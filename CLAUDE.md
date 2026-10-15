@@ -12,7 +12,7 @@ build the research and mapping toolkit, then use it to research the engineer its
 - Write requirements in EARS form ("When X, the system shall Y").
 
 ## Tools available
-- MCP servers in `.mcp.json`: DeepWiki (ask about any public GitHub repo), Mermaid (validate and render
-  diagrams), Playwright (headless browser).
-- Exa and Context7 come from claude.ai connectors, not this repo.
+- MCP servers in `.mcp.json`: DeepWiki (ask about any public GitHub repo) and Playwright (headless
+  browser, started by `scripts/playwright-mcp.sh`).
+- Exa, Context7 and Mermaid Chart come from claude.ai connectors, not this repo.
 - Superpowers is installed in cloud sessions by `scripts/cloud-setup.sh`.
