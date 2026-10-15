@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "deepwiki": {
+      "type": "http",
+      "url": "https://mcp.deepwiki.com/mcp"
+    },
+    "mermaid": {
+      "type": "http",
+      "url": "https://mcp.mermaid.ai/mcp"
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@latest", "--headless", "--browser", "chromium"]
+    }
+  }
+}
