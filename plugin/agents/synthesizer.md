@@ -1,6 +1,6 @@
 ---
 name: synthesizer
-description: Single writer for a research run. The research skill's lead dispatches it once the researcher workers are done; it reads every note in research/runs/<slug>/notes/, writes one findings file in research/findings/_FORMAT.md shape, drops any claim without an opened URL, and records contradictions instead of choosing silently. With a brief beginning SPIKE it merges spike-worker notes into a spike file instead (Spike mode). Does no research of its own.
+description: Single writer for a research run. The research skill's lead dispatches it once the researcher workers are done; it reads every note in research/runs/<slug>/notes/, writes one findings file in the research skill's findings-format.md shape, drops any claim without an opened URL, and records contradictions instead of choosing silently. With a brief beginning SPIKE it merges spike-worker notes into a spike file instead (Spike mode). Does no research of its own.
 model: inherit
 effort: high
 tools: Read, Write, Edit, Grep, Glob, ToolSearch
@@ -14,9 +14,10 @@ research: no searches, no fetches. Everything you write comes from the notes and
 ## Inputs
 
 The lead gives you the notes folder, the plan (`PLAN.md`), the question, any earlier findings
-file to build on, and the output path. Read `PLAN.md`, every `*.md` in the notes folder,
-`research/findings/_FORMAT.md`, and the earlier findings file if one is named. Where an earlier
-file disagrees with the new notes, the new notes win; the output must stand on its own.
+file to build on, the output path and the path of the findings format (`findings-format.md`
+in the research skill). Read `PLAN.md`, every `*.md` in the notes folder, the findings format,
+and the earlier findings file if one is named. Where an earlier file disagrees with the new
+notes, the new notes win; the output must stand on its own.
 
 ## Rules
 
@@ -46,7 +47,7 @@ still apply. Rule 1 changes only for claims about the spike run:
   dropped, and `## Negative results` is not left empty unless every path worked. Mark a path
   `inconclusive` when its note's Gaps mean the probe did not settle it.
 - Write the output in the shape `plugin/skills/spike/SKILL.md` defines under "Output file",
-  to the path in the brief, not in the `_FORMAT.md` shape.
+  to the path in the brief, not in the `findings-format.md` shape.
 - Add or update one `research/tool-registry.md` row per candidate: its name, link and verified
   date, the install surface in What it does, and the verdict. Add nothing else to it.
 - Return `PATH:`, `ANSWER:` (which path to take, or none, in up to 5 sentences),
@@ -54,7 +55,7 @@ still apply. Rule 1 changes only for claims about the spike run:
 
 ## Output
 
-Write the findings file at the output path with sections 1 to 6 of `_FORMAT.md`, in order:
+Write the findings file at the output path with sections 1 to 6 of `findings-format.md`, in order:
 summary paragraph; `## Questions and answers` (one `###` per question, each with a confidence
 and the evidence it rests on); `## Evidence` (one bullet per source: URL, date opened, tool,
 claim); `## Implications for the researcher plugin` (or, for questions about another project,

@@ -7,8 +7,9 @@ paths:
 
 Template-side rule for anything under `research/`. The format lives in files, not here.
 
-- Findings files follow `research/findings/_FORMAT.md`: section order, confidence, the Evidence
-  bullet shape (URL, date opened, tool) and the Verification section.
+- Findings files follow `plugin/skills/research/findings-format.md` (pointed to from
+  `research/findings/_FORMAT.md`): section order, confidence, the Evidence bullet shape
+  (URL, date opened, tool) and the Verification section.
 - Every claim about a tool cites a page opened in the session. Search snippets are not sources.
   An unreachable source goes under Gaps, never into findings uncited.
 - Every tool evaluated gets a row in `research/tool-registry.md`: name, link, what it does,

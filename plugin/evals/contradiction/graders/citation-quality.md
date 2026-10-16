@@ -14,7 +14,7 @@ PASS only if all of these hold:
   lists both URLs with a date and the tool used to open them.
 - Both claims appear together where the disagreement is discussed, and the file either says
   which it favours and why, or marks it unresolved.
-- No URL appears that is not one of the two above.
+- No claim is attributed to any other URL.
 
 FAIL if the file is missing or empty, if any claim is attributed to the wrong source, if a
 claim has no URL, if either source is dropped, or if the file picks one value without saying

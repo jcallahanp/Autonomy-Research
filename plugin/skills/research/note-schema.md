@@ -3,7 +3,7 @@
 Every `researcher` worker writes exactly one note, to the path the lead assigned:
 `research/runs/<slug>/notes/<facet-slug>.md`. This is the merge format. The synthesizer reads only
 these notes, so a note must stand on its own. The merged file follows
-`research/findings/_FORMAT.md`.
+`findings-format.md`, beside this file.
 
 ## Rules
 

@@ -143,7 +143,7 @@ Notes folder: research/runs/<slug>/notes/
 Plan: research/runs/<slug>/PLAN.md
 Question: <the full question this findings file answers>
 Earlier findings to build on: <path, or "none">
-Output: research/findings/<slug>.md, in the shape of research/findings/_FORMAT.md
+Output: research/findings/<slug>.md, in the shape of <path to this skill>/findings-format.md
 Return: PATH:, ANSWER: (up to 5 sentences), DROPPED: (count of claims without an opened
 URL), CONTRADICTIONS: (one line each), in at most 12 lines.
 ```

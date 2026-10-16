@@ -84,5 +84,5 @@ if [ -f "$i" ]; then
 else
   fail research-loop "missing $i"
 fi
-grep -q '^7\. `## Verification`' research/findings/_FORMAT.md \
-  || fail research-loop "_FORMAT.md lacks section 7 '## Verification'"
+grep -q '^7\. `## Verification`' plugin/skills/research/findings-format.md 2>/dev/null \
+  || fail research-loop "findings-format.md lacks section 7 '## Verification'"

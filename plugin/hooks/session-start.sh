@@ -7,7 +7,7 @@ project="${CLAUDE_PROJECT_DIR:-$(dirname "$plugin_root")}"
 
 # Skill index: the body of using-research-agent/SKILL.md (frontmatter stripped).
 ctx=$(awk 'c >= 2; /^---$/ { c++ }' "$plugin_root/skills/using-research-agent/SKILL.md" 2>/dev/null)
-[ -n "$ctx" ] || ctx="research-agent skills: using-research-agent (index), research, tool-scan, repo-triage, setup."
+[ -n "$ctx" ] || ctx="research-agent skills: using-research-agent (index), research, tool-scan, repo-triage, setup, interview, system-map, spike, self-test."
 ctx="research-agent is loaded. Skill index (using-research-agent):
 $ctx"
 
