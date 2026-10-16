@@ -19,11 +19,11 @@ Rulings: Claude Code is the engine and is not up for debate; everything else att
 
 ## Facets
 - [x] Diagrams non-technical readers understand and the three-page template - notes/template-and-readers.md - medium - arc42 canvas page 404; no numeric box-count threshold (PDF unreadable); print export, phone-sized diagram studies, DFDs, RFC templates not researched; some quotes from search text
-- [ ] Diagram toolchain: rendering, dark theme, validation and generation - notes/toolchain.md - pending
+- [x] Diagram toolchain: rendering, dark theme, validation and generation - notes/toolchain.md - medium - phone and project-file Mermaid rendering, GitHub Mermaid version, Terraform/OpenAPI/pydeps generators, Eraser and Graphviz not verified from opened pages
 - [x] Diagrams for the agent: text versus image, and the system-map skill - notes/agent-counterpart.md - medium - no agentic-coding text-versus-image test; no 2026 frontier diagram benchmark; Structurizr-for-agents evidence vendor-only; several quotes from search text
 
 ## Gap round
-- pending
+- not run: the remaining gaps weaken evidence strength but leave no key question unanswered; they are carried as open questions and spike items
 
 ## Outputs
 - Findings: research/findings/engineer-briefing.md - pending
