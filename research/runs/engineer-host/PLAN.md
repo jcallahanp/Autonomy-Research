@@ -23,5 +23,5 @@ Rulings: Claude Code is the engine and is not up for debate; everything else att
 - not run: the remaining gaps weaken evidence strength but leave no key question unanswered; they are carried as open questions and spike items
 
 ## Outputs
-- Findings: research/findings/engineer-host.md - pending
+- Findings: research/findings/engineer-host.md - done (127 evidence items, 29 excerpt-only claims moved to open questions)
 - Verification: pending
