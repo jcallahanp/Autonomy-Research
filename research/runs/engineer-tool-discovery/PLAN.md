@@ -18,7 +18,7 @@ Rulings: Claude Code is the engine and is not up for debate; everything else att
 
 ## Facets
 - [ ] Where to discover tools at run time, and how reliable each source is - notes/discovery-sources.md - pending
-- [ ] Vetting a candidate quickly and keeping the registry current - notes/vetting-and-registry.md - pending
+- [x] Vetting a candidate quickly and keeping the registry current - notes/vetting-and-registry.md - medium - GitHub advisory REST limits (403 here), PyPI attestation check, Socket FAQ, Invariant docs and Thoughtworks BYOR from search text only; no agent-scan detection benchmarks; no real approved-tool list found
 - [x] Decision procedure, discovery envelope and research-agent changes - notes/procedure-and-agent-changes.md - medium - envelope is the worker's untested design; MCP spec, repo-triage, system-map and agent files not read; no measured MCP schema tokens for Attio, Clay, n8n; some posts from search excerpts only
 
 ## Gap round
