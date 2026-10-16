@@ -1,1 +1,5 @@
 .playwright-mcp/
+.superpowers/
+# claude plugin eval output: raw JSON, reports, mock recordings
+plugin/evals/results/
+/evals/results/

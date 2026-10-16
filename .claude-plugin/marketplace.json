@@ -1,0 +1,15 @@
+{
+  "name": "research-agent-marketplace",
+  "owner": { "name": "jcallahanp" },
+  "metadata": {
+    "description": "A Claude Code research agent for project development: tool discovery, systems research, edge cases, cited findings."
+  },
+  "plugins": [
+    {
+      "name": "research-agent",
+      "source": "./plugin",
+      "description": "Finds tools and GitHub repos, works out how systems connect, tests feasibility, and writes cited findings and small Mermaid maps.",
+      "version": "0.1.0"
+    }
+  ]
+}

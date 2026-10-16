@@ -1,0 +1,13 @@
+flowchart LR
+  user[Researcher / project owner]
+  cc[Claude Code session<br/>local terminal or claude.ai/code cloud]
+  plugin[research-agent plugin + template repo]
+  repo[(research/ workspace in git<br/>findings, registry, open questions, diagrams)]
+  web[Web and GitHub<br/>Parallel, Exa, WebFetch, DeepWiki, Sourcegraph, MCP registry]
+  conn[claude.ai connectors<br/>Exa, Parallel, Context7, Mermaid Chart]
+
+  user -- "interview, brief, sign-off" --> cc
+  cc -- "loads skills, agents, hooks" --> plugin
+  cc -- "reads plan and index, writes findings" --> repo
+  cc -- "search, fetch, verify" --> web
+  cc -. "signed-in connectors" .-> conn

@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "deepwiki": {
+      "type": "http",
+      "url": "https://mcp.deepwiki.com/mcp"
+    },
+    "firecrawl": {
+      "type": "http",
+      "url": "https://mcp.firecrawl.dev/v2/mcp"
+    },
+    "playwright": {
+      "command": "bash",
+      "args": ["${CLAUDE_PLUGIN_ROOT:-.}/scripts/playwright-mcp.sh"]
+    }
+  }
+}
