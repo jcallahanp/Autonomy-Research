@@ -2,7 +2,7 @@
 
 Every tool evaluated for this project. Verdicts as of the verified date; details and the
 evidence behind each verdict are in `research/findings/` (tool-routing.md, methodology.md,
-packaging.md, architecture.md).
+packaging.md, architecture.md, engineer-intake.md).
 
 ## Research tools in use
 
@@ -25,7 +25,7 @@ packaging.md, architecture.md).
 
 | Tool | Link | What it does | Where it runs | Verified | Verdict |
 | --- | --- | --- | --- | --- | --- |
-| Official MCP registry API | https://github.com/modelcontextprotocol/registry | Keyless `/v0.1/servers?search=` listing of MCP servers | curl | 2026-10-16 | **Add** for MCP-server discovery |
+| Official MCP registry API | https://github.com/modelcontextprotocol/registry | Keyless `/v0.1/servers?search=` listing of MCP servers; name-substring search only; unvetted listings (pay-per-call and token-gated servers returned) | curl | 2026-10-16 | **Add** for MCP-server discovery, always followed by a URL/repo verification step (engineer-intake.md) |
 | Sourcegraph stream API | https://sourcegraph.com/docs/api/stream_api | Keyless cross-repo code search on sourcegraph.com | curl | 2026-10-16 | **Add** for "where does code do X" |
 | Firecrawl keyless MCP | https://docs.firecrawl.dev/mcp-server/keyless | Search/scrape/parse with no key, rate limited; live `tools/list` shows `firecrawl_scrape`, `firecrawl_search`, `firecrawl_parse` | Bundled keyless MCP in `plugin/.mcp.json` (`https://mcp.firecrawl.dev/v2/mcp`) | 2026-10-16 | **Installed**: fallback fetcher before Playwright |
 | OpenSSF Scorecard | https://github.com/ossf/scorecard | Per-repo security heuristics 0-10, viewer + REST API | hosted, read-only | 2026-10-16 | **Add** as lookup in repo triage |
@@ -42,6 +42,7 @@ packaging.md, architecture.md).
 | `/skill-doctor`, `/doctor prompt-audit` | https://code.claude.com/docs/en/skills | Per-skill context cost; CLAUDE.md conflict audit | interactive terminal | 2026-10-16 | Use to prune skills and CLAUDE.md |
 | GitHub template repository | https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-template-repository | "Use this template" copies the repo | GitHub web | 2026-10-16 | Use for clone-and-go |
 | Cloud network secrets | https://code.claude.com/docs/en/cloud-environments | Proxy attaches API key; key never enters the VM | cloud only | 2026-10-16 | Use for any paid API in cloud |
+| Claude Code plan mode + AskUserQuestion | https://code.claude.com/docs/en/best-practices | Read-only plan, 1-4 questions with 2-4 options, plan file, ExitPlanMode gate; AskUserQuestion not available in subagents | local CLI / SDK | 2026-10-16 | Use as intake engine in the main session; do not rely on ExitPlanMode as sole approval record (issues #50176, #30090) |
 
 ## Reference designs (not installed)
 
@@ -57,6 +58,15 @@ packaging.md, architecture.md).
 | GEPA (DSPy optimizer, optimize_anything) | https://dspy.ai/api/optimizers/GEPA/overview/index.md | Reflective, Pareto-based prompt and text evolution with minibatch-then-validation gating; learned coding-agent skills in a Feb 2026 post | Python; needs a reflection LM | 2026-10-16 | Reference design only; copy the loop, do not install |
 | DeepResearch Bench (RACE/FACT) | https://github.com/Ayanami0730/deep_research_bench | 100-task report-quality (RACE) and citation (FACT) benchmark; judge GPT-5.5 / GPT-5.4-mini since 11 May 2026 | local Python; OpenRouter/OpenAI key plus Jina key | 2026-10-16 | Skip as a per-round gate; reuse the FACT claim-to-URL design as a deterministic grader |
 | DeepResearch Bench II | https://github.com/imlrz/DeepResearch-Bench-II | 132 tasks, about 9,430 binary expert rubrics, public `tasks_and_rubrics.jsonl`; judge GPT-5.5 | local Python (uv); paid judge key | 2026-10-16 | Fallback: borrow a few rubrics as grader text; skip the full run |
+| GitHub spec-kit (/specify, /clarify templates) | https://github.com/github/spec-kit | /specify (max 3 clarification markers, informed defaults), /clarify (one question at a time, max 5, recommended option, coverage scan, writes answers into spec), /plan, /tasks | agent slash commands, Python CLI install; template read only | 2026-10-16 | Copy the clarify/specify prompt patterns as the intake gap-closing phase; do not adopt wholesale (verbosity per Fowler) |
+| AWS Kiro specs (requirements-first, Quick Spec) | https://kiro.dev/docs/specs/feature-specs/requirements-first/ | requirements.md (user stories + EARS), design.md, tasks.md; Quick Spec asks questions up front | proprietary IDE/CLI (separate product) | 2026-10-16 | Borrow the EARS output format and size-gating; do not adopt the IDE (Claude Code is the engine) |
+| EARS | https://alistairmavin.com/EARS | Five-pattern requirement syntax | notation, no install | 2026-10-16 | Use as intake output layer; model drafts, John confirms |
+| Volere fit criterion / snow card | https://www.reqview.com/blog/2019-02-27-news-volere-requirements-specification-template | Per-requirement shell with fit criterion; SCOPE/REQS/ISSUES/DEFS split | template | 2026-10-16 | Use fit criterion and glossary ideas only |
+| OntoAgent | https://arxiv.org/html/2605.05828 | Ontology-guided interview agent, IRE 0.69 | research prototype (not run) | 2026-10-16 | Reference design; slot pruning and coverage-plus-cap stop worth copying |
+| LLMREI | https://arxiv.org/html/2507.02564v1 | GPT-4o interviewer chatbot prompts | research prototype (not run) | 2026-10-16 | Reference for prompt rules (one question at a time, final summary); fine-tuning rejected |
+| OpenSpec | https://github.com/Fission-AI/OpenSpec | proposal/specs/design/tasks per change, delta specs, archive | npm CLI + slash commands; licence not checked | 2026-10-16 | Fallback if a ready-made spec framework is wanted; lighter than spec-kit |
+| Gemini Deep Research (Interactions API) | https://ai.google.dev/gemini-api/docs/deep-research | Research agent with optional collaborative plan review, MCP tool support; preview | Google API, paid | 2026-10-16 | Reference design for plan-approval loop only; skip as engine |
+| urlhealth | https://arxiv.org/abs/2604.03173v1 | Open-source URL liveness and stale-vs-hallucinated checker | pip / agent skill (not installed) | 2026-10-16 | Reference: copy the idea as the candidate verify step in intake |
 
 ## Evaluated and deferred or skipped
 
@@ -84,3 +94,11 @@ packaging.md, architecture.md).
 | DSPy MIPROv2 | https://dspy.ai/api/optimizers/MIPROv2/ | Bootstrapped demos, proposed instructions, Bayesian search | Python; needs LM key | 2026-10-16 | Skip; many calls, little value for markdown skills |
 | TextGrad | https://github.com/zou-group/textgrad | Textual-gradient critique and rewrite, PyTorch-style API | Python; needs OpenAI/Anthropic key | 2026-10-16 | Skip |
 | promptfoo optimize | https://www.promptfoo.dev/docs/usage/prompt-optimization/ | Baseline eval, LLM-proposed rewrites from failures, optional `--validation-split` | Node CLI; needs provider credential | 2026-10-16 | Fallback; built for prompt/provider pairs, not markdown skills |
+| ReqElicitGym | https://arxiv.org/abs/2602.18306v1 | Benchmark with oracle user for LLM interviewers | local Python (not run) | 2026-10-16 | Possible later test harness for the intake skill; website domain only |
+| tau-Elicitation | https://arxiv.org/html/2609.13602v1 | Voice entity capture benchmark | research (not run) | 2026-10-16 | Evidence only, for the dictated-name glossary playback |
+| BMAD Method | https://github.com/bmad-code-org/BMAD-METHOD | Skill pipeline brief, PRD, spec, architecture, tickets, build, build-auto | skills in coding tool; needs uv; v7 alpha | 2026-10-16 | Skip for one user; heavy; reference for right-sizing |
+| Aider modes | https://aider.chat/docs/usage/modes.html | ask / architect / code modes, no plan file (page seen in search excerpt only, not opened) | local CLI | 2026-10-16 (search excerpt only) | Skip; different engine, no artifact; description unverified |
+| Devin interactive planning | https://docs.devin.ai/work-with-devin/interactive-planning | Initial assessment, cited plan, 30 s auto-proceed | hosted, paid | 2026-10-16 | Skip; paid, hosted; borrow code-cited plan idea |
+| Cursor plan mode | https://cursor.com/blog/plan-mode | Clarifying questions then editable Markdown plan with to-dos | proprietary IDE | 2026-10-16 | Skip; different engine |
+| Claude research feature | https://support.claude.com/en/articles/11088861-use-research-on-claude | Multi-search research in claude.ai, paid plans (page seen in search excerpt only, not opened) | claude.ai web/desktop | 2026-10-16 (search excerpt only) | Skip for the engineer; cannot be driven from Claude Code; description unverified |
+| TrailLM / Sensecape | https://arxiv.org/html/2607.11810v1 | Research prototypes for exploratory search with LLMs | academic | 2026-10-16 | Skip; design ideas only (visible goal trail, option map) |
