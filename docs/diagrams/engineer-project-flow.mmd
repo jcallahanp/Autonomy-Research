@@ -1,0 +1,29 @@
+flowchart TD
+  s0{Stage 0: size gate}
+  s1[Stage 1: intake interview with John]
+  s2[Stage 2: as-is scan of existing systems]
+  s3[Stage 3: feasibility trials, dead-ends recorded]
+  s4[Stage 4: plan set, before-brief, John approves the hash, setup list]
+  s5[Stage 5: task loop: bounded claude -p, gate hook, audit, one PR per task]
+  s6[Stage 6: change record, dependents updated]
+  s7[Stage 7: security scans and review]
+  s8[Stage 8: preview deploy, promote held for John's digest reply]
+  s9[Stage 9: RUN_STATUS, MORNING.md, Telegram digest]
+  s10[Stage 10: resume after limit, crash or reboot]
+  s11[Stage 11: after-brief and model update]
+
+  s0 -- "sends one-sentence diffs straight to" --> s5
+  s0 -- "sends larger briefs to" --> s1
+  s1 -- "hands goal, constraints and profile to" --> s2
+  s2 -- "feeds the as-is pack to" --> s3
+  s3 -- "settles the paths for" --> s4
+  s4 -- "unlocks unattended work in" --> s5
+  s5 -- "raises a change of course to" --> s6
+  s6 -- "sends Major changes back for approval to" --> s4
+  s5 -- "runs each PR through" --> s7
+  s7 -- "hands PRs merged after John's reply to" --> s8
+  s8 -- "reports preview and promote lines in" --> s9
+  s9 -- "returns John's replies to" --> s5
+  s5 -- "on a limit or crash enters" --> s10
+  s10 -- "re-enters" --> s5
+  s9 -- "at project end leads to" --> s11

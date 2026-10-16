@@ -11,3 +11,7 @@ Mermaid Chart connector.
 | [tool-routing.mmd](tool-routing.mmd) | Decision flow | Which tool each research step uses, and the fallbacks |
 | [context-flow.mmd](context-flow.mmd) | Data flow | What lives in the lead's context, the workers' contexts, and on disk |
 | [setup-flow.mmd](setup-flow.mmd) | Flow | How a new user or cloud session gets to a working state |
+| [engineer-context.mmd](engineer-context.mmd) | Context | John, the autonomous engineer and the outside systems it touches |
+| [engineer-runtime.mmd](engineer-runtime.mmd) | Containers | Where each engineer part runs on the VM and where secrets live |
+| [engineer-project-flow.mmd](engineer-project-flow.mmd) | Flow | One project from intake to morning report and resume |
+| [engineer-approvals.mmd](engineer-approvals.mmd) | Decision flow | The three approval tiers and the channels each uses |

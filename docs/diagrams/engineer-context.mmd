@@ -1,0 +1,20 @@
+flowchart LR
+  john[John: designs and approves]
+  phone[John's phone: Telegram and Remote Control]
+  eng[Autonomous engineer on John's VM: Claude Code plus supervisor]
+  anth[Anthropic: Claude Code, Max plan or API key]
+  gh[GitHub: repos, PRs, branch protection]
+  gtm[GTM SaaS: Attio, Clay, n8n, Outreach, Slack]
+  health[Health services: WHOOP, Withings]
+  deploy[Deploy targets: Cloudflare, Cloud Run, Neon or Supabase]
+  reg[Registries: MCP registry, OSV, deps.dev, Scorecard]
+
+  john -- "gives brief, signs plan" --> eng
+  eng -- "sends digest and hard-gate prompts" --> phone
+  phone -- "returns numbered replies" --> eng
+  eng -- "runs sessions on" --> anth
+  eng -- "opens PRs and pushes branches" --> gh
+  eng -- "reads config, writes via API or browser" --> gtm
+  eng -- "pulls data by OAuth" --> health
+  eng -- "deploys by CLI with scoped tokens" --> deploy
+  eng -- "vets candidate tools against" --> reg

@@ -1,0 +1,30 @@
+flowchart TB
+  subgraph vm[John's Ubuntu VM]
+    root[Root-owned: managed settings, /opt/engineer hooks, egress allowlist]
+    sup[supervisor user: systemd loop, events.jsonl, RUN_STATUS.json, kill switch]
+    run[engineer user: one claude -p per task in the sandbox]
+    chan[engineer user: daytime Channels session in tmux]
+    broker[secretbroker user: SOPS and age secrets, agent-run jobs]
+    trial[Trial containers: host proxy holds test credentials]
+    browser[Headed Chrome profile on Xvfb, noVNC on localhost only]
+  end
+  tg[Telegram Bot API: supervisor bot and Channels bot]
+  phone[John's phone and computer]
+  gh[GitHub: bot account, protected branches]
+  targets[Deploy targets: Cloudflare, Cloud Run, Postgres]
+  hc[healthchecks.io: dead-man check]
+
+  root -- "constrains every tool call of" --> run
+  sup -- "starts via the run-task sudo wrapper" --> run
+  run -- "requests allowlisted jobs from" --> broker
+  sup -- "launches and tears down" --> trial
+  run -- "drives logged-in sessions in" --> browser
+  broker -- "pushes branches, never the default, to" --> gh
+  broker -- "deploys with minted child tokens to" --> targets
+  sup -- "sends digest, gates and pings as jobs to" --> broker
+  broker -- "holds the bot token and posts to" --> tg
+  broker -- "pings, or stops pinging when the supervisor dies," --> hc
+  hc -- "alerts" --> phone
+  chan -- "relays live prompts by day through" --> tg
+  tg -- "delivers to and returns replies from" --> phone
+  phone -- "reaches noVNC over an SSH tunnel to" --> browser

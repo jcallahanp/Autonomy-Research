@@ -46,3 +46,23 @@ the cross-cutting set.
 - [ ] Does Setup's seven-tool probe agree with the research skill's two-tool probe? The two were not compared line by line. (source: research-agent-self-improvement, 2026-10-16)
 - [ ] Can the live eval cases be made to grade research quality rather than workflow shape? Both live graders check wording or files, and one live case (scorecard) depends on a client-rendered page. Observed by the lead during round 1 measurement. (source: research-agent-self-improvement, 2026-10-16)
 - [ ] What noise floor does the frozen fast exam have on this model? At 8 cases x 3 runs it separates only changes of about 0.2-0.3; a 5-run paired comparison needs a budget call from John. Observed by the lead during round 1 measurement. (source: research-agent-self-improvement, 2026-10-16)
+
+## From the autonomous-engineer interview (2026-10-16)
+- [ ] Time budget or deadline for the engineer project. None stated.
+- [ ] The approval channel for batched gates: SMS, Slack, Telegram or another. John said "SMS or similar".
+- [ ] How many candidate paths the engineer may keep when testing feasibility (R7 in research/requirements/autonomous-engineer.md).
+- [ ] A template for per-project gates and privacy limits (R10, R14).
+- [ ] Whether the engineer's self-merge of routine changes (R16) has limits, for example production deploys.
+
+## From the existing-systems run (2026-10-16)
+- [Settled 2026-10-16 by the browser run: yes, the OpenAPI spec has only GET routes for views and no workflow routes; views and Workflows need the browser. See research/findings/engineer-browser.md.] Does the Attio REST API offer only GET for views (no create or update)? The verifier could not confirm it from the OpenAPI spec (too large to read whole). Spike against an Attio sandbox before relying on UI automation for views.
+- Does listing Attio webhooks need a "webhook:read" scope? The views page names only object_configuration:read.
+- Can any Clay client (official or unofficial) export table contents and enrichment column settings? The unofficial client page says "building and updating", not export.
+- Where does John's GTM system configuration live (Attio-Project repo holds none)? Asked of John; first engineer task is account access and exports.
+
+## From wave 3 (2026-10-16), for the cross-area blueprint
+- The runtime finding runs Claude Code on John's Max plan via /login. The key-creation note (research/runs/engineer-human-loop/notes/key-creation.md) found Anthropic terms saying products built on the Agent SDK should use API keys, not Max OAuth. Does a supervisor running the `claude -p` CLI under John's own Max login fall inside or outside that rule? The blueprint must state which, with the quote, or carry it as a decision for John.
+- R16 self-merge: GitHub's plans page lists branch protection, required reviewers and code owners for private repos under Pro (research/runs/engineer-protocol/notes/git-and-merge.md). Options for John: GitHub Pro, a public repo, or local-only enforcement.
+
+## From the cross-area blueprint (2026-10-16)
+- The blueprint's open items, each with the default taken meanwhile, are in research/blueprint/open-questions.md. The three that block building: Path A (Max login) or Path B (API key) for unattended runs; how R16 self-merge is enforced (GitHub Pro, public repo or local-only); where John's GTM configuration lives, his Clay plan, n8n hosting and the Attio merge route.
