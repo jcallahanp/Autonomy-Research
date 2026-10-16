@@ -27,5 +27,5 @@ Rulings: Claude Code is the engine and is not up for debate; everything else att
 - not run: the remaining gaps weaken evidence strength but leave no key question unanswered; they are carried as open questions and spike items
 
 ## Outputs
-- Findings: research/findings/engineer-human-loop.md - pending
+- Findings: research/findings/engineer-human-loop.md - written (17 unsourced claims dropped to Open questions; 5 contradictions recorded, Max login vs Agent SDK API keys left for John)
 - Verification: pending
