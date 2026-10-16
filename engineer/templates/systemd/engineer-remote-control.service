@@ -1,0 +1,15 @@
+[Unit]
+Description=Claude Code Remote Control (server mode) for the engineer
+After=network-online.target engineer-egress-proxy.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=engineer
+ExecStart=/opt/engineer/bin/remote-control-session
+# It exits after about 10 minutes offline (engineer-host E104); come back.
+Restart=always
+RestartSec=30
+
+[Install]
+WantedBy=multi-user.target

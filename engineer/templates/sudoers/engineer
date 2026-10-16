@@ -1,0 +1,7 @@
+# /etc/sudoers.d/engineer (mode 0440), installed by setup-root.sh --install.
+# The only privilege paths: engineer and supervisor reach the broker, supervisor starts runs.
+# The targets take no secret, secret path or command from the caller.
+Defaults:engineer,supervisor env_reset
+engineer ALL=(secretbroker) NOPASSWD: /opt/engineer/bin/agent-run
+supervisor ALL=(engineer) NOPASSWD: /opt/engineer/bin/run-task
+supervisor ALL=(secretbroker) NOPASSWD: /opt/engineer/bin/agent-run

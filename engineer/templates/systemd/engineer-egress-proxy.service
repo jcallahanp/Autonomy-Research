@@ -1,0 +1,14 @@
+[Unit]
+Description=Engineer egress proxy (host allowlist, no TLS interception)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=egress
+ExecStart=/usr/bin/mitmdump --listen-host 127.0.0.1 --listen-port 3128 --ignore-hosts '.*' -s /opt/engineer/scripts/egress/mitm_addon.py --set engineer_allowlist=/etc/engineer/egress.txt
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,17 @@
+[Unit]
+Description=Engineer supervisor (night loop, approvals, records)
+After=network-online.target engineer-egress-proxy.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=supervisor
+Environment=TZ=America/New_York
+ExecStart=/usr/bin/python3 /opt/engineer/scripts/supervisor/loop.py --projects /etc/engineer/projects.txt
+ExecStopPost=/usr/bin/sudo -n -u secretbroker /opt/engineer/bin/agent-run hc-ping fail
+Restart=on-failure
+RestartSec=30
+# No NoNewPrivileges: the supervisor reaches run-task and agent-run through sudo.
+
+[Install]
+WantedBy=multi-user.target
