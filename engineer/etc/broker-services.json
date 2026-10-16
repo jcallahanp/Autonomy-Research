@@ -1,0 +1,6 @@
+{
+  "_comment": "api-call services. Base URLs and header names are builder defaults, checked against vendor docs on setup day (SP60, SP66). Keys starting with _ are not services.",
+  "attio": {"base": "https://api.attio.com/v2", "secret": "ATTIO_API_KEY", "header": "Authorization", "format": "Bearer {}", "methods": ["GET"]},
+  "n8n": {"base_secret": "N8N_BASE_URL", "suffix": "/api/v1", "secret": "N8N_API_KEY", "header": "X-N8N-API-KEY", "format": "{}", "methods": ["GET"]},
+  "github": {"base": "https://api.github.com", "secret": "GH_BOT_PAT", "header": "Authorization", "format": "Bearer {}", "methods": ["GET"]}
+}

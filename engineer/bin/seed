@@ -1,0 +1,60 @@
+#!/bin/bash
+set -euo pipefail
+# seed NAME: store one secret in the SOPS file. Run by John only, from his SSH terminal, through his own sudo:
+#   sudo -u secretbroker /opt/engineer/bin/seed NAME
+# Not an agent-run job. The value is read from the terminal with echo off (or from stdin when it is not a
+# terminal), never from argv; it travels only through pipes: sops -d | merge | sops -e > temp file -> rename.
+# Exit: 0 seeded; 1 empty value or failure; 2 bad name or usage; 77 not running as BROKER_USER.
+root=$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)
+export PATH="$root/bin:/usr/bin:/bin"
+umask 077
+# shellcheck disable=SC1091
+. "$root/etc/engineer.conf"
+
+die() { echo "seed: $2" >&2; exit "$1"; }
+
+[ $# -eq 1 ] || die 2 "usage: seed NAME"
+name=$1
+[[ "$name" =~ ^[A-Z][A-Z0-9_]*$ ]] || die 2 "NAME must match ^[A-Z][A-Z0-9_]*$"
+[ "$(id -un)" = "$BROKER_USER" ] || die 77 "run as $BROKER_USER: sudo -u $BROKER_USER $0 $name"
+[ -s "$AGE_RECIPIENT_FILE" ] || die 1 "no age recipient in $AGE_RECIPIENT_FILE"
+recipient=$(head -n 1 "$AGE_RECIPIENT_FILE")
+[[ "$recipient" =~ ^age1[a-z0-9]+$ ]] || die 1 "bad age recipient in $AGE_RECIPIENT_FILE"
+
+if [ -t 0 ]; then
+  IFS= read -r -s -p "Value for $name (not shown): " value
+  echo >&2
+else
+  value=$(cat)
+fi
+[ -n "$value" ] || die 1 "empty value; nothing stored"
+
+mkdir -p "$BROKER_STATE_DIR"
+cd "$BROKER_STATE_DIR"
+tmp=$(mktemp "$BROKER_STATE_DIR/seed.XXXXXX")
+trap 'rm -f "$tmp"' EXIT
+
+current() {
+  if [ -f "$SECRETS_FILE" ]; then
+    SOPS_AGE_KEY_FILE="$AGE_KEY_FILE" sops -d --input-type json --output-type json "$SECRETS_FILE"
+  else
+    echo '{}'
+  fi
+}
+
+# The merge reads the document on stdin and the value on fd 3 (a pipe from the printf builtin).
+current | python3 -I -c '
+import json, os, sys
+doc = json.load(sys.stdin)
+if not isinstance(doc, dict):
+    sys.exit("seed: secrets file is not a JSON object")
+with os.fdopen(3) as f:
+    doc[sys.argv[1]] = f.read()
+json.dump(doc, sys.stdout, indent=2, sort_keys=True)
+' "$name" 3< <(printf '%s' "$value") \
+  | sops -e --age "$recipient" --input-type json --output-type json /dev/stdin > "$tmp"
+unset value
+[ -s "$tmp" ] || die 1 "sops wrote nothing; secrets file unchanged"
+chmod 600 "$tmp"
+mv -f "$tmp" "$SECRETS_FILE"
+echo "seeded $name"

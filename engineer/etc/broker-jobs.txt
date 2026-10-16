@@ -1,0 +1,9 @@
+# agent-run allowlist: job<TAB>comma-separated callers. Root-owned; seed and oauth-capture are never listed.
+# Jobs live in <root>/scripts/broker/jobs/<job>; agent-run runs them as BROKER_USER with a fixed PATH.
+push-branch	engineer,supervisor
+open-pr	engineer,supervisor
+automerge	supervisor
+api-call	engineer,supervisor
+hc-ping	supervisor
+tg-send	supervisor
+tg-poll	supervisor
