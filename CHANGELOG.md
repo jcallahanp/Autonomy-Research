@@ -35,6 +35,15 @@ Self-improvement round 1 (plan: `docs/self-improvement/2026-10-16-round-1-plan.m
   registry rows have one writer (the synthesizer); findings files say "Open questions"
   everywhere.
 
+### Fixed (found by re-measuring)
+- Workers get absolute paths under the project root. A relative note path was sometimes
+  resolved against the plugin folder, so the note was written outside the project (also in
+  v0.1).
+- Summary and answer lines cite each claim's URL inline; a qualifier the quote does not state
+  is labelled a worker inference instead of borrowing the URL.
+- Repo triage and tool scan create a missing `research/tool-registry.md` with its header
+  instead of skipping the row.
+
 ## 0.1.0 - 2026-10-16
 
 First release.

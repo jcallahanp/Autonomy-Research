@@ -4,5 +4,5 @@
 type: regex
 target: { source: file, path: research/findings/zorb-snapshots.md }
 flags: m
-pattern: '^## Evidence\b(?:(?!\n## )[\s\S])*?^- [^\n]*Quote:'
+pattern: '^## Evidence\b(?:(?!\n## )[\s\S])*?^(?:[-*]|\d+\.) [^\n]*Quote:'
 ---

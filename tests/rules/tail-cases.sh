@@ -100,6 +100,9 @@ if command -v node >/dev/null 2>&1; then
   printf '%s\n' '# zorbcache snapshots' '## Questions and answers' '### How often?' \
     'The reaper folds the oldest two generations into one every 900 s (high).' \
     '## Evidence' "- The reaper runs every 900 s — $S" > "$fx/findings-v01"
+  # A real round 1 run: Evidence as a numbered list, which the grader once rejected.
+  printf '%s\n' '# zorbcache snapshots' '## Evidence' "1. $S. Claim: compaction runs every 900 s. $Q" \
+    '## Open questions' '- none' > "$fx/findings-numbered"
   printf '%s\n' '# zorbcache snapshots' 'TODO' > "$fx/findings-stub"
   printf '%s\n' '# Snapshots' '## How often?' '### Takeaway' 'Every 900 s.' '### Cited findings' \
     "- The reaper merges the two oldest generations every 900 s — $S — $Q" '### Gaps' \
@@ -122,6 +125,7 @@ if command -v node >/dev/null 2>&1; then
   expect quote-carry/graders/quote-verbatim findings-v01 fail
   expect quote-carry/graders/evidence-has-quote findings-good pass
   expect quote-carry/graders/evidence-has-quote findings-v01 fail
+  expect quote-carry/graders/evidence-has-quote findings-numbered pass
   expect quote-carry/graders/evidence-has-quote findings-stub fail
   expect quote-carry/graders/quote-in-note note-good pass
   expect quote-carry/graders/quote-in-note note-v01 fail
