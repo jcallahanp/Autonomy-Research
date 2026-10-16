@@ -390,3 +390,10 @@ Gaps from the notes (pages not opened, or opened without the needed content):
 20. OpenRouter's ZDR and data-policy routing were not on the page opened. The Code Assist for individuals privacy notice was fetched but did not contain the training terms.
 21. Latency and relative cost per task type for second-model calls: no source.
 22. Repo citations without a line number (https://github.com/openai/codex-plugin-cc README.md, commit db52e28; https://github.com/google-gemini/gemini-cli docs/resources/quota-and-pricing.md, commit b25669d) are kept as the note wrote them. A verifier needs the file to locate the quote.
+
+## Verification
+Checked 2026-10-16 by the verifier. Sample: 20 cited claims.
+Verified: 17. Unverified: 3.
+- Unverified: Argon default output "65,536 (default synchronous) / up to 1,048,576 (with long decode)" (E1) — https://ai.google.dev/gemini-api/docs/models/gemini-4-argon — page did open and confirms the name, the 1,048,576 unified window and the 65,536 default, but the "long decode" 1,048,576 output figure does not appear in the fetched text, so uncertain.
+- Unverified: Paid Gemini API keeps "logs prompts and responses for a limited period of time" (E6) — https://ai.google.dev/gemini-api/terms — page did open and says paid prompts are not used to improve products, but the quoted log-retention sentence was not found in the fetched text, so uncertain.
+- Unverified: Greptile per-model figures, "Opus 4.7 finds 53.7% on Claude-authored PRs vs 60.0% on Codex-authored; GPT 5.5 finds 62.0% cross vs 50.5% same" (E45) — https://www.greptile.com/blog/model-inversion — the page gives the four numbers without labels; the fetch's own reading maps 60.0% and 62.0% to the opposite models from this claim, so the page does not state the claim as written.

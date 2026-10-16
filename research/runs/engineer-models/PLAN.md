@@ -25,4 +25,4 @@ Rulings: Claude Code is the engine and is not up for debate; everything else att
 
 ## Outputs
 - Findings: research/findings/engineer-models.md - written (23 unsourced claims dropped to Open questions; 8 contradictions recorded, 2 unresolved)
-- Verification: pending
+- Verification: 17 of 20 verified, needs-review (Argon long-decode figure, paid Gemini log-retention quote, and Greptile per-model figures not confirmed; the Greptile mapping may be reversed)
