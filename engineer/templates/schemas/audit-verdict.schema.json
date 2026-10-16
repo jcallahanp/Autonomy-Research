@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "audit verdict",
+  "description": "Auditor output (claude --json-schema) and audit.sh output.",
+  "type": "object",
+  "required": [
+    "verdict",
+    "head_sha",
+    "lines"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "verdict": {
+      "enum": [
+        "PASS",
+        "FAIL",
+        "NEEDS-JOHN"
+      ]
+    },
+    "head_sha": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "lines": {
+      "type": "array",
+      "maxItems": 15,
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

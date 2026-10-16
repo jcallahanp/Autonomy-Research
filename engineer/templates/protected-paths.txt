@@ -1,0 +1,25 @@
+# Protected paths, relative to the project root (eng.paths). `**` spans directories; `*` does not.
+# [always]: never written by the engineer. [existing]: may be added, never changed once they exist.
+# Hooks are a heuristic; the audit script and CODEOWNERS are the real stops.
+[always]
+tests/acceptance/**
+.github/**
+.claude/**
+audit/**
+CODEOWNERS
+.github/CODEOWNERS
+docs/plan/approval.json
+docs/plan/plan.approved.*
+**/conftest.py
+pytest.ini
+tox.ini
+jest.config.*
+vitest.config.*
+.mocharc*
+CLAUDE.md
+
+[existing]
+tests/**
+**/test_*.py
+**/*.test.*
+**/*.spec.*

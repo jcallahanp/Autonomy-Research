@@ -1,0 +1,120 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "tasks.json",
+  "description": "docs/plan/tasks.json: written by the planner; the implementer edits only status and passes.",
+  "type": "object",
+  "required": [
+    "version",
+    "tasks"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "type": "integer",
+      "enum": [
+        1
+      ]
+    },
+    "tasks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "title",
+          "type",
+          "status",
+          "depends_on",
+          "requirement_ids",
+          "files",
+          "check",
+          "passes",
+          "attempts"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "type": {
+            "enum": [
+              "feat",
+              "fix",
+              "docs",
+              "test",
+              "chore",
+              "refactor",
+              "style",
+              "perf"
+            ]
+          },
+          "status": {
+            "enum": [
+              "todo",
+              "ready",
+              "running",
+              "done",
+              "blocked",
+              "needs_john"
+            ]
+          },
+          "depends_on": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$"
+            }
+          },
+          "requirement_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "files": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "files_to_read": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "check": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The evidence command."
+          },
+          "evidence_result": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "passes": {
+            "type": "boolean"
+          },
+          "attempts": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "blocked_note": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

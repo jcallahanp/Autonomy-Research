@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "approval.json",
+  "description": "$STATE_DIR/approvals/<project>.json, written by the supervisor after John's identified approval.",
+  "type": "object",
+  "required": [
+    "approved_by",
+    "date",
+    "files",
+    "scope_version",
+    "gates",
+    "source",
+    "record_id"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "approved_by": {
+      "type": "string",
+      "minLength": 1
+    },
+    "date": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}"
+    },
+    "files": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "docs/plan/brief.md",
+        "docs/plan/requirements.md",
+        "docs/plan/integrations.yaml",
+        "docs/plan/profile.yaml"
+      ],
+      "properties": {
+        "docs/plan/brief.md": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "docs/plan/requirements.md": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "docs/plan/integrations.yaml": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "docs/plan/profile.yaml": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    },
+    "scope_version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "gates": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "source": {
+      "enum": [
+        "telegram",
+        "pr"
+      ]
+    },
+    "record_id": {
+      "type": "string",
+      "minLength": 1
+    }
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "name": "engineer",
+  "version": "0.1.0",
+  "description": "The autonomous engineer's skills, agents, hooks and MCP config, installed at /opt/engineer/plugin on the droplet.",
+  "author": { "name": "jcallahanp", "url": "https://github.com/jcallahanp" },
+  "homepage": "https://github.com/jcallahanp/Autonomy-Research",
+  "repository": "https://github.com/jcallahanp/Autonomy-Research",
+  "license": "MIT"
+}
