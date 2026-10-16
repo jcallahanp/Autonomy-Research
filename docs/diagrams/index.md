@@ -15,3 +15,5 @@ Mermaid Chart connector.
 | [engineer-runtime.mmd](engineer-runtime.mmd) | Containers | Where each engineer part runs on the VM and where secrets live |
 | [engineer-project-flow.mmd](engineer-project-flow.mmd) | Flow | One project from intake to morning report and resume |
 | [engineer-approvals.mmd](engineer-approvals.mmd) | Decision flow | The three approval tiers and the channels each uses |
+| [engineer-supervisor-loop.mmd](engineer-supervisor-loop.mmd) | Flow | One supervisor night: kill switch, window, task loop, audit, merge, breaker, terminal states |
+| [engineer-browser-route.mmd](engineer-browser-route.mmd) | Flow | How John and the engineer reach the droplet's branded Chrome, and the challenge stop |

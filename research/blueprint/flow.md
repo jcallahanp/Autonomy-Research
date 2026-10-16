@@ -2,7 +2,7 @@
 
 Purpose: how one project moves through the engineer from John's brief to the morning report, with the EARS requirements the findings gave for each stage.
 
-Diagram: `docs/diagrams/engineer-project-flow.mmd`. Approval tiers: T0 automatic, T1 digest line, T2 hard gate (decisions.md). Requirements numbered F1-F40 here are blueprint requirements derived from the findings cited; R and Q numbers refer to `research/requirements/autonomous-engineer.md`.
+Diagram: `docs/diagrams/engineer-project-flow.mmd`. Approval tiers: T0 automatic, T1 digest line, T2 hard gate (decisions.md). Requirements numbered F1-F42 here are blueprint requirements derived from the findings cited; R and Q numbers refer to `research/requirements/autonomous-engineer.md`.
 
 ## Run defaults
 Every number below is an untested default unless a citation says otherwise; the named spike sets the real value, and the builder keeps them in `templates/run-defaults.yaml`.
@@ -64,7 +64,7 @@ The supervisor computes `ready` from the `tasks.json` DAG and runs one task at a
 - F25 When the gate passes, `audit.sh` shall rerun the checks at HEAD with a test count above zero, then the supervisor shall start the auditor through `run-task` with the `auditor` profile, and the auditor shall return `PASS`, `FAIL` or `NEEDS-JOHN` bound to that HEAD SHA as JSON, which the supervisor writes to `audit/AUDIT-<id>.md` in its records clone and pushes to the `engineer-records` branch (repo-composition.md, Records) (engineer-protocol E138, E150, §Q2).
 - F26 If the same FAIL repeats, then the supervisor shall mark the task `NEEDS-JOHN` and continue with other ready tasks (engineer-protocol §Q3; R14).
 - F27 If a task fails twice, makes no git diff in 3 attempts, or repeats the same failing tests 5 times, then the supervisor shall write a blocked note and stop that task (engineer-context §Q7.4).
-- F28 When a task passes audit, the engineer shall open one PR with a Conventional Commit title; while R16 is off it shall add a T1 "merge PR?" line to the digest; while R16 is on and the paths are Tier 1 it shall run `gh pr merge --auto` (engineer-protocol E44, E54; ruling 2).
+- F28 When a task passes audit, the engineer shall open one PR with a Conventional Commit title; when its paths are Tier 1, the supervisor shall have the broker's `automerge` job run `gh pr merge --auto`, because R16 self-merge is on from day one under GitHub Pro; when its paths are Tier 2, it shall add a T1 "merge PR?" line and enable auto-merge only once John's own approving review exists on GitHub (engineer-protocol E44, E54; ruling 2) (updated 2026-10-16, John's decision).
 - F29 If the denial limit in Run defaults is reached for one kind of denial in a night, then the supervisor shall stop the night and report them in the digest (engineer-human-loop §Q6).
 
 ## Stage 6: change of course
@@ -90,6 +90,10 @@ The supervisor computes `ready` from the `tasks.json` DAG and runs one task at a
 ## Stage 10: resume after limits, crashes and reboots
 - F40 When a session limit message appears, the supervisor shall rely on `autoContinueAtUsageLimit`, record `waiting_for_reset` with the parsed reset time, and if the run still ended, resume with `--resume <session_id>`; when a weekly limit appears it shall end the night `stopped_by_bound` (ruling 5; engineer-protocol E108, E115-E117).
 - After a crash or reboot, systemd restarts the supervisor, which reconciles from `events.jsonl` before starting work and pings "supervisor died" on stop (engineer-protocol E124, E125). A new session re-reads state through the SessionStart hook (engineer-context §Q7.1).
+
+## Host rules (every stage) (updated 2026-10-16, John's decision)
+- F41 When a login page, CAPTCHA or bot challenge appears, the engineer shall stop the task, record a blocked note naming the host and kind, and notify John through Remote Control or Telegram with a T1 "re-login or clear the challenge on noVNC" line, and shall not attempt to bypass it; it shall not use stealth plugins, user-agent spoofing, proxy rotation or CAPTCHA solvers (engineer-host E17, E18, §Implications).
+- F42 When the engineer host is set up, the operator shall log in with an interactive `claude auth login` (`/login`) rather than `setup-token`, so that Remote Control works; when `ANTHROPIC_API_KEY` or `CLAUDE_CODE_OAUTH_TOKEN` is set in a run's environment, the wrappers shall refuse to start (engineer-host E105, §Implications; ruling 1).
 
 ## Stage 11: close
 The after-brief reuses the before-brief's skeleton and diagram ids, built from observed facts with unverified items marked (engineer-briefing §Q2), and `architecture.yaml` is updated in the same commit as any system change (engineer-briefing E70).

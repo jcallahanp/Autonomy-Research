@@ -1,18 +1,21 @@
 flowchart TB
-  subgraph vm[John's Ubuntu VM]
+  subgraph vm[John's DigitalOcean droplet, Ubuntu 24.04]
     root[Root-owned: managed settings, /opt/engineer hooks, egress allowlist]
     sup[supervisor user: systemd loop, events.jsonl, RUN_STATUS.json, kill switch]
     run[engineer user: one claude -p per task in the sandbox]
-    chan[engineer user: daytime Channels session in tmux]
+    chan[engineer user: Telegram channel session in tmux, engineer-channels unit]
+    rc[engineer user: Remote Control server mode, restarted by systemd]
     broker[secretbroker user: SOPS and age secrets, agent-run jobs]
     trial[Trial containers: host proxy holds test credentials]
-    browser[Headed Chrome profile on Xvfb, noVNC on localhost only]
+    browser[Headed branded Chrome profile on Xvfb, noVNC on 127.0.0.1:6080 only]
+    cfd[cloudflared tunnel, outbound only]
   end
   tg[Telegram Bot API: supervisor bot and Channels bot]
   phone[John's phone and computer]
   gh[GitHub: bot account, protected branches]
   targets[Deploy targets: Cloudflare, Cloud Run, Postgres]
   hc[healthchecks.io: dead-man check]
+  access[Cloudflare Access: one-email policy for noVNC]
 
   root -- "constrains every tool call of" --> run
   sup -- "starts via the run-task sudo wrapper" --> run
@@ -25,6 +28,12 @@ flowchart TB
   broker -- "holds the bot token and posts to" --> tg
   broker -- "pings, or stops pinging when the supervisor dies," --> hc
   hc -- "alerts" --> phone
-  chan -- "relays live prompts by day through" --> tg
+  chan -- "relays live prompts through" --> tg
+  rc -- "shows live sessions and pushes notifications to" --> phone
   tg -- "delivers to and returns replies from" --> phone
-  phone -- "reaches noVNC over an SSH tunnel to" --> browser
+  phone -- "signs in through" --> access
+  access -- "admits John to" --> cfd
+  cfd -- "forwards to noVNC of" --> browser
+  phone -. "SSH tunnel, fallback only" .-> browser
+%% updated 2026-10-16, John's decision
+

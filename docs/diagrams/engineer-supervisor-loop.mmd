@@ -1,0 +1,49 @@
+flowchart TD
+  wake([Supervisor loop under systemd])
+  kill{Kill switch file present?}
+  night{Inside the night window, US Eastern?}
+  idle[Sleep until the window opens]
+  recon[Reconcile from events.jsonl, skipping a torn last line]
+  pick{Ready task in the tasks.json DAG?}
+  impl[run-task implementer: one bounded claude -p in its own worktree]
+  limit[waiting_for_reset, then resume the session]
+  check{Stop gate: the task's check passes?}
+  audit{audit.sh at HEAD passes?}
+  auditor{Auditor verdict bound to the HEAD SHA}
+  pr[Broker opens one PR for the task]
+  tier{Only Tier 1 paths?}
+  merge[Broker automerge: gh pr merge --auto]
+  t1[T1 line in the digest; Tier 2 waits for John's review]
+  breaker{Breaker tripped: 2 failures, no diff in 3, same failure in 5?}
+  blocked[Blocked note; carry on with other tasks]
+  term[Terminal state: done, blocked, stopped_by_bound or crashed; RUN_STATUS.json, MORNING.md, digest]
+
+  wake --> kill
+  kill -- "yes" --> term
+  kill -- "no" --> night
+  night -- "no" --> idle
+  idle --> kill
+  night -- "yes" --> recon
+  recon --> pick
+  pick -- "none left" --> term
+  pick -- "yes" --> impl
+  impl -- "session limit" --> limit
+  limit -- "resumes" --> impl
+  limit -- "weekly limit" --> term
+  impl -- "exits" --> check
+  check -- "fails" --> breaker
+  check -- "passes" --> audit
+  audit -- "fails" --> breaker
+  audit -- "passes" --> auditor
+  auditor -- "FAIL" --> breaker
+  auditor -- "NEEDS-JOHN" --> t1
+  auditor -- "PASS" --> pr
+  pr --> tier
+  tier -- "yes" --> merge
+  tier -- "no" --> t1
+  merge -- "next task" --> kill
+  t1 -- "next task" --> kill
+  breaker -- "no: retry" --> impl
+  breaker -- "yes" --> blocked
+  blocked -- "next task" --> kill
+%% updated 2026-10-16, stage-1 plan
