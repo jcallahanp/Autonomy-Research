@@ -25,4 +25,4 @@ Rulings: Claude Code is the engine and is not up for debate; everything else att
 
 ## Outputs
 - Findings: research/findings/engineer-planning.md - written (18 unsourced claims dropped to Open questions; 10 contradictions recorded, 3 unresolved and listed as spikes)
-- Verification: pending
+- Verification: 19 of 20 verified, needs-review (the 25-39 point over-splitting figure is from the abstract and applies only to stripped-spec levels on 51 class tasks)
