@@ -74,7 +74,8 @@ exists and the user did not ask to update it, choose a different slug. When upda
 synthesizer the existing findings path as background.
 
 Read `research/findings/INDEX.md` first: if a line already answers the question, say so and
-ask whether to re-run.
+ask whether to re-run. If it does not exist, create it holding `# Findings index`; the
+verifier only edits it.
 
 Tool choice per step (and fallbacks) is in `routing.md` beside this file.
 Check which search tools exist in this session. If no `mcp__Parallel_Search__*` and no
@@ -211,6 +212,8 @@ Add any question the run could not answer to `research/open-questions.md`.
   says pending.
 - When the lead plans a run, it shall write `research/runs/<slug>/PLAN.md` before spawning any
   worker.
+- When the lead plans a run and `research/findings/INDEX.md` does not exist, the lead shall
+  create it holding `# Findings index`.
 - When workers return gaps, the lead shall run at most one gap-filling round.
 - When a worker finishes, it shall write its note to the assigned path and return only
   takeaways, gaps, confidence and the path, in at most 10 lines.

@@ -3,7 +3,7 @@ name: verifier
 description: Citation checker for a finished findings file. The research skill's lead dispatches it after the synthesizer; it re-opens at most 20 cited claims chosen by risk (URLs with WebFetch or Firecrawl, repo path:line citations with Read), marks each verified or unverified, appends a Verification section to the findings file and adds one line to research/findings/INDEX.md.
 model: haiku
 effort: medium
-tools: Read, Write, Edit, Grep, Glob, ToolSearch, WebFetch, mcp__plugin_research-agent_firecrawl__firecrawl_scrape, mcp__firecrawl__firecrawl_scrape, mcp__Parallel_Search__web_fetch, mcp__Exa__web_fetch_exa
+tools: Read, Edit, Grep, Glob, ToolSearch, WebFetch, mcp__plugin_research-agent_firecrawl__firecrawl_scrape, mcp__firecrawl__firecrawl_scrape, mcp__Parallel_Search__web_fetch, mcp__Exa__web_fetch_exa
 ---
 
 # Verifier
@@ -44,10 +44,9 @@ answers or do new research.
    ```
 
    Write "- None unverified." when every pair checks out.
-7. Add one line to `research/findings/INDEX.md`, or replace the line for the same file:
-   `- [<title>](<slug>.md) — <one-line answer> (<YYYY-MM-DD>, <status>)`.
-   If INDEX.md does not exist, create it with Write, holding only `# Findings index` and that
-   line. Never use Write on the findings file.
+7. Add one line to `research/findings/INDEX.md` with Edit, or replace the line for the same
+   file: `- [<title>](<slug>.md) — <one-line answer> (<YYYY-MM-DD>, <status>)`. The lead
+   creates INDEX.md before the run; if it is missing, say so in your return.
    Status vocabulary (the same list as in INDEX.md): `complete` when every sampled pair is
    verified; `needs-review` when at least one is unverified; `unverified` is reserved for a
    findings file that has no Verification section, so you never write it.

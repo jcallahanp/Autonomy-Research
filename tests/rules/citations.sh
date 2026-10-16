@@ -21,6 +21,10 @@ if [ -f "$v" ]; then
   grep -qiE 'numbers.{0,80}quotes.{0,80}single.source' "$v" || fail citations "verifier.md does not pick the sample by risk (numbers, quotes, single-source first)"
   grep -qi 'uncertain' "$v" || fail citations "verifier.md does not count an uncertain judgment as unverified"
   grep -qi 'uncertain' "$ff" || fail citations "findings-format.md section 7 lacks the 'uncertain' reason"
+  # Review I1: the verifier only appends and edits; Write could truncate INDEX.md or the findings.
+  tools_of "$v" | grep -qx Write && fail citations "verifier has Write (it should only Edit; the lead creates INDEX.md)"
+  tr '\n' ' ' < plugin/skills/research/SKILL.md | tr -s ' ' | grep -qF 'If it does not exist, create it holding `# Findings index`' \
+    || fail citations "research SKILL.md does not have the lead create INDEX.md before the verifier edits it"
 else fail citations "missing $v"; fi
 
 # Change 2: Quote field in the note, carried by the synthesizer into the findings Evidence.
