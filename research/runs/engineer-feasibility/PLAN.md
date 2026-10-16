@@ -20,10 +20,10 @@ Rulings: Claude Code is the engine and is not up for debate; everything else att
 - [x] Integration mapping artifacts and comparing paths on evidence - notes/mapping-and-rubric.md - medium - no study of diagrams staying current across design changes; Devin, Factory, Cursor not researched beyond registry; criteria list unvalidated
 - [x] Spikes, tracer bullets, set-based design, bounding rules and negative results - notes/spike-practice.md - medium - set-based design full text, SAFe and XP pages not opened; agent-vendor practice and coding best-of-N gains not researched; desk-vs-trial rule is the worker's own proposal
 - [x] Sandboxes for parallel trials and growing the spike skill - notes/trial-sandboxes.md - medium - Fly Machines, Northflank, Runloop not opened; hosted startup times and retention terms unseen; KVM on John's VM unknown
-- [ ] Integration edge cases for John's services and the setup list - notes/edge-cases-and-setup-list.md - pending
+- [x] Integration edge cases for John's services and the setup list - notes/edge-cases-and-setup-list.md - medium - several API guidelines and bootstrap examples not opened; Clay auth and rate limit, Outreach and Withings webhook signing, Cloudflare token TTL, Vercel REST limits unconfirmed; setup time estimates unsourced
 
 ## Gap round
-- pending
+- not run: the remaining gaps weaken evidence strength but leave no key question unanswered; they are carried as open questions and spike items
 
 ## Outputs
 - Findings: research/findings/engineer-feasibility.md - pending
