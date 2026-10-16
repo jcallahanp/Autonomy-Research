@@ -489,6 +489,13 @@ packaging.md, architecture.md, engineer-intake.md, engineer-existing-systems.md)
 
 | Tool | Link | What it does | Where it runs | Verified | Verdict |
 | --- | --- | --- | --- | --- | --- |
+| Cloudflare create tokens via API | https://developers.cloudflare.com/fundamentals/api/how-to/create-via-api/ | Parent token with Account API Tokens Edit mints scoped TTL child tokens; roll endpoint | hosted API | 2026-10-16 | Use: John makes one parent token (key-creation.md) |
+| Vercel tokens (REST + `vercel tokens`) | https://vercel.com/docs/cli/tokens | Mint/list/revoke tokens with expiresAt and projectId; `vercel signup` exists | hosted, CLI | 2026-10-16 | Use |
+| Supabase Management API + PAT | https://supabase.com/docs/reference/api/introduction | PAT (custom expiry, scopable) drives projects/secrets; project API keys created in Dashboard | hosted, CLI | 2026-10-16 | Use; PAT is a John step |
+| Slack manifest API + config tokens | https://docs.slack.dev/reference/methods/apps.manifest.create | Config token (12 h, rotate API) creates apps; returns client credentials, install still OAuth click | hosted | 2026-10-16 | Use; John does install click |
+| GitHub App manifest flow / device flow | https://docs.github.com/en/apps/sharing-github-apps/registering-a-github-app-from-a-manifest | Human-redirected app registration; device flow for CLI logins; no PAT-create API found; ToS bans bot-registered accounts | hosted | 2026-10-16 | Fallback; John creates PAT/app |
+| Telegram managed bots (Bot API) | https://core.telegram.org/bots/api | Bot can fetch token of a bot it manages via getManagedBotToken; first bot via @BotFather | hosted | 2026-10-16 | Spike |
+| Anthropic Admin API (keys) | https://platform.claude.com/docs/en/build-with-claude/administration-api | Org-only; API Keys list/retrieve/update, no create; keys made in Console | hosted | 2026-10-16 | Skip for solo Max user |
 | Channels permission relay (approvals facet) | https://code.claude.com/docs/en/channels-reference | Forwards tool-use prompts to chat; `yes <id>` verdict; first answer wins; sender allowlist | John's machine/VM | 2026-10-16 | Use for live prompts; do not rely on it overnight (stalled prompt blocks session) |
 | Supervisor Telegram digest | https://core.telegram.org/bots/api | Plain bot: sendMessage out, getUpdates in, allowlist on sender id; numbered batch with defaults | supervisor | 2026-10-16 | Use for batched approvals |
 | LangGraph interrupt | https://docs.langchain.com/oss/python/langgraph/interrupts | Pause/resume graph state, checkpointer required, node replay on resume | Python | 2026-10-16 | Skip; second runtime |
@@ -521,3 +528,7 @@ packaging.md, architecture.md, engineer-intake.md, engineer-existing-systems.md)
 | FlowVQA / FlowLearn / GITQA | https://aclanthology.org/2024.findings-acl.78.pdf | Flowchart and graph VQA benchmarks | datasets | 2026-10-16 | Evidence only |
 | FlowSight dataset | https://github.com/herbit2004/FlowSight-Dataset | Mermaid + PNG + QA per architecture diagram | local Python, OpenRouter key | 2026-10-16 (search text only) | Skip; not opened |
 | DiagramEval | https://aclanthology.org/2025.emnlp-main.640.pdf | Node/path F1 for LLM diagrams | research code | 2026-10-16 | Idea: parity check of diagram vs model |
+| C4 notation rules (briefing use) | https://c4model.com/diagrams/notation | Title, legend, labelled-line rules; context diagram "for everybody" (https://c4model.com/diagrams/system-context) | notation | 2026-10-16 | Use context level on John's page 1 |
+| Okabe-Ito palette | https://siegal.bio.nyu.edu/color-palette/ | Colour-blind-safe 8 colours with hex | palette | 2026-10-16 | Use on dark theme with shape/label redundancy |
+| Teach-back method | https://www.health.tas.gov.au/professionals/health-literacy/health-literacy-workplace-toolkit/spoken-communication/checking-understanding | Ask learner to explain in own words; tests the explainer | method | 2026-10-16 | Use as the brief's explain-back check |
+| Shape Up pitch / Amazon narrative | https://basecamp.com/shapeup/1.5-chapter-06 ; https://www.aboutamazon.com/news/workplace/an-insider-look-at-amazons-culture-and-processes | Five-ingredient pitch; length-capped memo | templates | 2026-10-16 | Borrow no-gos, appetite, forced length |
