@@ -27,4 +27,4 @@ Rulings: Claude Code is the engine and is not up for debate; everything else att
 
 ## Outputs
 - Findings: research/findings/engineer-browser.md - written (34 unsourced claims dropped to Open questions; 7 contradictions recorded, 2 unresolved and listed as spikes)
-- Verification: pending
+- Verification: 19 of 20 verified, needs-review (Attio webhooks being workspace-token-only not returned by the chunked spec fetch)
