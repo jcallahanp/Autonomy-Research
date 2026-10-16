@@ -19,11 +19,11 @@ Rulings: Claude Code is the engine and is not up for debate; everything else att
 ## Facets
 - [x] Protocol evidence and definition of done - notes/protocol-evidence.md - medium - no controlled Claude Code 5.x study of TDD, plan or reviewer; effect sizes mostly SWE-bench Python on small open models; Superpowers cites no measured effects; Kiro hooks and tdd-guard not opened
 - [x] The audit agent and coding-agent hallucination detection - notes/audit-agent.md - medium - neutral review-bot benchmarks and official vendor pricing not opened; current Opus 5.x system-card numbers not opened; most papers from Exa search text, flagged for the verifier
-- [ ] Git discipline and self-merge without a human reviewer - notes/git-and-merge.md - pending
-- [ ] Observability and crash resumption for unattended runs - notes/observability.md - pending
+- [x] Git discipline and self-merge without a human reviewer - notes/git-and-merge.md - medium - GitHub Pro price, rulesets and auto-merge on Free private repos, admin-PAT bypass and App token lifetime unverified; no Anthropic post on agent self-merge
+- [x] Observability and crash resumption for unattended runs - notes/observability.md - medium - headless behaviour at a usage limit untested; StopFailure hook schema not read; SigNoz, Grafana, ccusage code not opened
 
 ## Gap round
-- pending
+- not run: the remaining gaps weaken evidence strength but leave no key question unanswered; they are carried as open questions and spike items
 
 ## Outputs
 - Findings: research/findings/engineer-protocol.md - pending
