@@ -41,6 +41,7 @@ bundled and need no keys.
 | `system-map` | Draws a system as small Mermaid diagrams, one concern per file. |
 | `spike` | Tests up to three named paths for feasibility, in isolated workers. |
 | `self-test` | Scores the plugin once with `claude plugin eval` against a no-plugin baseline. |
+| `self-improve` | Runs a capped round of changes to the plugin itself, re-measured against a frozen exam, ending in a pull request. |
 | `using-research-agent` | The index of the skills above, injected at session start. |
 
 ## Where outputs land
