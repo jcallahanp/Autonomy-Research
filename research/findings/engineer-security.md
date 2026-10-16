@@ -208,11 +208,11 @@ per-file recall 4.6-19.2 percent in the Maxor preprint; 34 percent per-report fa
 3728923. Worker inference: a clean SAST run must never be reported as "secure"; the auditor says "no findings from
 rule set X".
 
-**Contradictions.** (1) The EASE 2024 note claim gives "CodeQL 15.3, Semgrep 15.9, FindSecBugs 26.5, Snyk Code 11.2
-percent", but the note's own quote attributes 15.3% to default Semgrep ("By editing the configuration of Semgrep, we
-were able to increase its detection rate from 15.3% (26/170)",
-https://dl.acm.org/doi/fullHtml/10.1145/3661167.3661262). The quote is verbatim, so it is favoured for Semgrep's
-default 15.3%; the per-tool assignment of the other figures is unresolved (Open questions). (2) CodeQL on the same
+**Contradictions.** (1) EASE 2024 Table 4 gives CodeQL 15.3% (26/170), Semgrep 15.9% (27/170), FindSecBugs 26.5 and
+Snyk Code 11.2 percent, while the paper's text gives 15.3% as the Semgrep baseline ("By editing the configuration of
+Semgrep, we were able to increase its detection rate from 15.3% (26/170)",
+https://dl.acm.org/doi/fullHtml/10.1145/3661167.3661262). The table is favoured for the per-tool defaults, CodeQL 15.3%
+and Semgrep 15.9%; the 15.3% Semgrep baseline in the text conflicts with the table (corrected after verification, 2026-10-16). (2) CodeQL on the same
 C/C++ dataset: 34 percent per-report false positives versus 96 percent sampled per-repo precision, both in
 https://dl.acm.org/doi/full/10.1145/3728923 (worker reading; neither figure is in the quote); the worker attributes
 the gap to the sampling unit. (3) Opengrep's rationale: InfoQ reports community claims that features moved behind a
@@ -940,8 +940,8 @@ Note on numbering: E15a-E15d sit between E15 and E16; there is no E65-E67.
 
 *Unresolved contradictions.*
 26. EASE 2024 per-tool detection figures: the note's claim assigns 15.3% to CodeQL and 15.9% to Semgrep, while its
-    quote attributes 15.3% to default Semgrep (https://dl.acm.org/doi/fullHtml/10.1145/3661167.3661262). Reopen the
-    paper's table.
+    quote attributes 15.3% to default Semgrep (https://dl.acm.org/doi/fullHtml/10.1145/3661167.3661262). The paper's
+    Table 4 gives CodeQL 15.3% (26/170) and Semgrep 15.9% (27/170) (corrected after verification, 2026-10-16).
 27. TruffleHog precision, SecretBench vs ProwlBench (https://arxiv.org/html/2307.00714, https://github.com/Lercas/prowlbench):
     spike on John's history.
 28. Vendor LLM-scanner claims vs academic benchmarks: spike on a seeded repo.

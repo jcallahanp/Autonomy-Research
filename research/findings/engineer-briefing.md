@@ -255,7 +255,7 @@ Worker inferences:
 - It runs `tests/check-mermaid.sh` when that file exists (:21-22).
 - It reads only "the sources the user points at" (:28-31).
 - The `.mmd` file is the deliverable (:48-51).
-- The checker verifies the index link, the first-line type and the render, not content: "does not render with mermaid-cli." (/home/user/Autonomy-Research/tests/check-mermaid.sh:8-11). It rejects anything but flowchart or sequenceDiagram (:46).
+- The checker verifies the index link, the first-line type and the render, not content: "does not render with mermaid-cli." (/home/user/Autonomy-Research/tests/check-mermaid.sh:8-11). It rejects anything but flowchart or sequenceDiagram (:39-43) (corrected after verification, 2026-10-16).
 - A grep for "theme" and "dark" in tests/, docs/diagrams/ and plugin/skills/ returned "(no output)".
 
 **Gaps (agent-counterpart worker inference).**
@@ -459,7 +459,7 @@ All sources were opened on 2026-10-16. "Exa search text" means the note lists th
 - E111. /home/user/Autonomy-Research/plugin/skills/system-map/SKILL.md:21-22 — 2026-10-16 — Read — Validation if present. Quote: "When `tests/check-mermaid.sh` exists, the skill shall run it on the directory and fix any failure before reporting."
 - E112. /home/user/Autonomy-Research/plugin/skills/system-map/SKILL.md:28-31 — 2026-10-16 — Read — Inputs are only the user's pointers. Quote: "Read the sources the user points at; use `researcher` workers for anything external so fetched pages stay out of the lead."
 - E113. /home/user/Autonomy-Research/tests/check-mermaid.sh:8-11 — 2026-10-16 — Read — The checker verifies link-in-index, first-line type, and render, not content. Quote: "does not render with mermaid-cli."
-- E114. /home/user/Autonomy-Research/tests/check-mermaid.sh:46 — 2026-10-16 — Read — The checker rejects anything but flowchart/graph/sequenceDiagram. Quote: "*) fail "$n starts with '$first'; only flowchart or sequenceDiagram are allowed" ;;"
+- E114. /home/user/Autonomy-Research/tests/check-mermaid.sh:42 — 2026-10-16 — Read — The checker rejects anything but flowchart/graph/sequenceDiagram (rule at lines 39-43, quote at line 42) (corrected after verification, 2026-10-16). Quote: "*) fail "$n starts with '$first'; only flowchart or sequenceDiagram are allowed" ;;"
 - E115. grep for "theme" and "dark" in /home/user/Autonomy-Research/tests/, docs/diagrams/ and plugin/skills/ — checked 2026-10-16 — Bash grep — No theme config exists in skill, tests or docs/diagrams. Quote: "(no output)"
 - E116. /home/user/Autonomy-Research/plugin/skills/system-map/SKILL.md:48-51 — 2026-10-16 — Read — Shareable render link is optional and lead-only. Quote: "The `.mmd` file in the repo is the deliverable, and tests/check-mermaid.sh is the check."
 

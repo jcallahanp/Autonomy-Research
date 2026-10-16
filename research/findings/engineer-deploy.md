@@ -214,7 +214,7 @@ low volume. Temporal was not researched (worker judgement: over-built for one us
 **Confidence: medium-high.** Attio "enforces a 5 second timeout" and retries "up to 10 times with an
 exponential back-off" (https://docs.attio.com/rest-api/guides/webhooks). WHOOP retries "five times over the
 course of about one hour" (https://developer.whoop.com/docs/developing/webhooks) for workout, sleep and recovery
-update and delete events (same URL); the worker's claim adds that WHOOP expects a response within a second.
+update and delete events (same URL); the page also "recommends that you return a successful 2XX status code within a second" as a design goal, not a hard limit (corrected after verification, 2026-10-16).
 Withings makes 10 attempts over about 5 h and "Missed notifications are not redelivered. Once your endpoint is
 back up, backfill via the Data API using lastupdate."
 (https://developer.withings.com/developer-guide/v3/data-api/notifications/notification-overview/). Cloudflare
@@ -564,7 +564,7 @@ but no tool name. Source note in brackets.
 - **E62** https://www.windmill.dev/pricing — 2026-10-16, WebFetch — Windmill community self-hosted: unlimited executions, 3 workspaces, git sync up to 2 users; "Commercial licence" No; licence not named on page. Quote: "Unlimited"
 - **E63** https://docs.attio.com/rest-api/guides/webhooks — 2026-10-16, WebFetch — Attio: HTTPS only, HMAC-SHA256 `Attio-Signature`, 5 s timeout, 10 retries over about 3 days. Quote: "Attio will retry delivery of the message up to 10 times with an exponential back-off."
 - **E64** https://docs.attio.com/rest-api/guides/webhooks — 2026-10-16, WebFetch — Attio timeout. Quote: "Attio also enforces a 5 second timeout on requests to your target URL."
-- **E65** https://developer.whoop.com/docs/developing/webhooks — 2026-10-16, WebFetch — WHOOP: HTTPS endpoint, signature headers, retries five times over about an hour, respond within a second. Quote: "WHOOP will retry webhook delivery for failed webhook requests five times over the course of about one hour."
+- **E65** https://developer.whoop.com/docs/developing/webhooks — 2026-10-16, WebFetch — WHOOP: HTTPS endpoint, signature headers, retries five times over about an hour, recommends (not requires) a 2XX within a second (corrected after verification, 2026-10-16). Quote: "WHOOP will retry webhook delivery for failed webhook requests five times over the course of about one hour."
 - **E66** https://developer.whoop.com/docs/developing/webhooks — 2026-10-16, WebFetch — WHOOP events: workout/sleep/recovery updated|deleted. Quote: "Enum: "workout.updated" "workout.deleted" "sleep.updated" "sleep.deleted" "recovery.updated" "recovery.deleted""
 - **E67** https://developer.withings.com/developer-guide/v3/data-api/notifications/notification-overview/ — 2026-10-16, WebFetch — Withings: 10 attempts over about 5 h, missed notifications not redelivered (backfill with lastupdate). Quote: "Missed notifications are not redelivered. Once your endpoint is back up, backfill via the Data API using lastupdate."
 - **E68** https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/ — 2026-10-16, WebFetch — Cloudflare Tunnel is outbound-only and needs no public IP. Quote: "creates outbound-only connections to Cloudflare's global network"
