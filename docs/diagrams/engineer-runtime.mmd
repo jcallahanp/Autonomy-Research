@@ -1,0 +1,21 @@
+flowchart TB
+  subgraph vm[John's Ubuntu VM]
+    sup[Supervisor under systemd: tasks.json, events.jsonl, RUN_STATUS.json]
+    run[engineer user: one claude -p per task, sandbox, managed settings]
+    broker[secretbroker user: SOPS and age files, agent-run jobs]
+    trial[Trial containers with host proxy: test credentials only]
+    browser[Headed Chrome profile on Xvfb, noVNC for John]
+  end
+  tg[Telegram Bot API]
+  phone[John's phone]
+  gh[GitHub: bot account, protected branches]
+  targets[Deploy targets: Cloudflare, Cloud Run, Postgres]
+
+  sup -- "starts and bounds" --> run
+  run -- "requests allowlisted jobs from" --> broker
+  sup -- "launches and tears down" --> trial
+  run -- "drives logged-in sessions in" --> browser
+  broker -- "pushes PRs with the bot PAT to" --> gh
+  broker -- "deploys with minted child tokens to" --> targets
+  sup -- "posts digest and gates to" --> tg
+  tg -- "delivers to and relays replies from" --> phone

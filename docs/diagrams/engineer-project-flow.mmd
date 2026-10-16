@@ -1,0 +1,26 @@
+flowchart TD
+  intake[1. Intake interview with John]
+  asis[2. As-is scan of existing systems]
+  trials[3. Feasibility trials, dead-ends recorded]
+  plan[4. Plan set and three-page before-brief]
+  approve{John approves plan hash?}
+  setup[5. Project setup list in one sitting]
+  loop[6. Task loop: one bounded claude -p per task]
+  audit[7. Gate hook, audit.sh, auditor verdict, PR]
+  deploy[8. Preview deploy, promote by digest line]
+  morning[9. RUN_STATUS, MORNING.md, Telegram digest]
+  resume[10. Resume after limit or crash]
+
+  intake -- "hands goal and constraints to" --> asis
+  asis -- "feeds the as-is pack to" --> trials
+  trials -- "settles paths for" --> plan
+  plan -- "asks" --> approve
+  approve -- "yes: writes approval.json, starts" --> setup
+  approve -- "no: returns changes to" --> plan
+  setup -- "unlocks" --> loop
+  loop -- "submits each task to" --> audit
+  audit -- "passes merged work to" --> deploy
+  deploy -- "reports the night in" --> morning
+  morning -- "carries John's replies back to" --> loop
+  loop -- "on limit or crash enters" --> resume
+  resume -- "re-enters" --> loop

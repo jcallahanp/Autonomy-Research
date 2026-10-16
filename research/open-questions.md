@@ -63,3 +63,6 @@ the cross-cutting set.
 ## From wave 3 (2026-10-16), for the cross-area blueprint
 - The runtime finding runs Claude Code on John's Max plan via /login. The key-creation note (research/runs/engineer-human-loop/notes/key-creation.md) found Anthropic terms saying products built on the Agent SDK should use API keys, not Max OAuth. Does a supervisor running the `claude -p` CLI under John's own Max login fall inside or outside that rule? The blueprint must state which, with the quote, or carry it as a decision for John.
 - R16 self-merge: GitHub's plans page lists branch protection, required reviewers and code owners for private repos under Pro (research/runs/engineer-protocol/notes/git-and-merge.md). Options for John: GitHub Pro, a public repo, or local-only enforcement.
+
+## From the cross-area blueprint (2026-10-16)
+- The blueprint's open items, each with the default taken meanwhile, are in research/blueprint/open-questions.md. The three that block building: Path A (Max login) or Path B (API key) for unattended runs; how R16 self-merge is enforced (GitHub Pro, public repo or local-only); where John's GTM configuration lives, his Clay plan, n8n hosting and the Attio merge route.

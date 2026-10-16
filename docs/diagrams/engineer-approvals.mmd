@@ -1,0 +1,24 @@
+flowchart TD
+  act[Engineer reaches an action]
+  classify{Classify against project profile}
+  t0[T0 automatic: reversible, in repo, checks pass]
+  t1[T1 digest line: numbered, recommended default]
+  t2[T2 hard gate: money, delete data, store submission]
+  digest[Supervisor Telegram bot: one daily digest]
+  prompt[Supervisor Telegram bot: immediate separate prompt]
+  parser[Deterministic reply parser]
+  log[(decisions/approvals.jsonl)]
+  relay[Channels relay and Remote Control: daytime view only]
+  sms[SMS: dead-man alert only]
+
+  act -- "is checked by" --> classify
+  classify -- "routes routine work to" --> t0
+  classify -- "routes reviewable items to" --> t1
+  classify -- "routes gated actions to" --> t2
+  t1 -- "is batched into" --> digest
+  t2 -- "is sent at once as" --> prompt
+  digest -- "returns replies to" --> parser
+  prompt -- "returns typed confirmations to" --> parser
+  parser -- "appends every ask and answer to" --> log
+  act -- "is shown live by day on" --> relay
+  digest -- "is backed by a dead-man alert on" --> sms
