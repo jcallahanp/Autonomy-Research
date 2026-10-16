@@ -3,6 +3,7 @@
 Stage-1 template code for the autonomous Claude Code engineer. Everything here lands in
 `/opt/engineer/` on the droplet (root-owned, read-only to the `engineer` user). The design is in
 `research/blueprint/`; the build plan is `docs/plans/2026-10-16-engineer-stage-1.md`.
+Setup day (John's one sitting on the droplet): [setup-day.md](../docs/engineer/setup-day.md).
 
 ## Layout
 | Path | What it holds |
