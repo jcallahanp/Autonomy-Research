@@ -485,4 +485,10 @@ Unsettled by the evidence:
 - Whether agents skip `bd` in practice; Beads unattended-run guidance (docs/multi-agent not read in full).
 - Observation-masking papers, RTK-style output compressors and code-intelligence MCPs were not surveyed.
 
+## Verification
+Checked 2026-10-16 by the verifier. Sample: 20 cited claims.
+Verified: 18. Unverified: 2.
+- Unverified: "an Anthropic maintainer closed the request for an evidence gate with 'There is a supported way to do this today: a `Stop` hook.'" — https://github.com/anthropics/claude-code/issues/75720 — quote is on the page, but the page lists its author (bcherny) as a "Collaborator" and does not state Anthropic affiliation; attribution uncertain.
+- Unverified: "Degradation is driven by step count rather than context length" (logit slope -0.69 vs -0.44) — https://arxiv.org/pdf/2609.01660v1 — page did not open as text (PDF returned as binary, text not extractable); quote and figures not confirmed.
+
 

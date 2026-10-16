@@ -26,4 +26,4 @@ Rulings: Claude Code is the engine and is not up for debate; everything else att
 
 ## Outputs
 - Findings: research/findings/engineer-context.md - written (40 unsourced claims dropped to Open questions; 3 contradictions unresolved, 5 recorded as setup differences)
-- Verification: pending
+- Verification: 18 of 20 verified, needs-review (a GitHub collaborator quote attributed to Anthropic without stated affiliation; the step-count-vs-length paper PDF did not extract)
