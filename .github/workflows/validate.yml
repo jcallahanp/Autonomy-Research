@@ -1,0 +1,37 @@
+name: validate
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4.2.2
+
+      - uses: actions/setup-node@v4.1.0
+        with:
+          node-version: "22.11.0"
+
+      - name: Structure checks
+        run: bash tests/check.sh
+
+      - name: Diagram checks
+        run: bash tests/check-mermaid.sh
+
+      # Claude Code is installed from npm at the version these checks were written against.
+      # `claude plugin validate` needs no login or API key (checked with an empty HOME), so
+      # this job uses no secrets.
+      - name: Install Claude Code
+        run: npm install --global @anthropic-ai/claude-code@2.1.301
+
+      - name: Validate plugin
+        run: claude plugin validate plugin --strict
+
+      - name: Validate marketplace
+        run: claude plugin validate . --strict

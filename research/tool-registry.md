@@ -27,7 +27,7 @@ packaging.md, architecture.md).
 | --- | --- | --- | --- | --- | --- |
 | Official MCP registry API | https://github.com/modelcontextprotocol/registry | Keyless `/v0.1/servers?search=` listing of MCP servers | curl | 2026-10-16 | **Add** for MCP-server discovery |
 | Sourcegraph stream API | https://sourcegraph.com/docs/api/stream_api | Keyless cross-repo code search on sourcegraph.com | curl | 2026-10-16 | **Add** for "where does code do X" |
-| Firecrawl keyless MCP | https://docs.firecrawl.dev/mcp-server/keyless | Search/scrape/parse with no key, rate limited | `https://mcp.firecrawl.dev/v2/mcp` | 2026-10-16 | **Add** as fallback fetcher before Playwright |
+| Firecrawl keyless MCP | https://docs.firecrawl.dev/mcp-server/keyless | Search/scrape/parse with no key, rate limited; live `tools/list` shows `firecrawl_scrape`, `firecrawl_search`, `firecrawl_parse` | Bundled keyless MCP in `plugin/.mcp.json` (`https://mcp.firecrawl.dev/v2/mcp`) | 2026-10-16 | **Installed**: fallback fetcher before Playwright |
 | OpenSSF Scorecard | https://github.com/ossf/scorecard | Per-repo security heuristics 0-10, viewer + REST API | hosted, read-only | 2026-10-16 | **Add** as lookup in repo triage |
 
 ## Plugin build and test tooling
