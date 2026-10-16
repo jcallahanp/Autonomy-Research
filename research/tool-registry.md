@@ -280,3 +280,28 @@ packaging.md, architecture.md, engineer-intake.md, engineer-existing-systems.md)
 | Stripe webhook + idempotency docs | https://docs.stripe.com/webhooks | Reference rules: raw-body signature, 5-minute replay tolerance, dedupe by event ID, no ordering, 24 h idempotency keys | docs | 2026-10-16 | Reference pattern for the integration edge-case checklist |
 | Google AIP-194 | https://google.aip.dev/194 | Retry guidance (UNAVAILABLE retryable; no blind retry of state changes) | docs | 2026-10-16 | Reference; thin on backoff |
 | Cloudflare Terraform provider | https://developers.cloudflare.com/api/terraform/ | IaC for Cloudflare with API token auth | local | not opened (search excerpt only) | Candidate; spike before relying |
+
+## Engineer deployment
+
+| Tool | Link | What it does | Where it runs | Verified | Verdict |
+| --- | --- | --- | --- | --- | --- |
+| Gradle wrapper (Android CLI build) | https://developer.android.com/build/building-cmdline | Headless build and sign of APK/AAB, no Android Studio | Linux VM | 2026-10-16 | Use; spike SDK setup (mobile.md) |
+| Bubblewrap / Trusted Web Activity | https://developer.chrome.com/docs/android/trusted-web-activity/overview | Node CLI wraps a PWA as an Android app; page dated 2020 | Linux VM | 2026-10-16 | Fallback for Play-listing a PWA; README not opened |
+| Capacitor (Android) | https://capacitorjs.com/docs/android | Web app in Android WebView; Android Studio centred, CLI allowed | Linux VM | 2026-10-16 | Use when native plugins needed; spike headless |
+| Expo EAS Build / Submit | https://docs.expo.dev/submit/android/ | 15 free Android + 15 iOS builds/month; `eas build --local` on Linux; Submit uploads .aab to internal track, no listing | Expo cloud / VM | 2026-10-16 | Fallback if React Native chosen; first-upload claim conflicts with fastlane |
+| fastlane supply | https://docs.fastlane.tools/actions/upload_to_play_store/ | Uploads binaries, listing, screenshots; promotes tracks; first build uploaded manually | Linux VM | 2026-10-16 | Use for non-Expo |
+| Firebase App Distribution | https://firebase.google.com/docs/app-distribution | Tester distribution via CLI/Gradle/fastlane; price not seen | Google cloud | 2026-10-16 | Fallback to `adb install` |
+| Codemagic | https://codemagic.io/pricing/ | Cloud macOS builds, 500 free M2 min/month then $0.095/min | cloud | 2026-10-16 | Use for iOS later |
+| Health Connect SDK | https://developer.android.com/health-and-fitness/health-connect/get-started | Native Android health API; no web API on page | Android | 2026-10-16 | Needs wrapper/native app, not PWA |
+| n8n self-hosted (Community) licence/limits (automation-surfaces.md) | https://github.com/n8n-io/n8n/blob/master/LICENSE.md | Sustainable Use Licence: internal business use; no git/environments in Community; API on by default | VM | 2026-10-16 | Keep for John's visual flows; Postgres, pruning, nightly export to git |
+| n8n Cloud pricing | https://n8n.io/pricing/ | Starter 20 EUR/mo annual, 2.5K executions; API not on free trial | cloud | 2026-10-16 | Fallback; small quota |
+| n8n instance-level MCP | https://docs.n8n.io/advanced-ai/mcp/accessing-n8n-mcp-server/ | Create/edit workflows (2.13.0+) on flagged workflows | n8n | 2026-10-16 | Use after spike on throwaway instance |
+| Cloudflare Workers cron + webhook receiver | https://developers.cloudflare.com/workers/platform/limits/ | Free 100k req/day, 5 cron triggers, 10 ms CPU; wrangler cron + local scheduled route | cloud | 2026-10-16 | Use for webhook receivers and light cron |
+| Cloudflare Tunnel | https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/ | Outbound-only tunnel; price not on page | VM | 2026-10-16 | Option; price unverified |
+| GitHub Actions schedule | https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows | Cron >=5 min, delays, auto-disable after 60 days inactivity (public repos) | GitHub | 2026-10-16 | Fallback for repo-bound jobs |
+| Supabase pg_cron + edge functions | https://supabase.com/docs/guides/cron | SQL cron calling edge functions; free 150 s wall clock | cloud | 2026-10-16 | Only if data is in Supabase |
+| systemd timers | https://man7.org/linux/man-pages/man5/systemd.timer.5.html | Persistent= catch-up of missed runs | VM | 2026-10-16 | Use: default VM scheduler |
+| Trigger.dev | https://trigger.dev/pricing | Durable tasks, Apache 2.0, $5 credit, 10 schedules free | cloud/self-host | 2026-10-16 | Fallback if durable retries needed |
+| Inngest | https://www.inngest.com/pricing | Durable functions; 50k executions/mo free | cloud | 2026-10-16 | Fallback |
+| Windmill | https://www.windmill.dev/pricing | Scripts/flows; free self-host unlimited executions; licence not stated on page | self-host | 2026-10-16 | Fallback; licence unverified |
+| Temporal | (not opened) | Durable workflow engine | - | not opened | Reject for one user; not researched |
