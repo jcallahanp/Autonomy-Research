@@ -18,10 +18,10 @@ Rulings: Claude Code is the engine and is not up for debate; everything else att
 - [x] Claude Code cloud sessions as the runtime - notes/cloud-sessions.md - medium - per-run wall-clock and token cap for routines undocumented; Playwright in the cloud VM unverified; Max prices only in snippets
 - [x] Self-hosted always-on Claude Code (VPS, VM, own machine) - notes/self-hosted-always-on.md - medium - consumer terms text, Cloudflare Access, Linux vault CLIs and several VPS repos seen only in snippets, not opened
 - [x] Packaging and composition of the engineer - notes/packaging-and-composition.md - medium - no official cloud-init, Packer, Nix or vault CLI pages opened; marketplace tag pinning, connectors under setup-token auth and hook collisions untested
-- [ ] Always-on agent harnesses as hosts (OpenClaw and its direction) - notes/always-on-agent-harnesses.md - pending
+- [x] Always-on agent harnesses as hosts (OpenClaw and its direction) - notes/always-on-agent-harnesses.md - medium - several security advisories and nanoclaw.dev seen only in snippets; no hands-on test; whether Claude Code permission prompts surface through OpenClaw chat undetermined
 
 ## Gap round
-- not run
+- not run: the remaining gaps weaken evidence strength but leave no key question unanswered; they are carried as open questions and spike items
 
 ## Outputs
 - Findings: research/findings/engineer-runtime.md - pending
