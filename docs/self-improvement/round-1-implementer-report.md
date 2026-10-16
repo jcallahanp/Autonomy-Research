@@ -212,3 +212,120 @@ describes the new hook. `docs/diagrams/c3-research-run.mmd`, `context-flow.mmd` 
 - Researchers may cite less under the quote-first rule (claims without a quote become Gaps).
   This is intended, but watch `contradiction`'s llm citation grader and `cite-or-park`.
 - The paired protocol's `--runs` precedence and cost ceiling are unverified (see Rulings).
+
+## Review fixes
+
+Source: the round-1 final review (Important I1-I7) and the controller's re-grade of M7 (the
+live command's `--allow-tools` grants). Every rule was written first and watched fail on the
+tree before the fix; `bash tests/check.sh` passes after the last commit. No file in
+`tests/frozen-exam.sha256` changed and no eval was run.
+
+### I1. Verifier loses Write; the lead creates INDEX.md
+- Changed: `plugin/agents/verifier.md` tools drop `Write`; step 7 adds the INDEX line with
+  Edit and reports a missing INDEX.md instead of creating it. `plugin/skills/research/SKILL.md`
+  step 1: "If it does not exist, create it holding `# Findings index`", plus an EARS line.
+  CHANGELOG updated. The earlier ruling that gave the verifier Write is superseded.
+- RED: `FAIL citations: verifier has Write (it should only Edit; the lead creates INDEX.md)` and
+  `FAIL citations: research SKILL.md does not have the lead create INDEX.md before the verifier
+  edits it`. GREEN: no citations failures.
+
+### I2. Positive checks beside the `not_contains` graders
+- Changed: new `verify-tail/graders/plan-outputs-filled.md` (Outputs has `- Verification: <v>
+  of <n>`), `quote-carry/graders/evidence-has-quote.md` (an Evidence bullet with `Quote:`) and
+  `quote-carry/graders/note-has-quote.md` (a Cited findings section with `Quote:`).
+- Test: `tests/rules/tail-cases.sh` now runs each grader's pattern with node (JavaScript
+  RegExp, `not_contains` inverted, `tool_used` matched against the tool-input JSON) on inline
+  good and bad samples, and checks at case level that every regex grader on a file passes the
+  good sample and each bad sample (stub, empty, v0.1 style) fails at least one.
+- RED (before the graders existed): `grader verify-tail/graders/plan-outputs-filled on sample
+  plan-good: got missing, want pass` (and the same for each new grader), plus
+  `verify-tail passes every grader on research/runs/quux-durability/PLAN.md for the bad sample
+  plan-stub` and `... plan-empty`. GREEN: no tail-cases failures.
+
+### I3. Quote graders require a `Quote:` field
+- Changed: `quote-verbatim.md` and `quote-in-note.md` match
+  `Quote:\s*["“][^"”\n]*folds the oldest two generations into one`. The tail-cases literal
+  check now requires the pattern to start with `Quote:` and the phrase after the last `]*` to
+  be a literal of the mock.
+- RED: `grader quote-carry/graders/quote-verbatim on sample findings-v01: got pass, want fail`,
+  the same for `quote-in-note` on `note-v01`, and `quote-carry passes every grader on
+  research/findings/zorb-snapshots.md for the bad sample findings-v01`. This matches the
+  controller's three v0.1 runs, where quote-carry scored 1.0. GREEN: a findings file whose
+  prose carries the page's words but has no `Quote:` now fails `quote-verbatim` and
+  `evidence-has-quote`.
+
+### I4. The tail cases see whether the agents ran
+- Changed: `verify-tail/graders/verifier-spawned.md` and
+  `quote-carry/graders/synthesizer-spawned.md`: `type: tool_used`, `tool: Agent`, `min: 1`,
+  `input_match` on `"subagent_type"` ending in `verifier` / `synthesizer`.
+- RED: `got missing, want pass` for both. GREEN: they pass on
+  `{"subagent_type":"research-agent:verifier",...}` and fail on a researcher dispatch whose
+  prompt text mentions the verifier.
+
+### I5. A fast or live case outside the manifest fails
+- Changed: `tests/rules/frozen-exam.sh` reads the tags of every `prompt.md` under
+  `plugin/evals/`; one tagged `fast` or `live` whose path is not in the manifest fails.
+- RED: with `verify-tail` tagged `[fast]`: `FAIL frozen-exam: plugin/evals/verify-tail is tagged
+  fast/live but is not in the frozen manifest`; with `quote-carry` tagged `[tail, live]`: the
+  same for quote-carry. GREEN: tags restored, no frozen-exam failure; the ten frozen cases pass.
+
+### I6. The 2-round cap counts a series
+- Changed: `plugin/skills/self-improve/SKILL.md` Cap rule: each plan records `Series: <s>,
+  round <k> of 2`; the budget yes, the plan yes and a merged pull request do not start a new
+  series; at `round 2 of 2` stop and ask. Step 1 reads the newest plan's Series line; step 5
+  writes it. EARS line, description, the `using-research-agent` table and CHANGELOG say "per
+  series". `2026-10-16-round-1-plan.md` gains `Series: 1, round 1 of 2.`
+- RED: `FAIL self-improve: self-improve SKILL.md lacks 'Series:'`, `... lacks 'round 2 of 2'`,
+  `self-improve does not say which yeses leave the series count alone`, `self-improve lacks the
+  EARS line for the series cap`. GREEN: none.
+
+### I7. Attribution rule for a dropped case
+- Changed: new Attribution loop rule: for each dropped case, revert the changes that touch its
+  skill, agents or hook, re-run only that case with the same `--runs`, widen once more if still
+  below, then revert every plugin change of the round and keep only tests and tail cases. The
+  Budget rule names this as the one allowed re-run; Commands gain the `--case <name>` re-run;
+  step 8 and the EARS keep line say the same.
+- RED: `lacks '--case <name>'`, `lacks the whole-round revert fallback`, `EARS keep line lacks
+  the targeted re-run`. GREEN: none.
+
+### Live command grants (M7, re-graded Important)
+- Changed: `tests/rules/self-improve.sh` extracts every `claude plugin eval plugin ...` command
+  from `self-test/SKILL.md` and requires each verbatim in `self-improve/SKILL.md`, and requires
+  the live line to grant WebFetch, WebSearch, `"Bash(git clone *)"`, `"Bash(grep *)"` and both
+  `mcp__plugin_research-agent_*__*` patterns. The skill now says to copy each command whole,
+  because a tool left out of `--allow-tools` is withheld without an error.
+- RED (live line cut after `WebFetch WebSearch`, which the old literal check let pass):
+  `self-improve SKILL.md lacks the self-test command(s) verbatim: [claude plugin eval plugin
+  --tag live ...]` and `self-improve live command does not grant "Bash(git clone *)"` (and the
+  other three). Also `lacks 'withheld'`. GREEN: none, with the skill restored.
+
+### Rulings
+- Ruling: the new positive regexes are scoped to their section with `(?:(?!\n## )[\s\S])*?`
+  instead of the review's `[\s\S]*?` — an unscoped pattern can match a `Quote:` or
+  `Verification:` line in a later section — a run that writes the heading at another level
+  (`### Outputs`) fails these graders.
+- Ruling: the series is recorded as a `Series:` line in each plan, not counted as plan files
+  since the last merged pull request — every round ends in a pull request the user may merge,
+  so a merge-based count resets after each round and the cap stays vacuous — one more line per
+  plan, and a plan written without it leaves the count to judgment.
+- Ruling: the Attribution re-run uses `--case <name>`, taken from the v0.1 plan and the v0.1
+  eval report header ("filtered: --case one-fact-inline"), not from CLI docs — if `--case` does
+  not combine with `--runs`, the re-run needs another form.
+- Ruling: a verifier that finds no INDEX.md reports it instead of creating it — the lead now
+  owns creation, so a missing file means the lead skipped a step — the run loses its INDEX line
+  (verify-tail's `index-line` fails, which is the signal).
+
+### Deferred minors
+Left as the review listed them, for a later round:
+- M1. Hook matches `pending|running` as substrings (`plugin/hooks/session-start.sh:20`).
+- M2. An abandoned run is re-injected at every session start.
+- M3. Verifier risk order says "quotes" when every claim now has a `Quote:`.
+- M4. `verified-some` can pass on `Verified: 0` via an Unverified reason.
+- M5. `planted-claim-absent` fails a correct negated mention of AES-256.
+- M6. Stale "opened URL" wording in research/SKILL.md and synthesizer.md.
+- M8. A `tests/grader-fixtures/` directory for every grader. Partly covered: the round-1 tail
+  graders now have inline good and bad samples in `tests/rules/tail-cases.sh`.
+- M9. Hook test misses the no-Outputs and `### Outputs` layouts.
+- M10. Registry ownership rule is not recorded in one place.
+- M11. self-improve step 2 says "current default branch" where it means the branch's starting
+  commit.

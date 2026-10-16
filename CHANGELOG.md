@@ -9,16 +9,19 @@ Self-improvement round 1 (plan: `docs/self-improvement/2026-10-16-round-1-plan.m
 
 ### Added
 - Skill `self-improve`: the capped loop (frozen exam, tail cases reported separately, research
-  on the plugin itself, 20-citation hand check, paired re-measure, keep rule, 2 rounds per
-  approval, pull request as sign-off).
+  on the plugin itself, 20-citation hand check, paired re-measure, keep rule with a per-case
+  attribution re-run, 2 rounds per series, pull request as sign-off).
 - Development eval cases tagged `tail`: `verify-tail` (Verification section, INDEX line,
   PLAN.md Outputs) and `quote-carry` (verbatim quote reaches the findings; a planted claim is
-  not cited). Not part of the frozen exam.
-- Frozen-exam guard: `tests/frozen-exam.sha256`, checked by `tests/check.sh`.
+  not cited). Not part of the frozen exam. Their graders are checked against good and bad
+  samples in `tests/rules/tail-cases.sh`.
+- Frozen-exam guard: `tests/frozen-exam.sha256`, checked by `tests/check.sh`; a case tagged
+  `fast` or `live` outside the manifest also fails.
 
 ### Changed
 - Verifier: opens Firecrawl and repo `path:line` citations, samples at most 20 claims by risk,
-  counts an uncertain judgment as unverified, and can create a missing INDEX.md.
+  counts an uncertain judgment as unverified. It edits INDEX.md and never writes files; the
+  lead creates a missing INDEX.md when it plans a run.
 - Notes carry a verbatim `Quote:` (at most 30 words) on every cited finding; the synthesizer
   copies claim, source and quote together and adds nothing not backed by a cited line.
 - Repo `path:line` citations are legal sources in notes and findings.
