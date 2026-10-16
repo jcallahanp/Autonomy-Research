@@ -17,12 +17,12 @@ Rulings: Claude Code is the engine and is not up for debate; everything else att
 
 ## Facets
 - [x] Mapping a codebase for an agent - notes/codebase-mapping.md - medium - no published token cost for mapping a mid-size repo; tree-sitter, ctags and CodeQL licence pages not opened
-- [ ] Reading SaaS configuration as data (Attio, Clay, n8n, Outreach, Slack) - notes/saas-config-as-data.md - pending
+- [x] Reading SaaS configuration as data (Attio, Clay, n8n, Outreach, Slack) - notes/saas-config-as-data.md - medium - Clay plan and workflow-dump command, Outreach permissions and rate limits, n8n CLI on Cloud, Slack app enumeration unverified
 - [x] Brownfield practice: as-is documentation, credential inventory, sources of truth - notes/brownfield-practice.md - medium - gitleaks redaction, n8n credential fields, Attio merge undo and dedupe docs unverified; no outcome data for the keep/replace/remove format
 - [x] John's two systems as they stand (from the cloned repos) - notes/johns-systems-as-is.md - high for health, low for GTM - the Attio-Project repo holds no GTM system (only rules and vendored skills); the GTM stack lives in accounts; jcallahanp/Varonis not cloned
 
 ## Gap round
-- not run
+- not run: the GTM system itself is in no repo (John asked where it lives); the remaining gaps weaken evidence strength but leave no key question unanswered
 
 ## Outputs
 - Findings: research/findings/engineer-existing-systems.md - pending
