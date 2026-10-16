@@ -1,0 +1,22 @@
+flowchart TB
+  subgraph plugin[Plugin root = template repo]
+    skills[skills/<br/>setup, research, tool-scan, repo-triage,<br/>interview, system-map, spike, self-test]
+    agents[agents/<br/>researcher, synthesizer, verifier]
+    hooks[hooks/ + .claude/settings.json<br/>SessionStart: inject index, check setup]
+    mcp[.mcp.json<br/>DeepWiki, Playwright, Firecrawl keyless]
+    rules[.claude/rules/<br/>research-format, diagrams]
+    evals[evals/<br/>claude plugin eval cases]
+  end
+  subgraph ws[research/ workspace]
+    plan[runs/slug/PLAN.md + notes/]
+    findings[findings/*.md + INDEX.md]
+    registry[tool-registry.md<br/>open-questions.md]
+    diagrams[../docs/diagrams/*.mmd + index]
+  end
+  skills --> agents
+  skills --> plan
+  agents --> plan
+  agents --> findings
+  agents --> registry
+  skills --> diagrams
+  hooks --> findings

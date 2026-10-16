@@ -1,0 +1,15 @@
+flowchart TD
+  q{What does the step need?}
+  q -->|find tools or repos| d[Parallel web_search<br/>fallback Exa web_search_exa]
+  q -->|find MCP servers| r[MCP registry API via curl]
+  q -->|find code across GitHub| sg[Sourcegraph stream API]
+  q -->|read a page| p[Parallel web_fetch with objective<br/>fallback Exa fetch, Firecrawl, then Playwright in a subagent]
+  q -->|verify and cite| wf[WebFetch with a pointed prompt<br/>one Evidence bullet: URL, date, tool, claim]
+  q -->|understand a repo| dw[DeepWiki ask_wiki_question<br/>confirm with git clone --depth 1 + grep]
+  q -->|library API syntax| c7[Context7, max 3 calls<br/>cite the snippet's source URL]
+  q -->|test an edge case| sh[Bash: curl, clone, run]
+  q -->|draw architecture| mm[Write .mmd locally<br/>validate via Mermaid MCP in a subagent]
+  d --> cap[Keep at most 3 URLs before any fetch]
+  cap --> p
+  p --> wf
+  dw --> wf

@@ -1,0 +1,20 @@
+sequenceDiagram
+  participant U as User
+  participant L as Lead (research skill, session model)
+  participant W as researcher x1-5 (Sonnet, fresh context)
+  participant S as synthesizer (session model)
+  participant V as verifier (Haiku/Sonnet)
+  participant F as research/ files
+
+  U->>L: brief
+  L->>F: write runs/slug/PLAN.md (facets, mutually exclusive)
+  L->>W: one brief per facet (objective, sources, note path, schema)
+  W->>F: notes/facet.md (claim, URL, date, tool; contradictions; gaps; registry row)
+  W-->>L: 10-line summary (takeaways, gaps, confidence, path)
+  L->>W: at most one gap-filling round
+  L->>S: paths of all notes
+  S->>F: findings/topic.md in _FORMAT.md shape; drops claims without a URL
+  L->>V: sample of cited claims
+  V->>F: marks each claim verified / unverified
+  L->>F: update findings/INDEX.md, open-questions.md
+  L-->>U: result with paths and open questions

@@ -1,20 +1,77 @@
 # Tool registry
 
+Every tool evaluated for this project. Verdicts as of the verified date; details and the
+evidence behind each verdict are in `research/findings/` (tool-routing.md, methodology.md,
+packaging.md, architecture.md).
+
+## Research tools in use
+
 | Tool | Link | What it does | Where it runs | Verified | Verdict |
 | --- | --- | --- | --- | --- | --- |
-| Exa | https://mcpservers.org/remote-mcp-servers/exa | Semantic search built for agents | claude.ai connector | 2026-10-15 | Starter kit |
-| DeepWiki | https://mcp.deepwiki.com/ | Q&A over any public GitHub repo | `.mcp.json` | 2026-10-15 | Starter kit |
-| Context7 | https://context7.com/docs/clients/claude-code | Current library and SDK docs | claude.ai connector | 2026-10-15 | Starter kit |
-| Mermaid Chart | https://mermaid.ai/docs/ai/mcp-server | Validates and renders Mermaid | claude.ai connector (repo copy needed sign-in) | 2026-10-15 | Starter kit |
-| Playwright MCP | https://playwright.dev/docs/getting-started-mcp | Browser automation | `.mcp.json` | 2026-10-15 | Starter kit |
-| Superpowers | https://github.com/obra/superpowers | Engineering methodology skills | plugin, via `scripts/cloud-setup.sh` | 2026-10-15 | In use |
-| Sequential Thinking | https://github.com/modelcontextprotocol/servers/tree/main/src/sequentialthinking | Structured thought log | not installed | 2026-10-15 | Low value with current models |
-| Ralph Loop | https://claude.com/plugins/ralph-loop | Stop hook re-feeds one prompt until `<promise>` text or iteration cap | not installed | 2026-10-16 | Phase 2; only with script-checked completion + max-iterations |
+| Parallel Search MCP | https://docs.parallel.ai/search/search-mcp | Keyless web search with answer-ready excerpts; fetch up to 20 URLs with objective-focused excerpts | claude.ai connector | 2026-10-16 | **Primary** for discovery and page reading |
+| Exa MCP (web_search_exa, web_fetch_exa) | https://exa.ai/docs/reference/exa-mcp | Semantic search with highlights; fetch with repo metadata (stars, contributors) | claude.ai connector ($10/month free credit) | 2026-10-16 | Second opinion for discovery; fetch when repo metadata wanted |
+| Exa agent_run | https://exa.ai/pricing | Multi-step metered research agent | claude.ai connector | 2026-10-16 | Subagent only, always with `budget.maxCostDollars` |
+| WebFetch (built-in) | https://code.claude.com/docs/en/tools-reference | Fetch up to 100k chars and answer a pointed prompt | Claude Code | 2026-10-16 | **Primary** for verify-and-cite |
+| WebSearch (built-in) | https://code.claude.com/docs/en/tools-reference | Titles and URLs only, US-only | Claude Code | 2026-10-16 | Fallback only; missed the canonical repo in testing |
+| DeepWiki MCP | https://docs.devin.ai/work-with-devin/deepwiki-mcp | Q&A and wiki over public GitHub repos, no auth | `.mcp.json` (http) | 2026-10-16 | **Primary** for understanding repos; `read_wiki_contents` subagent-only (905k chars seen) |
+| git clone --depth 1 + grep | (local) | Exact source for verification | Bash | 2026-10-16 | **Primary** verification of DeepWiki claims |
+| Context7 MCP | https://context7.com/plans | Versioned library docs snippets; 1,000 calls/month free | claude.ai connector | 2026-10-16 | Keep, for API syntax of a known library only |
+| Playwright MCP | https://github.com/microsoft/playwright-mcp | Headless Chromium via accessibility snapshots | `.mcp.json` (stdio, `scripts/playwright-mcp.sh`) | 2026-10-16 | Last resort, subagent only; blocked by Cloudflare/Vercel bot checks; 45-95 KB snapshots |
+| Mermaid Chart MCP | https://mermaid.ai/docs/ai/mcp-server | Validate and render Mermaid (free account) | claude.ai connector | 2026-10-16 | Keep for validation via subagent; 60k-char output per render |
+| GitHub MCP | https://github.com/github/github-mcp-server | Repo/file/PR tools | claude.ai connector | 2026-10-16 | Own-repo reads only; search returns 403 in cloud sessions |
+| Superpowers | https://github.com/obra/superpowers | Engineering methodology skills | plugin, via `scripts/cloud-setup.sh` | 2026-10-15 | In use; brainstorming flow reused for the interview skill |
+
+## Free additions recommended
+
+| Tool | Link | What it does | Where it runs | Verified | Verdict |
+| --- | --- | --- | --- | --- | --- |
+| Official MCP registry API | https://github.com/modelcontextprotocol/registry | Keyless `/v0.1/servers?search=` listing of MCP servers | curl | 2026-10-16 | **Add** for MCP-server discovery |
+| Sourcegraph stream API | https://sourcegraph.com/docs/api/stream_api | Keyless cross-repo code search on sourcegraph.com | curl | 2026-10-16 | **Add** for "where does code do X" |
+| Firecrawl keyless MCP | https://docs.firecrawl.dev/mcp-server/keyless | Search/scrape/parse with no key, rate limited | `https://mcp.firecrawl.dev/v2/mcp` | 2026-10-16 | **Add** as fallback fetcher before Playwright |
+| OpenSSF Scorecard | https://github.com/ossf/scorecard | Per-repo security heuristics 0-10, viewer + REST API | hosted, read-only | 2026-10-16 | **Add** as lookup in repo triage |
+
+## Plugin build and test tooling
+
+| Tool | Link | What it does | Where it runs | Verified | Verdict |
+| --- | --- | --- | --- | --- | --- |
+| Claude Code subagents | https://code.claude.com/docs/en/sub-agents | Isolated-context workers with per-agent model/tools/memory | plugin `agents/` | 2026-10-16 | Core primitive for workers |
+| Claude Code dynamic workflows (`/deep-research`) | https://code.claude.com/docs/en/workflows | Scripted fan-out with schema returns, cross-check and vote | plugin `workflows/` | 2026-10-16 | Phase 2 target for the verifier pipeline |
+| Claude Code agent teams | https://code.claude.com/docs/en/agent-teams | Peer sessions with shared task list and messaging | experimental | 2026-10-16 | Rejected for v1; roughly 7x tokens |
+| `claude plugin validate --strict` | https://code.claude.com/docs/en/plugins-reference | Checks manifest, frontmatter, `.mcp.json` | shell, CI | 2026-10-16 | Use in CI |
+| `claude plugin eval` | https://code.claude.com/docs/en/plugin-evals | Runs cases with/without plugin; regex/tool_used/llm graders | CLI v2.1.269+ | 2026-10-16 | Adopt for `/self-test` |
+| `/skill-doctor`, `/doctor prompt-audit` | https://code.claude.com/docs/en/skills | Per-skill context cost; CLAUDE.md conflict audit | interactive terminal | 2026-10-16 | Use to prune skills and CLAUDE.md |
+| GitHub template repository | https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-template-repository | "Use this template" copies the repo | GitHub web | 2026-10-16 | Use for clone-and-go |
+| Cloud network secrets | https://code.claude.com/docs/en/cloud-environments | Proxy attaches API key; key never enters the VM | cloud only | 2026-10-16 | Use for any paid API in cloud |
+
+## Reference designs (not installed)
+
+| Tool | Link | What it does | Where it runs | Verified | Verdict |
+| --- | --- | --- | --- | --- | --- |
+| Anthropic deep-research skill | local synced skill | Coordinator + file-note researchers + single writer | claude.ai synced skill | 2026-10-16 | Template for our research skill and note schema |
+| langchain-ai/open_deep_research | https://github.com/langchain-ai/open_deep_research | Supervisor/researcher with compression node, 5 concurrent | Python | 2026-10-16 | Reference design |
+| assafelovic/gpt-researcher | https://github.com/assafelovic/gpt-researcher | Recursive breadth/depth research with citations | Python | 2026-10-16 | Reference design |
+| stanford-oval/storm | https://github.com/stanford-oval/storm | Perspective-driven conversations to cited article | Python | 2026-10-16 | Reference for perspective decomposition |
+| bytedance/deer-flow | https://github.com/bytedance/deer-flow | Lead with `task()` subagents and citation rules | Python | 2026-10-16 | Reference design |
+
+## Evaluated and deferred or skipped
+
+| Tool | Link | What it does | Where it runs | Verified | Verdict |
+| --- | --- | --- | --- | --- | --- |
 | Beads | https://github.com/steveyegge/beads | Dolt-backed dependency-graph issue tracker for agents (hook, plugin, MCP) | not installed | 2026-10-16 | Phase 2; git files suffice for one researcher |
-| Trail of Bits skills | https://github.com/trailofbits/skills | ~40 security plugins; two relevant (supply-chain-risk-auditor, gh-cli) | not installed | 2026-10-16 | Install only the two named plugins |
-| Semgrep plugin | https://claude.com/plugins/semgrep | Post-edit SAST/SCA/secrets scan via Semgrep MCP | not installed | 2026-10-16 | Not useful for a researcher (no code output) |
+| Ralph Loop | https://claude.com/plugins/ralph-loop | Stop hook re-feeds one prompt until `<promise>` text or iteration cap | not installed | 2026-10-16 | Phase 2; only with script-checked completion and max-iterations |
+| Trail of Bits skills | https://github.com/trailofbits/skills | ~40 security plugins | not installed | 2026-10-16 | Only two relevant (below) |
+| supply-chain-risk-auditor (Trail of Bits) | https://github.com/trailofbits/skills/blob/main/plugins/supply-chain-risk-auditor/README.md | OSV advisories, archived upstreams, install scripts, Scorecard for deps | plugin + `uv run` | 2026-10-16 | Later; adopt when a lockfile needs checking |
+| gh-cli (Trail of Bits) | https://github.com/trailofbits/skills/blob/main/plugins/gh-cli/README.md | PreToolUse hooks redirect GitHub fetches to `gh` | plugin hooks | 2026-10-16 | Skip; would deny Exa fetch on github.com, and `gh` is unauthenticated in cloud |
+| Semgrep plugin | https://claude.com/plugins/semgrep | Post-edit SAST scan | not installed | 2026-10-16 | Not useful for a researcher |
+| Tavily MCP | https://docs.tavily.com/documentation/mcp | Search + extract, 1,000 free credits/month with key | not installed | 2026-10-16 | Later |
+| Octocode MCP | https://github.com/bgauryy/octocode-mcp | GitHub code research tools, needs token | not installed | 2026-10-16 | Later (cloud token blocked) |
+| Jina Reader | https://jina.ai/reader/ | URL to markdown; 20 RPM keyless | curl (401 from cloud IP) | 2026-10-16 | Later, needs free key |
+| arXiv MCP server | https://github.com/blazickjp/arxiv-mcp-server | Paper tools via uvx | not installed | 2026-10-16 | Later; academic focus |
+| Semantic Scholar API | https://www.semanticscholar.org/product/api | Scholarly graph | curl | 2026-10-16 | Later |
+| gh CLI | https://cli.github.com/manual/gh_search_repos | GitHub search from shell | preinstalled; token invalid in cloud | 2026-10-16 | Skip in cloud; fine locally |
+| Sequential Thinking MCP | https://github.com/modelcontextprotocol/servers/tree/main/src/sequentialthinking | Numbered thought log | not installed | 2026-10-16 | Skip |
+| grep.app | https://grep.app/ | Code search; 429 to all fetchers | - | 2026-10-16 | Skip |
+| Perplexity Sonar | https://docs.perplexity.ai/getting-started/pricing | Paid search-grounded LLM | not installed | 2026-10-16 | Skip, no free tier |
+| Brave Search MCP | https://brave.com/search/api/ | Search API, card required | not installed | 2026-10-16 | Skip |
+| Glama / Smithery / mcpservers.org | https://glama.ai/mcp/servers | MCP directories; key or bot-blocked | - | 2026-10-16 | Skip as tools; the official registry API covers discovery |
 | OpenClaw | https://openclaw.ai/security | Always-on personal agent platform | not installed | 2026-10-15 | Phase 2, security risk noted |
-| supply-chain-risk-auditor (Trail of Bits) | https://github.com/trailofbits/skills/blob/main/plugins/supply-chain-risk-auditor/README.md | OSV advisories, yanked releases, archived upstreams, npm install scripts, Scorecard checks for npm/PyPI/Go deps | plugin + `uv run` scripts | 2026-10-16 | Adopt for "safe to install" checks (see findings/methodology.md) |
-| gh-cli (Trail of Bits) | https://github.com/trailofbits/skills/blob/main/plugins/gh-cli/README.md | PreToolUse hooks redirect GitHub fetches to authenticated `gh` | plugin hooks + PATH shim | 2026-10-16 | Evaluate; would deny web_fetch_exa on github.com |
-| OpenSSF Scorecard | https://github.com/ossf/scorecard | Per-repo security heuristics scored 0-10, viewer + REST API | hosted, read-only | 2026-10-16 | Adopt as lookup in repo triage |
-| claude plugin eval | https://code.claude.com/docs/en/plugin-evals | Runs plugin eval cases with regex/tool_used/llm graders vs no-plugin baseline | Claude Code CLI v2.1.269+ | 2026-10-16 | Adopt for `/self-test` |

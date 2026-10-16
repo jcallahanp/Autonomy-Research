@@ -1,0 +1,20 @@
+flowchart LR
+  subgraph lead[Lead context: small by rule]
+    plan[PLAN.md]
+    idx[findings/INDEX.md under 200 lines]
+    status[one status line per facet]
+    sum[last worker summaries, 10 lines each]
+  end
+  subgraph worker[Worker context: disposable]
+    pages[fetched pages, search results,<br/>DeepWiki answers, snapshots]
+    note[note file written to disk]
+  end
+  subgraph disk[Disk: source of truth]
+    notes[runs/slug/notes/*.md]
+    findings[findings/*.md]
+  end
+  pages --> note --> notes
+  note -. "path + summary only" .-> sum
+  notes --> findings
+  findings -. "one line each" .-> idx
+  compact[/compact at phase boundaries<br/>keeps PLAN, INDEX, paths, rulings/] --> lead

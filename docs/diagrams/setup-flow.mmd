@@ -1,0 +1,11 @@
+flowchart TD
+  start([Session starts]) --> hook[SessionStart hook<br/>inject skill index + setup status]
+  hook --> cloud{Cloud session?}
+  cloud -->|yes| deps[scripts/cloud-setup.sh<br/>idempotent installs, sha256-gated]
+  cloud -->|no| local[plugin installed by user:<br/>claude plugin install research-agent --marketplace owner/repo]
+  deps --> probe
+  local --> probe[/research-agent:setup<br/>probe tool names: Exa, Parallel, Context7, Mermaid, DeepWiki, Playwright/]
+  probe --> ok{All present?}
+  ok -->|yes| ready([Ready: run /research-agent:research])
+  ok -->|no| steps[Print exact claude.ai steps:<br/>Customize > Connectors > + > Connect<br/>and cloud Network secrets for paid keys]
+  steps --> probe
