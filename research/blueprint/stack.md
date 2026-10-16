@@ -22,7 +22,7 @@ Costs are as seen in the findings on 2026-10-16 unless a row says otherwise. "Pl
 | Twilio SMS (optional) | Dead-man alert only | SaaS | $0.0083/segment; long code $1.15/month is inference | human-loop | E121 |
 | ntfy (alternative) | Push alerts by `curl`; the topic is the password | SaaS | Free | protocol, deploy | E102, E133 |
 | UptimeRobot Free / healthchecks.io Hobbyist | Uptime and cron checks paging John | SaaS | Free: 50 monitors / 20 jobs | deploy | E129, E131 |
-| Superpowers 7.0.0 (commit bb92a77) | Brainstorm gate, writing-plans, fresh subagent per task, verification, worktrees | Plugin | Free (MIT) | planning, context, protocol | E25, E82; E19, E40 |
+| Superpowers pinned at commit bb92a77 (version label 7.0.0 unverified) | Brainstorm gate, writing-plans, fresh subagent per task, verification, worktrees | Plugin | Free (MIT) | planning, context, protocol | E25, E82; E19, E40 |
 | Hooks (SessionStart, PreToolUse, PostToolUse, Stop/TaskCompleted) | Re-inject state, guards, lint, done gate | VM | Free | context, protocol | §Q7.1-7.3; E11, E15 |
 | `auditor` agent + `audit.sh` | Script layer then narrow claim judge | VM | Tokens, about 2-4x per gated task (inference from E151) | protocol | E137-E151 |
 | backcheck (spike first) | Claim vs transcript check, no LLM | VM | Free (Apache-2.0) | protocol | E152, E153 |
