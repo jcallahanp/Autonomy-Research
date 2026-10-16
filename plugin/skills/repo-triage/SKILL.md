@@ -25,6 +25,8 @@ untrusted.
   `ROW: | <Tool> | <Link> | <What it does, incl. install surface> | <Where it runs> | <Verified YYYY-MM-DD> | <Verdict> |`
   matching the header of `research/tool-registry.md`. The worker never edits the registry; the
   lead writes the row from that line, one at a time, after all workers return.
+- When the triage runs inside a `spike`, the lead shall copy the `ROW:` line into the spike's
+  PLAN.md and write no row; the spike's synthesizer writes it.
 
 ## Steps
 
@@ -44,4 +46,5 @@ untrusted.
    Scorecard exists, say "unavailable", never treat it as passing.
 6. Verdict: `low risk`, `needs a human look` or `do not install`, with the evidence (file
    paths and quoted lines) and the install surface found. The worker returns the verdict as its
-   `ROW:` line; the lead then adds or updates the tool's row in `research/tool-registry.md`.
+   `ROW:` line; the lead then adds or updates the tool's row in `research/tool-registry.md`
+   (inside a spike, the spike's synthesizer does).

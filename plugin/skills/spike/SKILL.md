@@ -52,9 +52,10 @@ installed or run, only in a `spike-worker`, and these rules bound it.
 1. Confirm the question, the named paths (one to three) and the probe with the user in one
    message. The probe is a fixed, small test with a pass condition written before anything runs,
    for example "return the title of https://example.com in under 60 seconds".
-2. Run `repo-triage` on each named path (in a `researcher` worker) and keep each verdict.
+2. Run `repo-triage` on each named path (in a `researcher` worker) and keep each verdict and
+   its `ROW:` line. In a spike the lead writes no registry row; step 7 says who does.
 3. Write `research/runs/<slug>/PLAN.md` with the requirement under test, the paths, the probe
-   and each path's `repo-triage` verdict. Choose `<slug>` as a short kebab-case name.
+   and each path's `repo-triage` verdict and `ROW:` line. Choose `<slug>` as a short kebab-case name.
 4. Spawn one `spike-worker` per path, all in one turn, each briefed with: the path, its
    triage verdict, the probe, the isolation rules, the note path
    `research/runs/<slug>/notes/spike-<path>.md`, and the return contract.
@@ -64,8 +65,9 @@ installed or run, only in a `spike-worker`, and these rules bound it.
    shape below. The lead does not write that file from the returns. Begin its brief with the
    word `SPIKE` (this switches it to its Spike mode: the file is a spike file, not a findings
    file, and negative results stay), then give the notes folder, PLAN.md and the output path.
-7. Add each tool tried to `research/tool-registry.md` with the verdict (the synthesizer does
-   this in Spike mode; nobody else writes those rows). Add anything unresolved to `research/open-questions.md`.
+7. The synthesizer adds each tool tried to `research/tool-registry.md` with the verdict, in
+   Spike mode, starting from the triage `ROW:` line in PLAN.md. It is the only writer of spike
+   rows. The lead adds anything unresolved to `research/open-questions.md`.
 
 ## Output file
 
