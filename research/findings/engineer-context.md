@@ -384,5 +384,105 @@ Task tracking and doc updates (task-tracking note):
 - same page — WebFetch. Resume from summary. Quote: "Resume from summary: runs [`/compact`](/docs/en/context-window#what-survives-compaction) immediately."
 - https://github.com/anthropics/claude-code/issues/60177 — WebFetch. Done without testing, worse after compaction (reporter's observation; closed by stale bot). Quote: "Worse in long sessions (after compaction)"
 
-<!-- CONTINUE -->
+## Implications for the autonomous engineer (and for the researcher plugin)
+
+Each item names the component it lands in and the evidence behind it. EARS statements are the build requirements.
+
+1. **State in files, re-injected by hook.** When a session starts, resumes or compacts, the engineer shall run a `SessionStart` hook that prints the open tasks from `tasks.json`, the last `PROGRESS.md` entry and the plan status. Evidence: hook-added context is summarised away and compact-matched SessionStart output is added back (https://code.claude.com/docs/en/context-window); recipe (https://code.claude.com/docs/en/hooks-guide); Beads relies on the same event (https://github.com/steveyegge/beads docs/integrations/claude-code.md:49 (commit d274841)).
+2. **Done is a command, not a claim.** When a task is marked complete, a `TaskCompleted` or `Stop` command hook shall run the task's `evidence_command` and shall block with exit 2 if it fails. Evidence: hooks are deterministic and CLAUDE.md is advisory (https://code.claude.com/docs/en/best-practices, https://code.claude.com/docs/en/memory); maintainer endorsement (https://github.com/anthropics/claude-code/issues/75720); completion claims mask failure (https://arxiv.org/html/2607.17937v2, https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents).
+3. **Dependent documents by manifest.** When the diff touches a path listed in `docs/DEPENDENTS.md`, the Stop hook shall block the turn until every mapped document is modified or an explicit waiver is recorded, and shall log when it fails open after eight blocks. Evidence: eight-block override and `stop_hook_active` (https://code.claude.com/docs/en/hooks-guide); third-party gates (https://github.com/viditparashar96/eng-skills, https://github.com/dgalarza/claude-code-workflows/pull/36); propagation checklist (https://microsoft.github.io/devsquad-copilot/concepts/spec-amendment/). The design is a worker inference; spike 3 measures its false-positive rate.
+4. **Fresh-context review against the plan before the final stop.** When a task's evidence command passes, a reviewer subagent with no Write/Edit tools shall compare the diff against the plan and acceptance checklist and shall be given the test output. Evidence: https://code.claude.com/docs/en/best-practices; weak review becomes reliable with execution evidence (https://arxiv.org/html/2610.01023); checklist beats self-check (https://arxiv.org/html/2607.17937v2).
+5. **One task per fresh `claude -p` session under a supervisor.** When the supervisor launches an attempt, it shall set `--max-turns`, `--max-budget-usd` and a wall-clock timeout; when a task fails twice, it shall write a blocked note and move on; when three attempts produce no git diff or five produce the same failing-test set, it shall open the breaker. Evidence: no default limits (https://code.claude.com/docs/en/cli-reference, https://code.claude.com/docs/en/agent-sdk/agent-loop); unbounded-default incidents (https://github.com/anthropics/claude-plugins-official/issues/1699, https://www.adrosenfeld.com/blog/2026-02-16-when-your-agent-burns-71-percent-of-your-tokens/); thresholds (https://raw.githubusercontent.com/frankbria/ralph-claude-code/main/lib/circuit_breaker.sh); two attempts (https://yoheinakamura.dev/night-loop-audit/).
+6. **One terminal status file and one push.** When any attempt ends, the supervisor shall write `RUN_STATUS.json` with one of `done | blocked | stopped_by_bound | crashed`, the `session_id`, git HEAD, per-task table and estimated cost, from a `trap` handler, and shall push one notification at the terminal state. Evidence: result subtypes and resume fields (https://code.claude.com/docs/en/agent-sdk/agent-loop); SIGTERM records no result (https://code.claude.com/docs/en/headless); crash zeroes usage (https://code.claude.com/docs/en/agent-sdk/cost-tracking); "1 note = 1 decision request" (https://yoheinakamura.dev/night-loop-audit/).
+7. **Tiers by role, measured before moving down.** The engineer shall set `model:` and `effort:` explicitly per agent, shall not move a role to Haiku 5.5 until the paired test (Q3) shows pass^3 not lower than the stronger tier, and shall never change model or effort mid-run. Evidence: https://code.claude.com/docs/en/costs, https://www.anthropic.com/claude-haiku-5-5, https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents, https://code.claude.com/docs/en/prompt-caching.
+8. **Token hygiene that does not touch quality.** PreToolUse filters on test and log commands that keep failing output whole; `/clear` between unrelated tasks; CLAUDE.md under 200 lines; CLI tools over MCP where both exist; `promptCacheTtl=1h` on API-key runs. Evidence: https://code.claude.com/docs/en/costs, https://code.claude.com/docs/en/prompt-caching. No opened source measured quality vs trimming, so each trim is A/B tested first.
+9. **For the researcher plugin specifically.** Keep the lead/worker/synthesizer/verifier shape (architecture.md); add the compact-matched SessionStart hook that echoes PLAN.md status (context-management.md rule 4 is implemented only as a Compact Instructions section today); test the Haiku verifier against seeded bad citations before trusting its recall (plugin/agents/verifier.md:4; https://arxiv.org/html/2610.01471v1); treat the three-layer subagent nesting as available but keep the no-nesting contract for research workers (architecture.md:55; context-management.md rule 8).
+
+## Tools evaluated
+
+| Tool | Link | What it does | Where it runs | Verified | Verdict |
+| --- | --- | --- | --- | --- | --- |
+| Superpowers | https://github.com/obra/superpowers | Spec/plan/ledger skills, fresh-subagent execution, SessionStart bootstrap on `startup|clear|compact`; v7.0.0, commit bb92a77 | plugin | 2026-10-16 | Use as process layer; watch open issues #2481, #2493, #2510 |
+| Beads | https://github.com/steveyegge/beads | Dolt issue graph with ready/claim, `bd prime`, `bd remember`, SessionStart hook; 446 open issues; 2026-08-11 data-loss incident documented; commit d274841 | local CLI + Dolt | 2026-10-16 (clone) | Defer; adopt only when dependency ordering or multi-agent claims bite |
+| Ralph Wiggum plugin (anthropics/claude-code, claude-plugins-official) | https://github.com/anthropics/claude-code/tree/main/plugins/ralph-wiggum ; https://claude.com/plugins/ralph-loop | Stop-hook loop, same prompt, same session, default unlimited, no no-op detection (issue #1699) | Claude Code plugin | 2026-10-16 (clone 03b5892; issue opened; plugin page seen in search excerpt only) | Skip as shipped; fallback only with `--max-iterations` and `--completion-promise` both set and an outer supervisor owning bounds |
+| frankbria/ralph-claude-code | https://github.com/frankbria/ralph-claude-code | Bash Ralph with circuit breaker (3 no-file-change loops, 5 error loops, 30 min cooldown), dual-condition exit gate | local shell | 2026-10-16 (`lib/circuit_breaker.sh` opened; not cloned, not run) | Reference design for the breaker; copy thresholds, do not adopt wholesale |
+| /goal | https://code.claude.com/docs/en/goal | Session-scoped Stop hook with an evaluator that cannot run tools; clears on met, impossible or unrecoverable error; stall stop | Claude Code, interactive or `-p` | 2026-10-16 | Use inside one task when the end state is demonstrable in output, with a turn clause; not a bound on its own |
+| claude -p --max-turns / --max-budget-usd; Agent SDK maxTurns / maxBudgetUsd | https://code.claude.com/docs/en/cli-reference ; https://code.claude.com/docs/en/agent-sdk/agent-loop | Per-run turn and estimated-spend caps; typed error result subtypes; default none | Claude Code CLI / SDK | 2026-10-16 | Use on every unattended call; supervisor owns per-task and per-night bounds |
+| PreToolUse output-filter hook | https://code.claude.com/docs/en/costs | Rewrites test commands to show failures only | Claude Code hooks | 2026-10-16 | Use; A/B test for quality |
+| Prompt cache TTL controls (`promptCacheTtl`) | https://code.claude.com/docs/en/prompt-caching | 5 m or 1 h cache for the main conversation | Claude Code | 2026-10-16 | Set `1h` when API-key runs have gaps over 5 min |
+| TaskCompleted / Stop command hooks | https://code.claude.com/docs/en/hooks | Block completion or the turn on exit 2 | Claude Code | 2026-10-16 | Use: core gate; spike exit 2 vs JSON block |
+| SessionStart hook (startup/resume/compact) | https://code.claude.com/docs/en/hooks-guide | Re-inject state after startup, resume and compaction | Claude Code | 2026-10-16 | Use |
+| Claude Code task list (TaskCreate etc., `CLAUDE_CODE_TASK_LIST_ID`) | https://code.claude.com/docs/en/tools-reference | In-session checklist with dependencies; named-dir sharing; model-gated | Claude Code | 2026-10-16 | In-session view only |
+| Claude Code subagents (model/tools per agent) | https://code.claude.com/docs/en/sub-agents | Fresh-context workers, per-agent model and tool allowlist, persistent memory field | Claude Code | 2026-10-16 | Use; core primitive |
+| Agent teams | https://code.claude.com/docs/en/costs | Parallel Claude instances | Claude Code | 2026-10-16 | Reject for overnight; about 7x tokens |
+| Claude Haiku 5.5 | https://www.anthropic.com/claude-haiku-5-5 | Cheap subagent model; vendor positions it as a coding subagent, not for complex agentic coding | Claude API / alias `haiku` | 2026-10-16 | Narrow checkable roles only; not implementer; paired test first |
+| anthropics/cwc-long-running-agents | https://github.com/anthropics/cwc-long-running-agents | Hooks plus fresh-context evaluator subagent, default-FAIL contract, progress hand-off | Claude Code / Agent SDK | not opened (Exa search excerpt only) | Template candidate; open README and spike before copying |
+| Scrouting / SuperScout | https://arxiv.org/html/2608.04804v1 | Small scout hands off to a frontier fixer; research prototype | research (not run) | 2026-10-16 | Reference; cheap-scout, strong-fixer idea |
+| Agent-as-a-Router / CodeRouterBench | https://www.alphaxiv.org/abs/2606.22902 | Routing benchmark for coding tasks | research | not opened (search excerpt only) | Reference only; unverified |
+| eng-skills | https://github.com/viditparashar96/eng-skills | Stop gate blocking code change without docs change; ADR commands; 0 stars | Claude Code hooks (npm) | 2026-10-16 (page only, not installed) | Reference only; copy the idea |
+| doc-sentinel (dgalarza) | https://github.com/dgalarza/claude-code-workflows/pull/36 | Stop hook auto-dispatching a drift resolver | Claude Code plugin | 2026-10-16 (PR page only) | Reference only; useful pitfalls |
+| DevSquad spec amendment | https://microsoft.github.io/devsquad-copilot/concepts/spec-amendment/ | Drift flag, propagation checklist, Spec Evolution Log | Copilot framework | 2026-10-16 | Borrow checklist idea; skip tool |
+| OpenSpec | https://github.com/Fission-AI/OpenSpec | Per-change proposal/specs/design/tasks, MIT | npm CLI | 2026-10-16 | Fallback spec framework |
+| Cline Memory Bank | https://docs.cline.bot/features/memory-bank | Markdown memory files re-read each session | Cline | 2026-10-16 | Idea only |
+| Aider repo map | https://aider.chat/docs/repomap.html | Graph-ranked repo map, 1k tokens default | Aider | 2026-10-16 | Idea only |
+| Devin Knowledge | https://docs.devin.ai/product-guides/knowledge | Trigger-recalled tips | hosted, paid | 2026-10-16 | Idea only |
+| OpenHands skills | https://docs.openhands.dev/openhands/usage/microagents/microagents-overview | Always-on repo context plus keyword skills | OpenHands | 2026-10-16 | Idea only |
+| Parallel Search web_search / web_fetch | https://docs.parallel.ai/search/search-mcp | Search with excerpts; fetch with objective | claude.ai connector | 2026-10-16 | web_search worked; web_fetch returned "Too Many Requests" repeatedly; fall back to Exa |
+| Exa web_fetch_exa / web_search_exa | https://exa.ai/docs/reference/exa-mcp | Search with highlights; page fetch to markdown | claude.ai connector | 2026-10-16 | Worked for arXiv, Chroma, Anthropic, code.claude.com; search highlights are not sources |
+| WebFetch (built-in) | https://code.claude.com/docs/en/tools-reference | Fetch + summarise with a prompt | Claude Code | 2026-10-16 | Returns paraphrase, not verbatim quotes; OpenReview blocked |
+| OpenReview PDF (ContextRotBench) | https://openreview.net/pdf?id=DiZ67nkfay | ContextRotBench host | web | 2026-10-16 | Blocked (browser check, 429); find arXiv copy |
+
+## Open questions
+
+Claims excluded because their only source was a search snippet or an unopened page (listed with the note's reason):
+1. ralphloop.sh safeguards (cap default 10, COMPLETE/MAX/BLOCKED/DECIDE exit codes) — https://ralphloop.sh/blog/ralph-loop-failure-modes/ seen in Exa highlights only.
+2. Vendor vs independent long-context numbers ("91.9% @256K" vs "69.1%") — https://agenticoding.ai/effective-context, highlights only.
+3. Server-side compaction as the answer near the limit — https://platform.claude.com/docs/en/build-with-claude/context-windows, read from search highlights.
+4. Context-editing defaults ("`trigger` | 100,000 input tokens") and "irrelevant content degrades model focus" — https://platform.claude.com/docs/en/build-with-claude/context-editing, search result only in this run (the earlier context-management.md opened this page; cite that file for the number).
+5. Context editing plus memory +39%, editing alone +29%, memory tool file-based — https://claude.com/blog/context-management, search result only.
+6. Sonnet 5 BrowseComp "10M token budget with compaction and programmatic tool calling" — https://www.anthropic.com/news/claude-sonnet-5, search result only.
+7. Long-horizon search study: isolation "highly model-dependent", compaction "most effective at eliminating the rot phenomenon" but "increases tool calls and unfinished cases", removing all context raises unfinished trajectories — https://arxiv.org/html/2606.29718v1, three claims, search result text only.
+8. Reminder mitigation "<3% input token overhead", "not against the more subtle attacks", "Opus 4.6 with extended thinking enabled is much more resistant" — https://arxiv.org/html/2605.12366 (html version), three claims, search result text only; the PDF version was opened and is cited.
+9. Coding agents as long-context processors, +17.3% — https://www.alphaxiv.org/abs/2603.20432, search result only.
+10. Practitioner 1M-context recall test (9 of 10 at 527K) — https://greghughes.net/claude-evaluating-one-million-token-context-in-the-real-world-2/, search result only.
+11. cwc-long-running-agents evaluator pattern ("A separate agent with no Write/Edit tools grades the work...") — README returned in Exa search content, not fetched or cloned.
+12. Single-org review case study (47% to 72% coverage with a second reviewer) — https://doi.org/10.5281/zenodo.20519584, Exa search content only.
+13. Multi-agent judge pipeline 4.4% vs 43.7% — https://arxiv.org/abs/2609.30328, excerpt only.
+14. Cost-inefficient behaviours of a Haiku 4.5 subagent under Claude Code — https://arxiv.org/pdf/2609.30725, PDF would not parse, Parallel 429.
+15. Agent-as-a-Router / CodeRouterBench — https://www.alphaxiv.org/abs/2606.22902, excerpt only.
+16. "Flat correctness, rising cost" harness result — https://www.alphaxiv.org/abs/2607.03691, excerpt only.
+17. Haiku 5.5 system card — search excerpt only.
+18. anthropics/claude-code#18646 (`--max-iterations=3` syntax ignored, iteration 462) — excerpt only.
+19. anthropics/claude-code#54393 (12 overnight coordination bugs) and #47049 (invented "BLOCKED on approval" gate, about 20% weekly quota) — excerpts only.
+20. DEV Community "108 Hours" post ("Fix, check, same error" repeated 20 times) — excerpt only.
+21. https://claude.com/plugins/ralph-loop page text — excerpt only (the plugin was read in the anthropics/claude-code clone instead).
+22. Yohei audit lines "Ticket failures outnumber code failures 4.5 to 1", "Records cannot be backfilled, only started", "The claim outran its evidence" — Exa excerpt only; not in the WebFetch output.
+23. anthropics/claude-code#14947 (tasks marked complete without implementation) and #68154/#72186 — not opened.
+24. Beads storage as "JSONL files + SQLite cache" — older discussion seen as excerpt; README (Dolt) is newer and wins.
+25. developertoolkit.ai plan.md CI snippet — excerpt only; docs-as-code CI tooling and ADR supersession tooling (adr-tools, log4brains) unverified.
+26. 2602.05892 — highlights only.
+27. Anthropic managed-agents post (Apr 2026) on harness assumptions going stale — excerpt only.
+28. Repo CLAUDE.md "What the lead may hold in context" — supplied in session context, not re-read as a file by the worker.
+29. Devin Knowledge migration to Skills — fetch-model statement from an opened page with no verbatim line, so no quote could be copied.
+30. The Beads issue list "found no issue about agents forgetting to use bd" — fetch-model statement, not a quote.
+
+Pages that would not open (Gaps): https://openreview.net/pdf?id=DiZ67nkfay (ContextRotBench; browser verification screen on WebFetch, 429 on Parallel); https://github.com/boshu2/agentops/blob/HEAD/skills/beads/references/WORKFLOWS.md (404); https://github.com/gastownhall/beads/blob/main/docs/FAQ.md (404); https://arxiv.org/pdf/2609.30725 (binary PDF, 429); Parallel web_fetch returned "Too Many Requests" for three workers.
+
+Unsettled by the evidence:
+- No study measures Claude Code, or Sonnet 5.x / Opus 5.x / Fable, on a multi-hour coding task as context grows; the only 2026 coding-agent studies used non-Claude agent models (https://arxiv.org/html/2607.17937v2).
+- Step count vs context length as the driver of agentic decay (Q2 contradiction 1).
+- Whether a fresh subagent's trajectory is durable across its own compaction (Q2 contradiction 2).
+- Whether Claude Code compaction summaries drop seeded decisions, and whether a SessionStart `compact` hook recovers them (spike 2).
+- Stop hook JSON `decision: block` vs exit 2 on the current engine version; hook behaviour under `claude -p`, cloud sessions and Routines (spike 3).
+- Exit-code values for `error_max_turns` and `error_max_budget_usd` (docs say only "non-zero"); whether Routines expose `result.subtype`.
+- Whether Task tools are on by default for the engine model (Sonnet 5.5 or later); behaviour of resume plus the Task list when `CLAUDE_CODE_TASK_LIST_ID` is unset in cloud sessions.
+- Exact wording of the sub-agents page on nesting depth (summarised by the fetch model; architecture.md:55 records three layers).
+- Whether plugin `agents/` can take per-run model overrides from a skill.
+- The Haiku verifier's recall on seeded bad citations; any independent per-task-type measurement of Haiku 5.5; Opus 5.5 Terminal-Bench figure; Opus 5.5 / Sonnet 5.5 absolute per-token prices (pricing page not opened).
+- No controlled evidence that any doc-staleness hook reduces drift; no measured comparison of Beads vs plain files on task loss; no measured quality effect of any token-trimming practice; no validated statistical threshold for accepting a cheaper tier.
+- Which push channel (Channels, ntfy, e-mail, GitHub comment) is least brittle for John (outside this run; see engineer-runtime.md).
+- Superpowers issue bodies (#2481, #2493, #2510, #2506) and maintainer fix status; token cost of subagent-driven mode beyond "a fresh context per task".
+- Whether agents skip `bd` in practice; Beads unattended-run guidance (docs/multi-agent not read in full).
+- Observation-masking papers, RTK-style output compressors and code-intelligence MCPs were not surveyed.
+
 
