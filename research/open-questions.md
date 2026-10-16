@@ -46,3 +46,10 @@ the cross-cutting set.
 - [ ] Does Setup's seven-tool probe agree with the research skill's two-tool probe? The two were not compared line by line. (source: research-agent-self-improvement, 2026-10-16)
 - [ ] Can the live eval cases be made to grade research quality rather than workflow shape? Both live graders check wording or files, and one live case (scorecard) depends on a client-rendered page. Observed by the lead during round 1 measurement. (source: research-agent-self-improvement, 2026-10-16)
 - [ ] What noise floor does the frozen fast exam have on this model? At 8 cases x 3 runs it separates only changes of about 0.2-0.3; a 5-run paired comparison needs a budget call from John. Observed by the lead during round 1 measurement. (source: research-agent-self-improvement, 2026-10-16)
+
+## From the autonomous-engineer interview (2026-10-16)
+- [ ] Time budget or deadline for the engineer project. None stated.
+- [ ] The approval channel for batched gates: SMS, Slack, Telegram or another. John said "SMS or similar".
+- [ ] How many candidate paths the engineer may keep when testing feasibility (R7 in research/requirements/autonomous-engineer.md).
+- [ ] A template for per-project gates and privacy limits (R10, R14).
+- [ ] Whether the engineer's self-merge of routine changes (R16) has limits, for example production deploys.
