@@ -73,6 +73,7 @@ synthesizer the existing findings path as background.
 Read `research/findings/INDEX.md` first: if a line already answers the question, say so and
 ask whether to re-run.
 
+Tool choice per step (and fallbacks) is in `routing.md` beside this file.
 Check which search tools exist in this session. If no `mcp__Parallel_Search__*` and no
 `mcp__Exa__*` tools are available, record "Connectors missing: Parallel Search, Exa. Workers
 fall back to WebSearch and WebFetch." in PLAN.md, tell workers the same, and say so in the

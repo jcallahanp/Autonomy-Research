@@ -12,7 +12,7 @@ research-agent plugin and also the workspace where that agent does its research.
 - `scripts/` holds template-side scripts such as `cloud-setup.sh`.
 
 ## Research rules
-- Use the research-agent skills for research. For multi-source research the lead delegates reading to workers and never holds fetched pages; a one-fact lookup may be answered inline with one tool call.
+- Use the research-agent skills for research. For multi-source research the lead delegates reading to workers and never holds fetched pages; a one-fact lookup may be answered inline with at most two content calls.
 - Every claim about a tool cites a page you actually opened. Search snippets are not sources.
 - Log every tool you evaluate in `research/tool-registry.md`: name, link, what it does,
   verified date, verdict.

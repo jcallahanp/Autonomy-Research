@@ -8,6 +8,11 @@
             "type": "command",
             "command": "bash \"$CLAUDE_PROJECT_DIR\"/scripts/cloud-setup.sh",
             "timeout": 180
+          },
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR\"/plugin/hooks/session-start.sh",
+            "timeout": 10
           }
         ]
       }
