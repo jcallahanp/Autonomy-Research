@@ -1073,3 +1073,11 @@ opened in this run:
   - whether the VM has KVM, and whether `kernel.apparmor_restrict_unprivileged_userns` is 1;
   - the Claude Code version on John's VM;
   - Ralph posts from 2026 and Anthropic's long-run harness post, not opened.
+
+## Verification
+Checked 2026-10-16 by the verifier. Sample: 20 cited claims.
+Verified: 18. Unverified: 2.
+- Unverified: Four brokerage keys were revoked (#59094 incident, Evidence E69) — https://github.com/anthropics/claude-code/issues/59094 — page says the issue lists steps the reporter "now must" take but "never confirms that any of these were completed"; the quoted sentence itself is verified, the revocation is not.
+- Unverified: Withings+ becomes required on the Start for Free API plan from October 12, 2026 (E37) — https://developers.withings.com/developer-guide/v3/get-access/create-your-app — page did not open: WebFetch "getaddrinfo ENOTFOUND developers.withings.com", Parallel "connect_error", Exa "CRAWL_UNKNOWN_ERROR".
+
+Verified in sample: E42, E129, E133, E150, E126, E138 (Anthropic API model list), E70, E71, E72 (page opened via Exa after WebFetch returned HTTP 404), E116, E111, E115, E16, E118, E100, E101, E30. E168 is verified on substance (the page states that `allowUnsandboxedCommands: false` makes Claude Code ignore the `dangerouslyDisableSandbox` retry), but the page's wording differs from the quote in the note. Telegram's `getManagedBotToken` sentence sits in the second 100k characters of a 582k-character page.

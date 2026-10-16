@@ -28,4 +28,4 @@ Rulings: Claude Code is the engine and is not up for debate; everything else att
 
 ## Outputs
 - Findings: research/findings/engineer-human-loop.md - written (17 unsourced claims dropped to Open questions; 5 contradictions recorded, Max login vs Agent SDK API keys left for John)
-- Verification: pending
+- Verification: 18 of 20 verified, needs-review (#59094 says keys must be revoked, not that they were; the Withings+ requirement page would not open)
