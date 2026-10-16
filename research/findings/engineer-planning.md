@@ -502,3 +502,10 @@ All sources were opened on 2026-10-16. "clone" means a read-only git clone in a 
 32. Whether Moderate changes should need John's approval. This is an owner decision, not researchable.
 33. The numeric caps (15-45 minutes, 1-4 files, about 100 lines, 50% context) and the Minor/Moderate/Major boundaries are worker inference, unmeasured (S8, S10).
 34. The Stop hook's JSON decision versus exit 2, carried from wave 1 (E120): unresolved (S5).
+
+## Verification
+Checked 2026-10-16 by the verifier. Sample: 20 cited claims.
+Verified: 19. Unverified: 1.
+- Unverified: "splitting one class across two agents costs 25-39 points", quoted as "a persistent coordination gap (25–39pp) separates multi-agent from single-agent performance—even when specifications are detailed." — https://arxiv.org/pdf/2603.24284 — quote not found verbatim (the paper says "persistent specification gap"; the 25–39pp coordination gap is in the abstract); the figure is conditional on stripping spec detail (levels L0 to L3, 51 class tasks, Sonnet and Haiku), which the claim omits, so the judgment is uncertain.
+
+Not re-checked in the sampled reads: the ISCAP 78.2% and 87.4% pass rates and the 296 comparisons (the excerpt read showed the 9.2-point gain and the 28x and 15x multipliers only); the BMAD line numbers :8, :244 and :260 (the quoted lines were found, not the numbers); the Superpowers "7.0.0" version label (the page at commit bb92a77 carries no version).

@@ -59,3 +59,7 @@ the cross-cutting set.
 - Does listing Attio webhooks need a "webhook:read" scope? The views page names only object_configuration:read.
 - Can any Clay client (official or unofficial) export table contents and enrichment column settings? The unofficial client page says "building and updating", not export.
 - Where does John's GTM system configuration live (Attio-Project repo holds none)? Asked of John; first engineer task is account access and exports.
+
+## From wave 3 (2026-10-16), for the cross-area blueprint
+- The runtime finding runs Claude Code on John's Max plan via /login. The key-creation note (research/runs/engineer-human-loop/notes/key-creation.md) found Anthropic terms saying products built on the Agent SDK should use API keys, not Max OAuth. Does a supervisor running the `claude -p` CLI under John's own Max login fall inside or outside that rule? The blueprint must state which, with the quote, or carry it as a decision for John.
+- R16 self-merge: GitHub's plans page lists branch protection, required reviewers and code owners for private repos under Pro (research/runs/engineer-protocol/notes/git-and-merge.md). Options for John: GitHub Pro, a public repo, or local-only enforcement.
