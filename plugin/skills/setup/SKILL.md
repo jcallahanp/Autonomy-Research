@@ -24,7 +24,7 @@ counts as present. Connector tools never carry the plugin prefix.
 | Mermaid Chart | claude.ai connector | `mcp__Mermaid_Chart__validate_and_render_mermaid_diagram` | Validate with local `mmdc`; give a live-editor link for humans |
 | DeepWiki | bundled `.mcp.json` | `select:mcp__deepwiki__ask_wiki_question,mcp__plugin_research-agent_deepwiki__ask_wiki_question` | `git clone --depth 1` and grep |
 | Playwright | bundled `.mcp.json` | `select:mcp__playwright__browser_navigate,mcp__plugin_research-agent_playwright__browser_navigate` | Firecrawl, then WebFetch; pages needing a browser go to Gaps |
-| Firecrawl | bundled `.mcp.json` | `firecrawl scrape` (keyword; matches either prefix) | Parallel or Exa fetch, then WebFetch |
+| Firecrawl | bundled `.mcp.json` | `select:mcp__firecrawl__firecrawl_scrape,mcp__plugin_research-agent_firecrawl__firecrawl_scrape` | Parallel or Exa fetch, then WebFetch |
 
 If both Parallel Search and Exa are missing, say research will run on WebSearch (titles and
 URLs only, US-only) and WebFetch, and will say so in every output.
