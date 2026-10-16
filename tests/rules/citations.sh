@@ -46,3 +46,8 @@ grep -qF 'with no URL' "$sy" && fail citations "synthesizer.md still drops every
 grep -q 'inline, not only an Evidence number' "$sy" || fail citations "$sy: summary and answers must cite URLs inline"
 grep -q 'Worker inference (not' "$sy" || fail citations "$sy: unquoted qualifiers must be labelled as worker inference"
 grep -q 'inline, the URL or `path:line`' "$ff" || fail citations "$ff: answers must cite inline"
+
+# Round 1 re-measure fix: workers once wrote notes under the plugin's folder (a relative note
+# path resolved against the skill path), so the cite-or-park run lost its note.
+grep -q 'absolute path under the session' plugin/skills/research/SKILL.md || fail paths "research SKILL.md: dispatch paths must be absolute under the working directory"
+grep -q "never to the plugin or skill folder" "$r" || fail paths "$r: relative note paths resolve against the working directory"

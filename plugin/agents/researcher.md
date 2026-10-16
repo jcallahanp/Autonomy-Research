@@ -38,6 +38,8 @@ others and will do no research of its own, so the note must stand on its own.
 Some tools (WebFetch, WebSearch, MCP tools) may be deferred: load them with ToolSearch
 (`select:<tool name>`) before the first call. A ToolSearch call is not research.
 
+Write the note to the exact note path the lead gave. If that path is relative, it is relative
+to the session's working directory, never to the plugin or skill folder you read files from.
 Before your first search, write the note skeleton to your note path: the title, the Brief and
 Run lines, and one `##` block per key question with its empty `###` sections. Fill it in as you
 go, so the note on disk holds your progress. Your context may be compacted during a long facet;

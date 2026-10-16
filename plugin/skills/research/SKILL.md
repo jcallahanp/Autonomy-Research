@@ -111,6 +111,10 @@ Spawn every worker in the same turn with the Agent tool. The agent type is `rese
 repo's template and `research-agent:researcher` when the plugin is installed; use whichever your
 Agent tool lists. Wait for every worker to return before continuing.
 
+Give every path in a dispatch as an absolute path under the session's working directory (the
+project root, `$PWD`), never relative. A worker that sees a relative path may resolve it
+against the plugin or skill folder it read its instructions from and write outside the project.
+
 Each dispatch prompt is fresh: task, sources, paths, contract. Never paste conversation history.
 Copy the PLAN.md Rulings line into every dispatch word for word; never paraphrase it.
 
@@ -124,7 +128,7 @@ Suggested sources: <primary docs, repos, registries to try first>
 Constraints: <dates, versions, scope from the brief>
 Rulings: <the Rulings line from PLAN.md, copied verbatim>
 Tools: <"Parallel Search and Exa available" or "Connectors missing: use WebSearch and WebFetch">
-Note path: research/runs/<slug>/notes/<facet-slug>.md
+Note path: <project root>/research/runs/<slug>/notes/<facet-slug>.md
 Today: <YYYY-MM-DD>
 Write the note in the schema at <path to this skill>/note-schema.md, then return only
 PATH:, TAKEAWAYS: (at most 5 bullets), GAPS:, CONFIDENCE: high|medium|low.
@@ -145,11 +149,11 @@ synthesis." There is never a second gap round.
 Spawn one `synthesizer` (`research-agent:synthesizer` when installed):
 
 ```
-Notes folder: research/runs/<slug>/notes/
-Plan: research/runs/<slug>/PLAN.md
+Notes folder: <project root>/research/runs/<slug>/notes/
+Plan: <project root>/research/runs/<slug>/PLAN.md
 Question: <the full question this findings file answers>
 Earlier findings to build on: <path, or "none">
-Output: research/findings/<slug>.md, in the shape of <path to this skill>/findings-format.md
+Output: <project root>/research/findings/<slug>.md, in the shape of <path to this skill>/findings-format.md
 Return: PATH:, ANSWER: (up to 5 sentences), DROPPED: (count of claims without an opened
 URL), CONTRADICTIONS: (one line each), in at most 12 lines.
 ```
@@ -159,8 +163,8 @@ URL), CONTRADICTIONS: (one line each), in at most 12 lines.
 Spawn one `verifier` (`research-agent:verifier` when installed):
 
 ```
-Findings file: research/findings/<slug>.md
-Index: research/findings/INDEX.md
+Findings file: <project root>/research/findings/<slug>.md
+Index: <project root>/research/findings/INDEX.md
 Title: <short title>   One-line answer: <first sentence of the synthesizer's ANSWER>
 Date: <YYYY-MM-DD>
 Return: sample size, verified count, unverified count, and the INDEX line you wrote.
