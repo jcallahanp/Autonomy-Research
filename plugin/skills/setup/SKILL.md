@@ -12,7 +12,9 @@ nothing for tools that are present beyond one line "All seven tools present."
 
 Tools may be deferred, so a tool absent from your list is not yet proof it is missing. Call
 ToolSearch once per row with the query below and treat zero matches as missing. Installed as a
-plugin, bundled tools carry a `plugin_research-agent_` prefix; either form counts as present.
+plugin, the bundled servers' tools are named `mcp__plugin_research-agent_<server>__<tool>`
+instead of `mcp__<server>__<tool>`; each query names both forms, and either form matching
+counts as present. Connector tools never carry the plugin prefix.
 
 | Tool | Kind | ToolSearch query | Fallback research uses when missing |
 | --- | --- | --- | --- |
@@ -20,9 +22,9 @@ plugin, bundled tools carry a `plugin_research-agent_` prefix; either form count
 | Exa | claude.ai connector | `mcp__Exa__web_search_exa` | Parallel Search, then WebSearch and WebFetch |
 | Context7 | claude.ai connector | `mcp__Context7__resolve-library-id` | WebFetch the official docs page |
 | Mermaid Chart | claude.ai connector | `mcp__Mermaid_Chart__validate_and_render_mermaid_diagram` | Validate with local `mmdc`; give a live-editor link for humans |
-| DeepWiki | bundled `.mcp.json` | `mcp__deepwiki__ask_wiki_question` | `git clone --depth 1` and grep |
-| Playwright | bundled `.mcp.json` | `mcp__playwright__browser_navigate` | Firecrawl, then WebFetch; pages needing a browser go to Gaps |
-| Firecrawl | bundled `.mcp.json` | `mcp__firecrawl` | Parallel or Exa fetch, then WebFetch |
+| DeepWiki | bundled `.mcp.json` | `select:mcp__deepwiki__ask_wiki_question,mcp__plugin_research-agent_deepwiki__ask_wiki_question` | `git clone --depth 1` and grep |
+| Playwright | bundled `.mcp.json` | `select:mcp__playwright__browser_navigate,mcp__plugin_research-agent_playwright__browser_navigate` | Firecrawl, then WebFetch; pages needing a browser go to Gaps |
+| Firecrawl | bundled `.mcp.json` | `firecrawl scrape` (keyword; matches either prefix) | Parallel or Exa fetch, then WebFetch |
 
 If both Parallel Search and Exa are missing, say research will run on WebSearch (titles and
 URLs only, US-only) and WebFetch, and will say so in every output.

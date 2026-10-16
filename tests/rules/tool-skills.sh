@@ -78,3 +78,14 @@ grep -q 'one-fact lookup.*at most two content calls' CLAUDE.md || fail tool-skil
 # The cloud session-start command is guarded so a local plugin install is not injected twice.
 jq -e '[.hooks.SessionStart[].hooks[].command | select(contains("plugin/hooks/session-start.sh"))] | length > 0 and all(contains("CLAUDE_CODE_REMOTE"))' \
   .claude/settings.json >/dev/null 2>&1 || fail tool-skills ".claude/settings.json session-start.sh command is not guarded by CLAUDE_CODE_REMOTE"
+
+# Fix round 1: setup probes survive the plugin prefix; triage and scan keep fetched text out of the lead.
+s=plugin/skills/setup/SKILL.md
+if [ -f "$s" ]; then
+  grep -qF 'mcp__plugin_research-agent_' "$s" || fail tool-skills "setup SKILL.md does not name the mcp__plugin_research-agent_ prefix"
+  grep -qE '`mcp__firecrawl`' "$s" && fail tool-skills "setup SKILL.md has a bare mcp__firecrawl query"
+fi
+grep -qE '`researcher`' plugin/skills/repo-triage/SKILL.md || fail tool-skills "repo-triage does not say the reading runs in a researcher worker"
+grep -qi 'DeepWiki.*untrusted\|untrusted.*DeepWiki' plugin/skills/tool-scan/SKILL.md || fail tool-skills "tool-scan does not mark DeepWiki output untrusted"
+grep -qiE 'quote.*(instead|never)|flag' plugin/skills/tool-scan/SKILL.md || fail tool-skills "tool-scan lacks the quote-and-flag injection rule"
+grep -qE 'outside the project tree' plugin/skills/tool-scan/SKILL.md || fail tool-skills "tool-scan does not clone outside the project tree"

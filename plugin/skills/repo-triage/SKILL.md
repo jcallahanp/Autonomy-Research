@@ -19,6 +19,9 @@ untrusted.
 - The triage shall end in a verdict for a human to act on; it never installs on the user's
   behalf.
 
+- The triage reading (README, workflows, clone, DeepWiki output) shall run in a `researcher`
+  worker or subagent; the lead takes back only the short verdict and never holds fetched pages.
+
 ## Steps
 
 1. Metadata: stars, forks, licence, created vs last push, archived flag, open issues vs
