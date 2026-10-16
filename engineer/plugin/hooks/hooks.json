@@ -41,7 +41,7 @@
           {
             "type": "command",
             "command": "python3 -I \"${CLAUDE_PLUGIN_ROOT}/hooks/stop_gate.py\"",
-            "timeout": 1200
+            "timeout": 1500
           }
         ]
       }
@@ -52,7 +52,7 @@
           {
             "type": "command",
             "command": "python3 -I \"${CLAUDE_PLUGIN_ROOT}/hooks/stop_gate.py\"",
-            "timeout": 1200
+            "timeout": 1500
           }
         ]
       }

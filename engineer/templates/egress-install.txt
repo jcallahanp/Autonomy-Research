@@ -7,31 +7,32 @@
 
 # ---- runtime list (keep in step with egress-allowlist.txt) ----
 # Claude (Max via /login, Remote Control)
-api.anthropic.com
 claude.ai
 *.claude.ai
+api.anthropic.com
 
 # GitHub
 github.com
 api.github.com
 
 # Chat control and monitoring
-api.telegram.org
 hc-ping.com
 api.uptimerobot.com
+api.telegram.org
 
 # GTM vendors (API and browser)
+*.attio.com
 api.attio.com
 app.attio.com
-*.attio.com
-app.clay.com
 *.clay.com
+app.clay.com
 accounts.google.com
 
-# Dependency and MCP vetting
-api.osv.dev
+# Dependency, scanner and MCP vetting (the audit's osv-scanner and semgrep)
 api.deps.dev
+api.osv.dev
 api.securityscorecards.dev
+semgrep.dev
 registry.modelcontextprotocol.io
 
 # ---- install and sitting only ----
@@ -41,8 +42,8 @@ pypi.org
 files.pythonhosted.org
 # GitHub sources and releases (github.com and accounts.google.com are listed above).
 # release-assets.githubusercontent.com: release downloads redirect there (curl -I, 2026-10-16).
-objects.githubusercontent.com
 codeload.github.com
+objects.githubusercontent.com
 release-assets.githubusercontent.com
 # Setup sitting
 dash.cloudflare.com

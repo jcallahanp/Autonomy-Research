@@ -30,7 +30,7 @@ esac
 die() { echo "bootstrap: $*" >&2; exit 1; }
 
 # John's decision 1: Claude Max via /login only; no API key, no setup-token.
-for v in ANTHROPIC_API_KEY CLAUDE_CODE_OAUTH_TOKEN; do
+for v in ANTHROPIC_API_KEY CLAUDE_CODE_OAUTH_TOKEN ANTHROPIC_AUTH_TOKEN; do
   [ -z "${!v:-}" ] || die "$v is set; Path A (Max /login) only: unset it and run again"
 done
 [ "$(id -u)" != 0 ] || die "run as engineer, not root"

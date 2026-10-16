@@ -5,7 +5,7 @@ set -euo pipefail
 
 root=$(mk_root "$T")
 export HOME="$T/home"; mkdir -p "$HOME"
-unset ANTHROPIC_API_KEY CLAUDE_CODE_OAUTH_TOKEN
+unset ANTHROPIC_API_KEY CLAUDE_CODE_OAUTH_TOKEN ANTHROPIC_AUTH_TOKEN
 stub "$root" id 'echo 1000'
 B="$root/scripts/bootstrap.sh"
 
@@ -83,7 +83,7 @@ rc=0; out=$(bash "$B" --dry-run 2>&1) || rc=$?
 stub "$root" id 'echo 1000'
 
 # Path A only: an API key or OAuth token in the environment is refused.
-for v in ANTHROPIC_API_KEY CLAUDE_CODE_OAUTH_TOKEN; do
+for v in ANTHROPIC_API_KEY CLAUDE_CODE_OAUTH_TOKEN ANTHROPIC_AUTH_TOKEN; do
   rc=0; out=$(env "$v=TEST-TOKEN-fake" bash "$B" --dry-run 2>&1) || rc=$?
   [ "$rc" -eq 1 ] && echo "$out" | grep -q "$v" || fail "$v set: exit $rc: $out"
   echo "$out" | grep -q 'TEST-TOKEN-fake' && fail "$v value printed"

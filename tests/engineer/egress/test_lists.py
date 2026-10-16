@@ -16,6 +16,7 @@ RUNTIME_HOSTS = {
     "api.telegram.org", "hc-ping.com", "api.uptimerobot.com", "api.attio.com", "app.attio.com",
     "*.attio.com", "app.clay.com", "*.clay.com", "accounts.google.com", "api.osv.dev",
     "api.deps.dev", "api.securityscorecards.dev", "registry.modelcontextprotocol.io",
+    "semgrep.dev",  # the audit's semgrep fetches its registry rules (osv-scanner uses api.osv.dev)
 }
 INSTALL_EXTRA = {
     "registry.npmjs.org", "github.com", "objects.githubusercontent.com", "codeload.github.com",
@@ -49,6 +50,21 @@ class Lists(unittest.TestCase):
                 lines = [l for l in lines if l]
                 self.assertNotIn("*", lines)
                 self.assertEqual(len(lines), len(set(lines)))
+
+    def test_groups_sorted_in_domain_order(self):
+        # A group is a run of host lines with no blank or comment line between them; within it
+        # hosts sort by reversed labels (github.com, then api.github.com), so families stay together.
+        for path in (INSTALL, RUNTIME):
+            groups, cur = [], []
+            for line in path.read_text().splitlines() + [""]:
+                h = line.split("#", 1)[0].strip()
+                if h and not line.lstrip().startswith("#"):
+                    cur.append(h)
+                elif cur:
+                    groups, cur = groups + [cur], []
+            for g in groups:
+                with self.subTest(path=path.name, group=g[0]):
+                    self.assertEqual(g, sorted(g, key=lambda h: h.lower().split(".")[::-1]))
 
     def test_header_says_provisional(self):
         for path in (INSTALL, RUNTIME):

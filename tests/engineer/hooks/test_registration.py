@@ -5,6 +5,8 @@ import shutil
 import subprocess
 import unittest
 
+import yaml
+
 from hookfix import testlib
 
 HOOKS = testlib.ENGINEER / "plugin" / "hooks" / "hooks.json"
@@ -15,8 +17,8 @@ EXPECTED = {  # event: (matcher or None, script, timeout seconds)
     "SessionStart": ("startup|resume|compact", "session_start.py", None),
     "PreToolUse": ("*", "pre_tool_use.py", 10),
     "PostToolUse": ("Edit|Write|MultiEdit", "post_tool_use.py", 10),
-    "Stop": (None, "stop_gate.py", 1200),
-    "TaskCompleted": (None, "stop_gate.py", 1200),
+    "Stop": (None, "stop_gate.py", 1500),
+    "TaskCompleted": (None, "stop_gate.py", 1500),
     "StopFailure": (None, "event_tap.py", 5),
     "Notification": (None, "event_tap.py", 5),
 }
@@ -42,6 +44,15 @@ class RegistrationTest(unittest.TestCase):
                 self.assertEqual(h["type"], "command")
                 self.assertEqual(h["command"], f'python3 -I "{PLUGIN_VAR}/hooks/{script}"')
                 self.assertEqual(h.get("timeout"), timeout)
+
+    def test_stop_gate_outlives_its_check(self):
+        # Claude Code kills a hook at its timeout; the gate must outlast the check run plus its own work.
+        defaults = yaml.safe_load((testlib.ENGINEER / "templates" / "run-defaults.yaml").read_text())
+        check_secs = int(defaults["profiles"]["check"]["timeout_minutes"]) * 60
+        for event in ("Stop", "TaskCompleted"):
+            for obj in (self.hooks, json.loads(MANAGED.read_text())):
+                (h,) = obj["hooks"][event][0]["hooks"]
+                self.assertGreaterEqual(h["timeout"], check_secs + 300, event)
 
     def test_every_command_names_an_existing_file(self):
         for h in self.commands(self.hooks):

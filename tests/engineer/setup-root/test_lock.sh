@@ -40,6 +40,16 @@ before=$(tree_sum "$P")
 sr --unlock >/dev/null 2>&1 || fail "second unlock failed"
 [ "$before" = "$(tree_sum "$P")" ] || fail "second unlock changed the tree"
 
+# The real managed-hooks.json: its inner "hooks" object becomes managed settings' "hooks" (not nested).
+cp "$REPO/engineer/templates/managed-hooks.json" "$E/templates/managed-hooks.json"
+sr --lock >/dev/null 2>&1 || fail "lock with the real managed hooks failed"
+[ "$(jq -cS .hooks "$M")" = "$(jq -cS .hooks "$REPO/engineer/templates/managed-hooks.json")" ] || fail "real hooks not merged"
+jq -e '.hooks | has("hooks") | not' "$M" >/dev/null || fail "hooks nested under hooks"
+jq -e '.hooks.Stop[0].hooks[0].timeout == 1500 and .hooks.PreToolUse[0].matcher == "*"' "$M" >/dev/null \
+  || fail "managed Stop/PreToolUse hooks wrong: $(jq -c .hooks "$M")"
+jq -e '.permissions.disableBypassPermissionsMode == "disable"' "$M" >/dev/null || fail "real lock lost other settings"
+sr --unlock >/dev/null 2>&1 || fail "unlock after real lock failed"
+
 # Lock refuses without an install or without the managed hooks template.
 rm -rf "$P"
 rc=0; sr --lock >/dev/null 2>&1 || rc=$?

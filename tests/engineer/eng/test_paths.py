@@ -34,6 +34,8 @@ class ProtectedTest(unittest.TestCase):
         self.assertEqual(paths.protected("../other/x", RULES, False), "outside project")
         self.assertEqual(paths.protected("/etc/passwd", RULES, False), "outside project")
         self.assertEqual(paths.protected("pkg/conftest.py", RULES, False), "**/conftest.py")
+        self.assertEqual(paths.protected(".git/config", RULES, False), ".git/**")
+        self.assertEqual(paths.protected(".git/hooks/pre-commit", RULES, False), ".git/**")
 
     def test_normalises_first(self):
         self.assertEqual(paths.protected("src/../tests/acceptance/a.py", RULES, False), "tests/acceptance/**")

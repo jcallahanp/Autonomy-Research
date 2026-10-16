@@ -5,7 +5,7 @@ set -euo pipefail
 
 root=$(mk_root "$T")
 export HOME="$T/home"; mkdir -p "$HOME"
-unset ANTHROPIC_API_KEY CLAUDE_CODE_OAUTH_TOKEN
+unset ANTHROPIC_API_KEY CLAUDE_CODE_OAUTH_TOKEN ANTHROPIC_AUTH_TOKEN
 D="$root/scripts/doctor.sh"
 . "$root/etc/engineer.conf"
 mkdir -p "$(dirname "$MANAGED_SETTINGS")"; echo '{"permissions": {}}' > "$MANAGED_SETTINGS"
@@ -42,6 +42,9 @@ ANTHROPIC_API_KEY=TEST-TOKEN-fake expect_fail no_api_key --skip units
 echo "$out" | grep -q TEST-TOKEN-fake && fail "key value printed"
 CLAUDE_CODE_OAUTH_TOKEN=TEST-TOKEN-fake expect_fail no_api_key --skip units
 echo "$out" | grep -q TEST-TOKEN-fake && fail "token value printed"
+ANTHROPIC_AUTH_TOKEN=TEST-TOKEN-fake expect_fail no_api_key --skip units
+echo "$out" | grep -q ANTHROPIC_AUTH_TOKEN || fail "auth token not named: $out"
+echo "$out" | grep -q TEST-TOKEN-fake && fail "auth token value printed"
 DOCTOR_NPROC=2 expect_fail cpu --skip units
 DOCTOR_OS_RELEASE="$T/os-old" expect_fail os --skip units
 DOCTOR_MEMINFO="$T/meminfo-small" expect_fail ram --skip units

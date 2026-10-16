@@ -47,8 +47,9 @@ def load_addon():
     return mod
 
 
-def flow(host):
-    return types.SimpleNamespace(request=types.SimpleNamespace(host=host), response=None)
+def flow(host, port=443, method="CONNECT"):
+    return types.SimpleNamespace(request=types.SimpleNamespace(host=host, port=port, method=method),
+                                 response=None)
 
 
 class Loader:
@@ -136,12 +137,34 @@ class Addon(unittest.TestCase):
         self.assertFalse(self.log.exists())
 
     def test_plain_request_checked_too(self):
-        f = flow("github.com.evil.com")
+        f = flow("github.com.evil.com", 80, "GET")
         self.addon.request(f)
         self.assertEqual(f.response.status_code, 403)
-        g = flow("github.com")
+        g = flow("github.com", 80, "GET")
         self.addon.request(g)
         self.assertIsNone(g.response)
+
+    def test_connect_only_to_443(self):
+        for port in (22, 80, 8443, 25):
+            with self.subTest(port=port):
+                f = flow("github.com", port)
+                self.addon.http_connect(f)
+                self.assertEqual(f.response.status_code, 403)
+        self.assertEqual(self.log.read_text().splitlines()[-1].split(" ")[1], "github.com:25")
+
+    def test_plain_http_only_to_80(self):
+        for port in (443, 8080, 22):
+            with self.subTest(port=port):
+                f = flow("github.com", port, "GET")
+                self.addon.request(f)
+                self.assertEqual(f.response.status_code, 403)
+
+    def test_decide_port_rule(self):
+        self.assertTrue(self.mod.decide("github.com", PATTERNS, 443, connect=True))
+        self.assertFalse(self.mod.decide("github.com", PATTERNS, 80, connect=True))
+        self.assertTrue(self.mod.decide("github.com", PATTERNS, 80, connect=False))
+        self.assertFalse(self.mod.decide("github.com", PATTERNS, 443, connect=False))
+        self.assertFalse(self.mod.decide("evil.com", PATTERNS, 443, connect=True))
 
     def test_log_line_cannot_be_forged(self):
         self.addon.http_connect(flow("evil.com\n2026-01-01T00:00:00Z ok.com"))

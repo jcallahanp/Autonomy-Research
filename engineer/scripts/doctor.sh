@@ -30,7 +30,7 @@ bad() { echo "FAIL $1: $2"; fails=$((fails+1)); }
 
 # no_api_key: John's decision 1. Name the variable, never print its value.
 set_vars=()
-for v in ANTHROPIC_API_KEY CLAUDE_CODE_OAUTH_TOKEN; do
+for v in ANTHROPIC_API_KEY CLAUDE_CODE_OAUTH_TOKEN ANTHROPIC_AUTH_TOKEN; do
   [ -z "${!v:-}" ] || set_vars+=("$v")
 done
 if [ ${#set_vars[@]} -eq 0 ]; then ok no_api_key

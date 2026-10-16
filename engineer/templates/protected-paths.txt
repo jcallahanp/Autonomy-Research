@@ -2,6 +2,7 @@
 # [always]: never written by the engineer. [existing]: may be added, never changed once they exist.
 # Hooks are a heuristic; the audit script and CODEOWNERS are the real stops.
 [always]
+.git/**
 tests/acceptance/**
 .github/**
 .claude/**
