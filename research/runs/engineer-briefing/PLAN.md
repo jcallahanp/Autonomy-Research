@@ -27,4 +27,4 @@ Rulings: Claude Code is the engine and is not up for debate; everything else att
 
 ## Outputs
 - Findings: research/findings/engineer-briefing.md - written (11 unsourced claims dropped to Open questions; 7 contradictions recorded, several quotes flagged as Exa search text)
-- Verification: pending
+- Verification: 19 of 20 verified, needs-review (the check-mermaid.sh rule holds but is cited at line 46 instead of 39-43; Code-Vision quote is scoped to the Algorithm subset)

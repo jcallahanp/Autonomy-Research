@@ -558,3 +558,8 @@ All sources were opened on 2026-10-16. "Exa search text" means the note lists th
     - dark against light polarity (Q3, with item 4);
     - Structurizr model consistency against plain Mermaid (Q6);
     - node-count target for a phone, where the workers' inferences of 6-9, 10-15 and about 25 lines disagree (Q1, spike 6).
+
+## Verification
+Checked 2026-10-16 by the verifier. Sample: 20 cited claims.
+Verified: 19. Unverified: 1.
+- Unverified: The checker "rejects anything but flowchart/graph/sequenceDiagram", quoted as `*) fail "$n starts with '$first'; only flowchart or sequenceDiagram are allowed" ;;` — /home/user/Autonomy-Research/tests/check-mermaid.sh:46 — Page did open, and the rule is true, but line 46 is `&& fail "$n contains C4 syntax" ;;` and the quoted text is at line 42 (the rule itself is at lines 39-43). The citation and quote are wrong.
