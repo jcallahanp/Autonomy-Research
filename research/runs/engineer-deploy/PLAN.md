@@ -16,7 +16,7 @@ Rulings: Claude Code is the engine and is not up for debate; everything else att
 
 ## Facets
 - [ ] Web hosting free tiers, token-driven deploys and when to use containers - notes/web-hosting.md - pending
-- [ ] Automation surfaces for GTM and health flows - notes/automation-surfaces.md - pending
+- [x] Automation surfaces for GTM and health flows - notes/automation-surfaces.md - medium - Temporal not researched; Slack ack rules, Actions free minutes, Cloudflare Tunnel price not opened; several free-tier numbers paraphrased by fetch; n8n API and MCP write path unspiked
 - [x] Android path and the iOS deferral - notes/mobile.md - medium - Flutter, React Native CLI, Kotlin, widgets and TestFlight docs not opened; Play Publisher API reference 404; first-upload automation contradicts between Expo and fastlane
 - [ ] Domains, secrets, environments, rollback, monitoring and human-only steps - notes/operations.md - pending
 
