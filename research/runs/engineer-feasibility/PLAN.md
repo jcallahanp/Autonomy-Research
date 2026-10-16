@@ -27,4 +27,4 @@ Rulings: Claude Code is the engine and is not up for debate; everything else att
 
 ## Outputs
 - Findings: research/findings/engineer-feasibility.md - written (18 unsourced claims dropped to Open questions; 8 contradictions recorded, 3 unresolved and listed as spikes)
-- Verification: pending
+- Verification: 19 of 20 verified, needs-review (the SEI three-level rating quote could not be read from its PDF)

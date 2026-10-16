@@ -679,3 +679,8 @@ Earlier findings this file builds on (read 2026-10-16, Read):
 - Not confirmed from an opened page: Clay API auth and rate limit; Outreach webhook signing and refresh-token rotation; Attio token expiry; Cloudflare token TTL; Vercel REST token expiry; Withings webhook retry and signing; Slack Events API retries; n8n key expiry and rate limit; whether Attio, Clay, Outreach and Slack offer sandboxes. The Vercel `/docs/rest-api` page gave only an endpoint list.
 - No Terraform prerequisite page, infrastructure bootstrap README or one-time setup script example was opened. No page establishes ID verification at signup for any of John's services. No legal source covers ToS bans on agent-created accounts for specific services.
 - No source gives time estimates for setup steps. The 45-90 minute sitting is the worker's estimate (spike item 20).
+
+## Verification
+Checked 2026-10-16 by the verifier. Sample: 20 cited claims.
+Verified: 19. Unverified: 1.
+- Unverified: SEI "stakeholders cannot reliably and repeatably make finer distinctions than High, Medium, and Low" (Evidence A19, and Q2 and Q10) — https://www.sei.cmu.edu/documents/629/2000_005_001_13706.pdf — page did not open as text: WebFetch returned a binary PDF with compressed streams and no readable passage, so the quote could not be confirmed.
