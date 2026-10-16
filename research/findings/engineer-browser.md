@@ -1267,3 +1267,8 @@ Also not carried as findings:
 - Clay export of table contents and enrichment column settings: **partly settled**. Official routes cannot
   create tables and read rows only on Enterprise; column-settings export is still unknown (Q13.3).
 - Where John's GTM configuration lives: **not settled**; it needs John (Q13.4).
+
+## Verification
+Checked 2026-10-16 by the verifier. Sample: 20 cited claims.
+Verified: 19. Unverified: 1.
+- Unverified: Attio webhooks are workspace-level tokens only ("Supported token levels: `workspace`") — https://api.attio.com/openapi/api (POST /v2/webhooks, A8) — the POST scope line "Required scopes: `webhook:read-write`" was confirmed, but the token-level line was not returned in the chunks read, so uncertain.
