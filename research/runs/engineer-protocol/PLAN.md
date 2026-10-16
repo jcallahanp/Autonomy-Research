@@ -23,8 +23,8 @@ Rulings: Claude Code is the engine and is not up for debate; everything else att
 - [x] Observability and crash resumption for unattended runs - notes/observability.md - medium - headless behaviour at a usage limit untested; StopFailure hook schema not read; SigNoz, Grafana, ccusage code not opened
 
 ## Gap round
-- not run: the remaining gaps weaken evidence strength but leave no key question unanswered; they are carried as open questions and spike items
+- [ ] Audit-agent evidence: fetch the sources the synthesizer dropped as search-text-only (hallucination rates, LLM-judge limits, fresh vs cross-family reviewers, Proof-or-Stop, review-bot prices) - notes/audit-gap.md - pending
 
 ## Outputs
-- Findings: research/findings/engineer-protocol.md - pending
+- Findings: research/findings/engineer-protocol.md - written (61 search-text-only claims dropped to Open questions, 42 from the audit note; to be revised after the gap round)
 - Verification: pending
