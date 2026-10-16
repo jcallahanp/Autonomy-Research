@@ -25,4 +25,4 @@ Rulings: Claude Code is the engine and is not up for debate; everything else att
 
 ## Outputs
 - Findings: research/findings/engineer-runtime.md - written (24 unsourced claims dropped to Open questions; 4 contradictions recorded)
-- Verification: pending
+- Verification: 20 of 20 verified, complete

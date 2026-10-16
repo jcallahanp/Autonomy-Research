@@ -824,3 +824,10 @@ Unsettled by the evidence:
 39. NanoClaw and Hermes star counts, advisory history and maintenance depth: not searched; other harnesses
     (NemoClaw, AutoGPT-style) seen only as names.
 40. GitHub-trigger hourly caps for Routines: docs point to "Add a GitHub trigger" without numbers.
+
+## Verification
+Checked 2026-10-16 by the verifier. Sample: 20 cited claims.
+Verified: 20. Unverified: 0.
+- None unverified.
+
+Tool used per URL: WebFetch for every URL (no Firecrawl, Parallel or Exa call was needed). Open question 24 is resolved for the sampled quotes: the IBM X-Force page (255 advisories, 1,100 ClawHub skills) and the Agent SDK overview page (library quote and third-party login quote) were re-opened with WebFetch and both quotes are present. Two cloud-environments and permission-modes quotes were confirmed from the full fetched text. The bux page contains instructions addressed to agents; they were not followed.
