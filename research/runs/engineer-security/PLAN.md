@@ -16,12 +16,12 @@ Rulings: Claude Code is the engine and is not up for debate; everything else att
 
 ## Facets
 - [x] Security frameworks and which items tooling can check - notes/frameworks.md - medium - FTC and ZAP automation pages via highlights only; agentic Top 10 body unread; only Washington state law checked; pass thresholds untested
-- [ ] Security tooling an agent can run, and its noise - notes/tooling.md - pending
+- [x] Security tooling an agent can run, and its noise - notes/tooling.md - medium - Lynis format, Nuclei false-positive rates, Ruff S noise, Socket Python coverage not opened; Dependabot free-on-private from the features page only; some quotes from highlights
 - [x] LLM-driven security review and project-specific risks - notes/llm-review-and-risks.md - medium - CASTLE numbers, scan cost, open prompt packs, independent precision of vendor scanners not opened; Attio replay header and Withings webhook authenticity unconfirmed; John's code not inspected
 - [x] Reports, gates, remediation and cadence - notes/reports-and-gates.md - medium - PTES page 503, NIST SP 800-115 and PCI PDFs unreadable; no public audit report opened; no sourced dollar cost per LLM scan; DefectDojo default SLA days not stated
 
 ## Gap round
-- pending
+- not run: the remaining gaps weaken evidence strength but leave no key question unanswered; they are carried as open questions and spike items
 
 ## Outputs
 - Findings: research/findings/engineer-security.md - pending
