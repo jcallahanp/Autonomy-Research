@@ -51,7 +51,9 @@
         "merge",
         "challenge",
         "heartbeat",
-        "digest"
+        "digest",
+        "notify",
+        "stopped"
       ]
     },
     "exit_code": {

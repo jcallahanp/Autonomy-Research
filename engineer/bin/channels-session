@@ -14,7 +14,9 @@ done
 
 # shellcheck source=/dev/null
 . "$root/etc/engineer.conf"
-# A claude in <root>/bin (tests only) wins; the session keeps its own PATH.
-claude=$(PATH="$root/bin:$PATH" command -v claude) || { echo "$(basename "$0"): claude not found" >&2; exit 69; }
+# A claude in <root>/bin (tests only) wins, then PATH, then ~/.local/bin where bootstrap.sh puts it
+# (systemd's default PATH lacks it; the unit also sets PATH). The session keeps its own PATH.
+claude=$(PATH="$root/bin:$PATH:${HOME:-/home/engineer}/.local/bin" command -v claude) \
+  || { echo "$(basename "$0"): claude not found" >&2; exit 69; }
 cd "$PROJECTS_DIR"
 exec "$claude" --channels plugin:telegram

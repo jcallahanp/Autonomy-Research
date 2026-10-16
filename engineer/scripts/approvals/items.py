@@ -1,7 +1,8 @@
 """Open approval items: approval_ask events without an answer record; T1 timeouts and reminders.
 
 An ask's detail: item (int), tier T1|T2, kind, text, default, reversible, phrase (T2 only), ref.
-A T2 item never times out and never takes a default (F38).
+A T2 item never times out and never takes a default (F38). Item numbers are global across projects
+(next_global), so a reply's number names one project's item only.
 The item number is an int in event detail and a string in an approval-record line; item_key and
 item_num are the only places that convert between the two.
 """
@@ -88,6 +89,7 @@ def open_items(events: list, records: list, now) -> dict:
         except ValueError:
             continue
         item = dict(d)
+        item["project"], item["task_id"] = ev.get("project"), ev.get("task_id")
         item.setdefault("kind", "other")
         if item["kind"] not in KINDS:
             item["kind"] = "other"
@@ -103,6 +105,35 @@ def next_item(events: list) -> int:
             if ev.get("event") == "approval_ask" and isinstance(ev.get("detail"), dict)
             and isinstance(ev["detail"].get("item"), int) and not isinstance(ev["detail"]["item"], bool)]
     return max(nums, default=0) + 1
+
+
+def next_global(state_dir) -> int:
+    """The next free item number over every project's STATE_DIR/<p>/events.jsonl."""
+    evs = []
+    for path in sorted(Path(state_dir).glob("*/events.jsonl")) if Path(state_dir).is_dir() else []:
+        evs += read_jsonl(path)
+    return next_item(evs)
+
+
+def seen(events: list, date) -> tuple:
+    """(items of the last `digest` sent at or before date, every item a `digest` or `notify` event listed
+    by then); date is a Unix time. `all y` covers the first set; a numbered reply must be in the second."""
+    last, listed, last_ts = set(), set(), None
+    for ev in events:
+        d = ev.get("detail")
+        if ev.get("event") not in ("digest", "notify") or not isinstance(d, dict) or not isinstance(d.get("items"), list):
+            continue
+        try:
+            sent = parse_ts(ev.get("ts"))
+        except ValueError:
+            continue
+        if not isinstance(date, int) or isinstance(date, bool) or sent.timestamp() > date:
+            continue
+        nums = {n for n in (item_num(x) for x in d["items"] if isinstance(x, int)) if n}
+        listed |= nums
+        if ev["event"] == "digest" and (last_ts is None or sent >= last_ts):
+            last, last_ts = nums, sent
+    return last, listed
 
 
 def record(item: dict, now, answer: str, source: str, from_id=None, raw=None) -> dict:

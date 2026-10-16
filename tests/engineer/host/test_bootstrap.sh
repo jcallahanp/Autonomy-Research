@@ -37,11 +37,16 @@ grep -qv '^id ' "$T/argv.log" 2>/dev/null && fail "dry run ran a command: $(grep
 [ ! -e "$HOME/.local/bin/gitleaks" ] || fail "dry run installed gitleaks"
 
 # Real run with stubbed npm, pipx, claude and curl (curl copies the fixture asset).
-for c in npm pipx claude; do stub "$root" "$c"; done
+for c in pipx claude; do stub "$root" "$c"; done
+# R3-4: under nft engineer reaches the net only through the proxy, so installs must use it.
+stub "$root" npm 'echo "$HTTPS_PROXY|$HTTP_PROXY|$https_proxy|$http_proxy|$NO_PROXY" >> "'"$T"'/proxy.log"'
 stub "$root" curl 'u=""; o=""; while [ $# -gt 0 ]; do case "$1" in -o) o=$2; shift ;; https://*) u=$1 ;; esac; shift; done; cp "'"$A"'/$(basename "$u")" "$o"'
 rm -f "$T/argv.log"
 out=$(bash "$B" 2>&1) || fail "real run exit $?: $out"
 grep -qx "npm install -g --prefix $HOME/.local @anthropic-ai/claude-code@2.1.301" "$T/argv.log" || fail "npm not called with pin"
+px=$(sed -n 's/^PROXY_PORT=//p' "$root/etc/engineer.conf" | tr -d '"')
+want="http://127.0.0.1:$px"
+grep -qx "$want|$want|$want|$want|127.0.0.1,localhost" "$T/proxy.log" || fail "npm ran without the proxy: $(head -1 "$T/proxy.log")"
 grep -qx 'claude plugin install telegram@claude-plugins-official --scope user' "$T/argv.log" || fail "plugin not installed"
 [ "$(cat "$HOME/.local/bin/gitleaks" 2>/dev/null)" = "fake gitleaks" ] || fail "gitleaks not installed from tarball"
 [ "$(cat "$HOME/.local/bin/osv-scanner" 2>/dev/null)" = "fake osv" ] || fail "osv-scanner not installed"

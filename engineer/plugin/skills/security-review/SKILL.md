@@ -13,7 +13,8 @@ John decides what is left.
 - F32: When a PR touches auth, data or config, run the deterministic scanners and this review,
   and accept a model finding only with `file:line`, a repro and its scope.
 - F33: If a new Critical or High deterministic finding, any secret, or a failing auth test
-  appears, then block merge and deploy: set the task to `needs_john` with the finding ids.
+  appears, then block merge and deploy: set the task to `needs_john` with the finding ids (the
+  supervisor sends John an `Unblock <task>` T1 line with your reason; his `y` sets it ready again).
 - F34: When a milestone ends, write `security/REPORT.md` and `security/BRIEF.md` stating scope,
   method, findings, severity, remediation, retest and what the review does not assure.
 - Never write that a system is "secure". Say what was checked, at which commit, and how.

@@ -26,9 +26,11 @@ class LoopTest(unittest.TestCase):
         rec = str(Path(self.rig.conf["RECORDS_DIR"]) / "demo")
         for want in ("run-task demo t1 implementer", "run-task demo t1 check", "audit.sh demo t1",
                      "run-task demo t1 auditor", f"agent-run push-branch {rec} engineer-records",
-                     "agent-run open-pr demo task/t1 feat: task t1", "agent-run automerge demo 7", "agent-run hc-ping"):
+                     f"agent-run push-branch {Path(self.rig.conf['PROJECTS_DIR']) / 'demo'} task/t1 --expect {SHA}",
+                     "agent-run open-pr demo task/t1 feat: task t1", f"agent-run automerge demo 7 {SHA}",
+                     "agent-run hc-ping"):
             self.assertTrue(any(line.startswith(want) for line in argv), (want, argv))
-        self.assertEqual(self.outcome()[-1]["status"], "done")
+        self.assertEqual(self.outcome()[-1]["status"], "in_review")  # a PASS waits for its merge
         kinds = [e["event"] for e in self.rig.events()]
         for k in ("night_start", "task_start", "task_end", "check", "audit", "pr_open", "merge"):
             self.assertIn(k, kinds)
@@ -98,7 +100,7 @@ class LoopTest(unittest.TestCase):
         self.assertEqual(len(asks), 1)
         self.assertEqual((asks[0]["tier"], asks[0]["kind"], asks[0]["item"]), ("T1", "merge", 1))
         self.assertEqual(asks[0]["ref"], "https://github.com/o/demo/pull/7")
-        self.assertEqual(self.outcome()[-1]["status"], "done")
+        self.assertEqual(self.outcome()[-1]["status"], "in_review")  # a PASS waits for its merge
 
     def test_kill_switch_stops(self):
         Path(self.rig.conf["KILL_SWITCH"]).touch()
@@ -126,7 +128,7 @@ class LoopTest(unittest.TestCase):
         self.assertEqual(len([a for a in self.rig.argv() if a.startswith("run-task demo t1 implementer")]), 1)
         self.run_ok("2026-10-16T09:05:00Z")
         self.assertIn(f"run-task demo t1 implementer --resume {SID}", self.rig.argv())
-        self.assertEqual(self.outcome()[-1]["status"], "done")
+        self.assertEqual(self.outcome()[-1]["status"], "in_review")  # a PASS waits for its merge
         self.assertIn("resume", [e["event"] for e in self.rig.events()])
 
     def test_dag_cycle_blocks_night(self):
@@ -172,10 +174,9 @@ class LoopTest(unittest.TestCase):
         self.assertIn("1 y", (self.rig.rt / "apply-replies.py.stdin").read_text())
         self.assertTrue([a for a in argv if a.startswith("approve-plan demo --record-id item-1 --item 1 --by john --source telegram")])
         self.assertIn("approval_answer", [e["event"] for e in self.rig.events()])
-        self.assertIn("Merge PR 7?", (self.rig.rt / "sent.txt").read_text())
-        n = len((self.rig.rt / "sent.txt").read_text())
+        self.assertEqual((self.rig.rt / "sent.txt").read_text().count("Merge PR 7?"), 1)
         self.run_ok(DAY)
-        self.assertEqual(len((self.rig.rt / "sent.txt").read_text()), n)
+        self.assertEqual((self.rig.rt / "sent.txt").read_text().count("Merge PR 7?"), 1)  # once a day
 
 
 if __name__ == "__main__":

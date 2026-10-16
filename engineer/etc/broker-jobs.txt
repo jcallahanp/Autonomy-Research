@@ -8,3 +8,4 @@ hc-ping	supervisor
 tg-send	supervisor
 tg-poll	supervisor
 sync-mirror	supervisor
+pr-head	supervisor

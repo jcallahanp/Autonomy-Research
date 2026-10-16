@@ -1,6 +1,6 @@
 ---
 name: plan
-description: Write and keep the project's plan set under docs/plan/ and turn it into small tasks. Use after intake (and the as-is scan, when an existing system is involved) and before any code ("write the plan", "break this into tasks", "update the plan", "this needs a change of course", "what does John sign"). Covers the plan files, the four files John signs and how approval.json binds them by hash, the task contract (one session, one commit, one check, about 1-4 files and 100 lines), the tasks.json fields, change records tiered Minor, Moderate or Major, docs/DEPENDENTS.md and the project setup list. The task contract here wins over Superpowers task sizing.
+description: Write and keep the project's plan set under docs/plan/ and turn it into small tasks. Use after intake (and the as-is scan, when an existing system is involved) and before any code ("write the plan", "break this into tasks", "update the plan", "this needs a change of course", "what does John sign"). Covers the plan files, the five files John signs and how approval.json binds them by hash, the task contract (one session, one commit, one check, about 1-4 files and 100 lines), the tasks.json fields, change records tiered Minor, Moderate or Major, docs/DEPENDENTS.md and the project setup list. The task contract here wins over Superpowers task sizing.
 ---
 
 # Plan
@@ -43,14 +43,14 @@ small, and change it only through a change record.
 | `docs/plan/architecture.yaml` | The system model: `nodes` (id, kind, label) and `edges` | no |
 | `docs/plan/architecture.mmd` | The `flowchart LR` view of `architecture.yaml`, same node ids | no |
 | `docs/plan/contracts/` | One file per interface: request, response, errors, example | no |
-| `docs/plan/tasks.json` | The task DAG (below) | no |
+| `docs/plan/tasks.json` | The task DAG (below); each task's `check` runs on the droplet, so John signs it | yes |
 | `tests/acceptance/` | Frozen acceptance checks, one per fit criterion | no |
 | `docs/adr/NNNN-<slug>.md` | One MADR per decision, copied from `docs/adr/0000-template.md` | no |
 
-- John signs exactly four files: `brief.md`, `requirements.md`, `integrations.yaml` and
-  `profile.yaml`. The approval record hashes those four.
+- John signs exactly five files: `brief.md`, `requirements.md`, `integrations.yaml`,
+  `profile.yaml` and `tasks.json`. The approval record hashes those five; a task never edits them.
 - The `plan-reviewer` agent, in a fresh context, checks everything John does not sign against
-  the four signed files. Run it before you ask John for approval and fix what it finds.
+  the signed files. Run it before you ask John for approval and fix what it finds.
 - Keep `architecture.yaml` and `architecture.mmd` in step: the parity check fails when their node
   ids differ. Keep `integrations.yaml` `env_vars` and `.env.example` in step: that check fails on a
   missing or extra name.
@@ -61,15 +61,21 @@ small, and change it only through a change record.
 
 ## Asking for approval
 
-1. Open the plan as one PR. Its description lists the four signed files and links each draft.
+1. Open the plan as one PR. Its description lists the signed files (`approval.SIGNED`: brief,
+   requirements, integrations, profile and `tasks.json`) and links each draft.
 2. Add one T1 line: `Approve plan v<N> for <project>? PR <url>` with default `n`, as a bullet
-   under `## Asks for John` in `PROGRESS.md` (see the `digest` skill). The supervisor raises it as
-   the plan item with the sha256 of each signed file as it is at that moment. Plan approval never
-   takes a default on timeout. If a signed file changes after the line is raised, `approve-plan`
-   refuses John's yes; write the line again so he is asked about the files as they are now.
-3. When John approves, the supervisor runs `approve-plan`, which writes the approval and tags
-   `plan-approved-N`. Read the approval status from the SessionStart context; do not edit code
-   until it says `approved`.
+   under `## Asks for John` in `PROGRESS.md` (see the `digest` skill). `<url>` must be a PR of this
+   project's repo and `<N>` higher than the approved version. The supervisor reads the PR's head
+   commit on GitHub (never your working tree), stores the signed files of that commit on
+   `engineer-records` under `approvals/<project>/v<N>/`, and sends John
+   `Approve plan v<N> @ <sha7>? PR <url>; signed files <link> (<short hashes>)` at once.
+   It asks each version once: to change the plan after that, push to the PR and write a new line
+   with `v<N+1>`. Plan approval never takes a default on timeout and `all y` never answers it.
+3. When John approves, the supervisor runs `approve-plan`, which checks the stored files against
+   the hashes John saw and refuses (John gets a T1 line with the reason) when one differs, when
+   `v<N>` is not newer than the approved version, or when `hard_gates` in `profile.yaml` is empty.
+   Otherwise it writes the approval (`scope_version` = N) and tags `plan-approved-N`. Read the
+   approval status from the SessionStart context; do not edit code until it says `approved`.
 
 ## The task contract
 
@@ -93,19 +99,19 @@ task; its PR simply waits for John's review.
 | `id` | Letters, digits, `_` or `-`, at most 64 characters, unique |
 | `title` | At most 120 characters; becomes the PR title after `<type>: ` |
 | `type` | `feat`, `fix`, `docs`, `test`, `chore`, `refactor`, `style` or `perf` |
-| `status` | `todo` when written; later `ready`, `running`, `done`, `blocked`, `needs_john` |
-| `depends_on` | Ids of tasks that must be `done` first; no cycles, no unknown ids |
+| `status` | `todo` when written; never changed by a task (the supervisor keeps task state in its events) |
+| `depends_on` | Ids of tasks that must be `done` (merged) first; no cycles, no unknown ids |
 | `requirement_ids` | The `R` ids this task serves |
 | `files` | The files the task may create or change |
 | `files_to_read` | Optional: files the implementer reads first (contracts, map notes) |
 | `check` | The evidence command, run from the project root |
-| `evidence_result` | `null` until the check has run |
+| `evidence_result` | `null` (the check's result lives in the supervisor's state, not here) |
 | `passes` | `false` when written |
 | `attempts` | `0` when written |
-| `blocked_note` | `null`; the supervisor fills it when a task is blocked |
+| `blocked_note` | `null`; the supervisor keeps blocked notes in its events and MORNING.md |
 
-- Only the planner writes tasks. The implementer changes only `status` and `passes` of its own
-  task.
+- Only the planner writes tasks, in the plan PR. The implementer never edits `tasks.json`
+  (it is signed; a task diff that touches `docs/plan/` fails the audit).
 - Order tasks so the earliest ones prove the riskiest assumption.
 - Every requirement id appears in at least one task; every task names at least one.
 - Write each task so the implementer decides nothing: name the files, the interface and the

@@ -49,22 +49,34 @@ def _has_ref(cwd: Path, ref: str) -> bool:
                           capture_output=True).returncode == 0
 
 
+def base_ref(clone: Path, default: str) -> str:
+    """refs/remotes/mirror/<default> when the clone has it, else the clone's own default branch."""
+    return mirror_ref(default) if _has_ref(clone, mirror_ref(default)) else default
+
+
 def ensure_worktree(clone: Path, wt: Path, branch: str, default: str, mirror: Path) -> str:
     """Create or reuse the worktree wt on branch; return the ref the branch is based on.
 
+    A reused branch gets a fresh refs/remotes/mirror/<default> too (best effort), so a retry can merge or
+    rebase onto GitHub's head when the audit says the branch does not contain it.
     Raises ValueError when wt exists but is not a worktree on branch, CalledProcessError when git fails.
     """
     if wt.exists():
         if wt.is_symlink() or git("rev-parse", "--abbrev-ref", "HEAD", cwd=wt) != branch:
             raise ValueError(f"{wt} exists but is not a worktree on {branch}")
-        return mirror_ref(default) if _has_ref(clone, mirror_ref(default)) else default
-    wt.parent.mkdir(parents=True, exist_ok=True)
-    if _has_ref(clone, f"refs/heads/{branch}"):
+    elif _has_ref(clone, f"refs/heads/{branch}"):
+        wt.parent.mkdir(parents=True, exist_ok=True)
         git("worktree", "add", "-q", str(wt), branch, cwd=clone)
-        return mirror_ref(default) if _has_ref(clone, mirror_ref(default)) else default
-    base = fetch_mirror(clone, mirror, default) or default
-    git("worktree", "add", "-q", "-b", branch, str(wt), base, cwd=clone)
-    return base
+    else:
+        wt.parent.mkdir(parents=True, exist_ok=True)
+        base = fetch_mirror(clone, mirror, default) or default
+        git("worktree", "add", "-q", "-b", branch, str(wt), base, cwd=clone)
+        return base
+    try:
+        fetch_mirror(clone, mirror, default)
+    except subprocess.CalledProcessError:
+        pass
+    return base_ref(clone, default)
 
 
 def shas(wt: Path, base_ref: str) -> dict:

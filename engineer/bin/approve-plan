@@ -1,14 +1,18 @@
 #!/usr/bin/python3 -I
 """approve-plan PROJECT --record-id ID --item N --by NAME --source telegram|pr
 
-Run by the supervisor when John approves plan item N. Copies the four signed files out of the
-project clone (regular files only, no symlinks) and refuses unless each one still has the sha256 the
-plan ask N carried (STATE_DIR/<p>/events.jsonl), so John approves exactly what he saw; with source
-telegram it also needs his `yes` for N in the records clone. Writes STATE_DIR/approvals/<p>.json (approval
-schema, scope_version = previous + 1), commits the same JSON as docs/plan/approval.json on
-engineer-records in the supervisor's records clone, tags it plan-approved-N and pushes with
-`AGENT_RUN push-branch RECORDS_DIR/<p> engineer-records --tag plan-approved-N`.
-Exit 65: refused input; 1: failure after checks (a failed push leaves the approval in place).
+Run by the supervisor when John approves plan item N. The ask (STATE_DIR/<p>/events.jsonl) names plan
+version V, the plan PR's head sha, the sha256 of each signed file at that commit and where the supervisor
+stored those exact bytes: RECORDS_DIR/<p>/approvals/<p>/v<V>/ (committed on engineer-records when the ask
+was raised, approvals/plansnap.py). approve-plan copies the stored files (regular files only, no symlinks,
+committed) and refuses unless each has the hash the ask carried, so John approves exactly the commit he
+could see; the engineer's working tree is never read. It also refuses V <= the live scope_version, a
+profile with empty hard_gates, and (source telegram) an item without John's recorded `yes`.
+Writes STATE_DIR/approvals/<p>.json (approval schema, scope_version = V), commits the same JSON as
+docs/plan/approval.json on engineer-records, tags it plan-approved-V and pushes with
+`AGENT_RUN push-branch RECORDS_DIR/<p> engineer-records --tag plan-approved-V`.
+Exit 65: refused (the reason on stderr, which the supervisor sends John); 1: failure after checks
+(a failed push leaves the approval in place).
 """
 import argparse
 import datetime
@@ -16,7 +20,6 @@ import json
 import os
 import re
 import shlex
-import stat
 import subprocess
 import sys
 import tempfile
@@ -25,15 +28,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 from approvals import planask  # noqa: E402
+from approvals.planask import Refused  # noqa: E402
 from eng import approval, schema  # noqa: E402
 from eng import conf as _conf  # noqa: E402
-
-GATES = ("money", "delete_data", "store_submission")
-MAX_BYTES = 1 << 20
-
-
-class Refused(Exception):
-    pass
 
 
 def args(argv):
@@ -58,69 +55,10 @@ def args(argv):
     return a
 
 
-def expected_hashes(conf: dict, a) -> dict:
-    """The plan ask's hashes; John's recorded yes is required for a Telegram approval."""
-    try:
-        ask = planask.ask(Path(conf["STATE_DIR"]) / a.project / "events.jsonl", a.item)
-    except ValueError as e:
-        raise Refused(str(e))
-    records = Path(conf["RECORDS_DIR"]) / a.project / "decisions" / "approvals.jsonl"
-    if a.source == "telegram" and not planask.answered_yes(records, a.item):
-        raise Refused(f"no recorded yes for item {a.item}")
-    return ask.get("files")
-
-
 def listed(conf: dict, project: str) -> bool:
     path = Path(conf["ETC_DIR"]) / "projects.txt"
     rows = path.read_text().splitlines() if path.is_file() else []
     return any(r.split()[:1] == [project] for r in rows if not r.lstrip().startswith("#"))
-
-
-def copy_signed(clone: Path, dest: Path) -> None:
-    """Copy each signed file as a regular file, refusing symlinks anywhere under the clone."""
-    if clone.is_symlink() or not clone.is_dir():
-        raise Refused(f"{clone} is not a directory")
-    for rel in approval.SIGNED:
-        parts = Path(rel).parts
-        for i in range(1, len(parts)):
-            if (clone.joinpath(*parts[:i])).is_symlink():
-                raise Refused(f"{'/'.join(parts[:i])} is a symlink")
-        try:
-            fd = os.open(clone / rel, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
-        except OSError as e:
-            raise Refused(f"{rel}: cannot open ({e.strerror})")
-        with os.fdopen(fd, "rb") as f:
-            if not stat.S_ISREG(os.fstat(f.fileno()).st_mode):
-                raise Refused(f"{rel} is not a regular file")
-            data = f.read(MAX_BYTES + 1)
-        if len(data) > MAX_BYTES:
-            raise Refused(f"{rel} is larger than 1 MiB")
-        (dest / rel).parent.mkdir(parents=True, exist_ok=True)
-        (dest / rel).write_bytes(data)
-
-
-def gates(profile: Path) -> list:
-    import yaml
-    try:
-        data = yaml.safe_load(profile.read_text())
-    except yaml.YAMLError:
-        raise Refused("profile.yaml is not valid YAML")
-    found = data.get("hard_gates", list(GATES)) if isinstance(data, dict) else None
-    if not isinstance(found, list) or any(g not in GATES for g in found):
-        raise Refused(f"profile.yaml hard_gates must be a list from {', '.join(GATES)}")
-    return found
-
-
-def previous_version(path: Path) -> int:
-    if not path.exists():
-        return 0
-    try:
-        v = json.loads(path.read_text())["scope_version"]
-    except (ValueError, KeyError, TypeError):
-        raise RuntimeError(f"{path} is unreadable; fix it by hand before approving again")
-    if not isinstance(v, int) or isinstance(v, bool) or v < 0:
-        raise RuntimeError(f"{path} has a bad scope_version")
-    return v
 
 
 def write_atomic(path: Path, text: str) -> None:
@@ -147,42 +85,59 @@ def git(rec: Path, *argv, conf: dict, check: bool = True):
     return p.stdout.strip()
 
 
+def checked_ask(conf: dict, a) -> dict:
+    """The plan ask, with John's yes (telegram) and a version newer than the live approval."""
+    ask = planask.ask(Path(conf["STATE_DIR"]) / a.project / "events.jsonl", a.item)
+    records = Path(conf["RECORDS_DIR"]) / a.project / "decisions" / "approvals.jsonl"
+    if a.source == "telegram" and not planask.answered_yes(records, a.item):
+        raise Refused(f"no recorded yes for item {a.item}")
+    live = planask.previous_version(Path(conf["STATE_DIR"]) / "approvals" / f"{a.project}.json")
+    if ask["version"] <= live:
+        raise Refused(f"plan v{ask['version']} is not newer than the approved v{live}")
+    if ask["snapshot"] != f"approvals/{a.project}/v{ask['version']}":
+        raise Refused("the plan ask names an unexpected snapshot path")
+    return ask
+
+
 def main(argv) -> int:
     a = args(argv)
     conf = _conf.load(ROOT)
     if not listed(conf, a.project):
         raise Refused(f"project {a.project} is not in projects.txt")
-    expected = expected_hashes(conf, a)
+    ask = checked_ask(conf, a)
+    version = ask["version"]
     rec = Path(conf["RECORDS_DIR"]) / a.project
     if git(rec, "symbolic-ref", "--short", "HEAD", conf=conf) != "engineer-records":
         raise RuntimeError(f"{rec} is not on engineer-records")
-    state_file = Path(conf["STATE_DIR"]) / "approvals" / f"{a.project}.json"
-    version = previous_version(state_file) + 1
+    if git(rec, "status", "--porcelain", "--", ask["snapshot"], conf=conf):
+        raise Refused(f"{ask['snapshot']} has uncommitted changes in the records clone")
     tag = f"plan-approved-{version}"
     if git(rec, "rev-parse", "-q", "--verify", f"refs/tags/{tag}", conf=conf, check=False):
         raise RuntimeError(f"tag {tag} already exists in {rec}")
     with tempfile.TemporaryDirectory() as tmp:
-        copy_signed(Path(conf["PROJECTS_DIR"]) / a.project, Path(tmp))
-        bad = planask.mismatches(expected, Path(tmp))
+        planask.copy_signed(rec / ask["snapshot"], Path(tmp))
+        bad = planask.mismatches(ask.get("files"), Path(tmp))
         if bad:
-            raise Refused("signed files differ from what John was asked to approve: " + "; ".join(bad))
+            raise Refused("stored plan files differ from what John was asked to approve: " + "; ".join(bad))
         now = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         doc = approval.make(Path(tmp), a.by, a.source, a.record_id, version,
-                            gates(Path(tmp) / "docs/plan/profile.yaml"), now)
+                            planask.gates(Path(tmp) / "docs/plan/profile.yaml"), now)
     errors = schema.validate(doc, schema.load(ROOT, "approval"))
     if errors:
         raise RuntimeError(f"approval invalid: {errors[0]}")
     text = json.dumps(doc, indent=2, sort_keys=True) + "\n"
-    write_atomic(state_file, text)
+    write_atomic(Path(conf["STATE_DIR"]) / "approvals" / f"{a.project}.json", text)
     write_atomic(rec / "docs/plan/approval.json", text)
     git(rec, "add", "--", "docs/plan/approval.json", conf=conf)
-    git(rec, "commit", "-q", "-m", f"chore(plan): approve scope version {version} ({a.source} {a.record_id})",
+    sha = str(ask.get("sha") or "")[:12]
+    git(rec, "commit", "-q", "-m", f"chore(plan): approve plan v{version} at {sha} ({a.source} {a.record_id})",
         conf=conf)
-    git(rec, "tag", "-a", tag, "-m", f"Plan approved by {a.by} ({a.source} {a.record_id})", conf=conf)
+    git(rec, "tag", "-a", tag, "-m", f"Plan v{version} at {sha} approved by {a.by} ({a.source} {a.record_id})",
+        conf=conf)
     push = shlex.split(conf["AGENT_RUN"]) + ["push-branch", str(rec), "engineer-records", "--tag", tag]
     rc = subprocess.run(push, stdin=subprocess.DEVNULL).returncode
     if rc != 0:
-        raise RuntimeError(f"push-branch exited {rc}; approval {version} is live, tag {tag} is local only")
+        raise RuntimeError(f"push-branch exited {rc}; approval v{version} is live, tag {tag} is local only")
     print(json.dumps({"project": a.project, "scope_version": version, "tag": tag}))
     return 0
 

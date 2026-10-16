@@ -16,11 +16,20 @@ new_clone "$src"
 mkdir -p "$src/docs/plan"
 jq -n '{version: 1, tasks: [
   {id: "t1", title: "T one", type: "feat", status: "ready", depends_on: [], requirement_ids: [], files: [],
-   check: "test -f README.md && echo checked-ok", passes: false, attempts: 0},
+   check: "test -f README.md && test ! -e untracked.txt && echo checked-ok", passes: false, attempts: 0},
   {id: "t2", title: "T two", type: "fix", status: "ready", depends_on: [], requirement_ids: [], files: [],
    check: "echo failing-check; exit 3", passes: false, attempts: 0}]}' > "$src/docs/plan/tasks.json"
 git -C "$src" add docs && git -C "$src" commit -qm "docs: plan"
+git -C "$src" rebase -q main task/t1 && git -C "$src" branch -q task/t2 main && git -C "$src" checkout -q main
 wt="$PROJECTS_DIR/demo.wt/t1"
+# approve [HASH]: the live plan approval, with the sha256 of the committed tasks.json unless HASH is given.
+approve() {
+  local h=${1:-$(git -C "$src" show main:docs/plan/tasks.json | sha256sum | cut -d' ' -f1)}
+  mkdir -p "$STATE_DIR/approvals"
+  jq -n --arg h "$h" '{approved_by: "john", date: "2026-10-16", scope_version: 1, gates: [], source: "telegram",
+    record_id: "item-1", files: {"docs/plan/tasks.json": $h}}' > "$STATE_DIR/approvals/demo.json"
+}
+approve
 touch "$R/LOCKED"
 
 # --dry-run, implementer.
@@ -41,6 +50,11 @@ prompt=$(after -p "$d")
 case "$prompt" in *"{{"*) fail "prompt has an unreplaced placeholder" ;; esac
 case "$prompt" in *t1*demo*|*demo*t1*) ;; *) fail "prompt lacks task id and project: $prompt" ;; esac
 [ -e "$wt" ] && fail "dry-run created the worktree"
+# The implementer never edits docs/plan/ (tasks.json is signed; status lives in the supervisor's events).
+for f in "$prompt" "$(cat "$R/plugin/agents/implementer.md")"; do
+  case "$f" in *"Never edit anything under \`docs/plan/\`"*) ;; *) fail "implementer text lacks the docs/plan rule" ;; esac
+  case "$f" in *"to \`done\`"*|*"status\` to"*) fail "implementer text still sets a tasks.json status" ;; esac
+done
 
 # Auditor gets --json-schema with the audit-verdict schema as JSON text; --resume is implementer-only.
 expect 0 "dry-run auditor" "$RT" demo t1 auditor --dry-run
@@ -99,15 +113,55 @@ echo "$res" | jq -e --arg b "$(git -C "$src" merge-base main task/t1)" '.base_sh
   and .structured_output == {"verdict": "PASS"}' >/dev/null || fail "base_sha/structured_output: $res"
 expect 0 "second run reuses the worktree" "$RT" demo t1 implementer
 
-# check profile: runs the task check in the worktree.
+# check profile: the check comes from the approved tasks.json at the task's commit and runs in a clean
+# detached checkout of that commit (untracked files in the worktree are not there).
+touch "$wt/untracked.txt"
+t1=$(git -C "$src" rev-parse task/t1)
 expect 0 "check t1" "$RT" demo t1 check
 res=$(validate "$T/out") || fail "check run-result invalid: $(cat "$T/out")"
-echo "$res" | jq -e '.profile == "check" and .exit_code == 0 and .is_error == false and (.output_tail | contains("checked-ok"))' \
-  >/dev/null || fail "check result: $res"
+echo "$res" | jq -e --arg h "$t1" '.profile == "check" and .exit_code == 0 and .is_error == false
+  and .head_sha == $h and (.output_tail | contains("checked-ok"))' >/dev/null || fail "check result: $res"
+# --- test_check_without_bwrap_warns: this container has no bwrap, so the run says it is unsandboxed.
+echo "$res" | jq -e '.output_tail | contains("bwrap not found")' >/dev/null || fail "no bwrap warning: $res"
+[ "$(git -C "$src" worktree list | grep -c run-task-check)" -eq 0 ] || fail "check checkout left behind"
+expect 0 "check t1 at an explicit sha" "$RT" demo t1 check --sha "$t1"
+expect 65 "--sha not a sha" "$RT" demo t1 check --sha main
+expect 65 "--sha for the implementer" "$RT" demo t1 implementer --sha "$t1" --dry-run
+# A working-tree edit of tasks.json changes nothing: t2's approved check still fails.
+jq '.tasks[1].check = "echo hacked"' "$src/docs/plan/tasks.json" > "$T/tasks.json" && cp "$T/tasks.json" "$src/docs/plan/tasks.json"
 expect 0 "check t2 (failing check still prints a result)" "$RT" demo t2 check
 echo "$(cat "$T/out")" | jq -e '.exit_code == 3 and .is_error == true and (.output_tail | contains("failing-check"))' >/dev/null \
   || fail "failing check result: $(cat "$T/out")"
-[ "$(git -C "$PROJECTS_DIR/demo.wt/t2" rev-parse --abbrev-ref HEAD)" = task/t2 ] || fail "t2 worktree branch"
+[ -e "$PROJECTS_DIR/demo.wt/t2" ] && fail "the check profile created a worktree"
+git -C "$src" checkout -q docs/plan/tasks.json
+# --- test_check_refuses_unapproved_tasks_json: a commit whose tasks.json is not the approved copy.
+git -C "$wt" -c core.hooksPath=/dev/null checkout -q -- . 2>/dev/null || true
+jq '.tasks[0].check = "echo sneaky"' "$wt/docs/plan/tasks.json" > "$T/tasks.json" && cp "$T/tasks.json" "$wt/docs/plan/tasks.json"
+git -C "$wt" commit -qam "chore: edit plan"
+expect 65 "tasks.json differs from the approval" "$RT" demo t1 check
+grep -q "approved" "$T/err" || fail "mismatch message: $(cat "$T/err")"
+git -C "$wt" reset -q --hard HEAD~1
+approve 0000000000000000000000000000000000000000000000000000000000000000
+expect 65 "approval hash differs" "$RT" demo t1 check
+rm -f "$STATE_DIR/approvals/demo.json"
+expect 65 "no approval" "$RT" demo t1 check
+approve
+# --- test_check_runs_in_bwrap: with bwrap present the check runs inside it, no network, writes only to the
+# checkout and its tmp dir (a stub bwrap logs its argv, then runs the command after --).
+stub "$R" bwrap 'while [ "$1" != -- ]; do shift; done; shift; exec "$@"'
+expect 0 "check t1 in bwrap" "$RT" demo t1 check
+line=$(grep '^bwrap ' "$T/argv.log" | tail -n 1 || true)
+for want in "--unshare-all" "--die-with-parent" "--ro-bind / /" "--tmpfs /tmp" "--chdir /" "-- bash -c test -f README.md"; do
+  case "$line" in *"$want"*) ;; *) fail "bwrap argv lacks '$want': $line" ;; esac
+done
+co=$(sed -E 's/.*--chdir ([^ ]+) .*/\1/' <<< "$line")
+case "$line" in *"--bind $co $co"*) ;; *) fail "bwrap does not bind the checkout read-write: $line" ;; esac
+case "$line" in *"--share-net"*) fail "bwrap shares the network: $line" ;; esac
+jq -e '(.output_tail | contains("bwrap not found") | not) and .exit_code == 0' "$T/out" >/dev/null || fail "bwrap run: $(cat "$T/out")"
+expect 0 "dry-run check shows bwrap" "$RT" demo t1 check --dry-run
+jq -e '.argv | index("bwrap") != null' "$T/out" >/dev/null 2>&1 || jq -e '[.argv[] | test("bwrap$")] | any' "$T/out" >/dev/null \
+  || fail "dry-run check argv: $(cat "$T/out")"
+rm -f "$R/bin/bwrap"
 
 # A scratch project runs without LOCKED.
 rm -f "$R/LOCKED"

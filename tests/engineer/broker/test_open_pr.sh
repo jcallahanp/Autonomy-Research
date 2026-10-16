@@ -8,7 +8,7 @@ stub "$R" gh "[ \"\${GH_TOKEN:-}\" = TEST-TOKEN-PAT ] || { echo 'no GH_TOKEN' >&
 cat > '$T/pr-body'
 echo https://github.com/owner/demo/pull/12"
 
-printf 'Audit: PASS\nline two\n' | SUDO_USER=engineer "$R/bin/agent-run" open-pr demo task/t1 "feat(api): add the t1 endpoint" \
+printf 'Audit: PASS\nline two\n' | SUDO_USER=supervisor "$R/bin/agent-run" open-pr demo task/t1 "feat(api): add the t1 endpoint" \
   >"$T/out" 2>"$T/err" || fail "open-pr exit $?: $(cat "$T/err")"
 line=$(grep '^gh ' "$T/argv.log" | tail -n 1)
 case "$line" in *"pr create"*) ;; *) fail "gh not called with pr create: $line" ;; esac
@@ -21,9 +21,13 @@ jq -e '.number == 12 and .url == "https://github.com/owner/demo/pull/12"' "$T/ou
 grep -q TEST-TOKEN-PAT "$T/argv.log" "$T/out" "$T/err" && fail "token in argv or output"
 
 n=$(grep -c '^gh ' "$T/argv.log")
-expect 65 "title without a type" bash -c "echo body | SUDO_USER=engineer '$R/bin/agent-run' open-pr demo task/t1 'update stuff'"
-expect 65 "title too long" bash -c "echo body | SUDO_USER=engineer '$R/bin/agent-run' open-pr demo task/t1 'fix: $(printf 'x%.0s' $(seq 1 80))'"
-expect 65 "title with a newline" bash -c "echo body | SUDO_USER=engineer '$R/bin/agent-run' open-pr demo task/t1 \$'fix: a\nb'"
+# task/* PRs are opened by the supervisor after the audit; the engineer may open other branches.
+expect 77 "engineer opens a task/* PR" bash -c "echo body | SUDO_USER=engineer '$R/bin/agent-run' open-pr demo task/t1 'fix: x'"
+expect 0 "engineer opens a wip/* PR" bash -c "echo body | SUDO_USER=engineer '$R/bin/agent-run' open-pr demo wip/t1 'fix: x'"
+n=$((n + 1))
+expect 65 "title without a type" bash -c "echo body | SUDO_USER=supervisor '$R/bin/agent-run' open-pr demo task/t1 'update stuff'"
+expect 65 "title too long" bash -c "echo body | SUDO_USER=supervisor '$R/bin/agent-run' open-pr demo task/t1 'fix: $(printf 'x%.0s' $(seq 1 80))'"
+expect 65 "title with a newline" bash -c "echo body | SUDO_USER=supervisor '$R/bin/agent-run' open-pr demo task/t1 \$'fix: a\nb'"
 expect 65 "head is the default branch" bash -c "echo body | SUDO_USER=engineer '$R/bin/agent-run' open-pr demo main 'fix: x'"
 expect 65 "unknown project" bash -c "echo body | SUDO_USER=engineer '$R/bin/agent-run' open-pr nope task/t1 'fix: x'"
 expect 65 "bad branch" bash -c "echo body | SUDO_USER=engineer '$R/bin/agent-run' open-pr demo -x 'fix: x'"
@@ -31,5 +35,5 @@ expect 0 "breaking-change title" bash -c "echo body | SUDO_USER=supervisor '$R/b
 [ "$(grep -c '^gh ' "$T/argv.log")" -eq $((n + 1)) ] || fail "gh called for a refused request"
 
 stub "$R" gh "echo 'pull request create failed' >&2; exit 1"
-expect 1 "gh failure is passed on" bash -c "echo body | SUDO_USER=engineer '$R/bin/agent-run' open-pr demo task/t1 'fix: x'"
+expect 1 "gh failure is passed on" bash -c "echo body | SUDO_USER=supervisor '$R/bin/agent-run' open-pr demo task/t1 'fix: x'"
 exit 0

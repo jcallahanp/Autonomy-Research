@@ -13,18 +13,22 @@ from the line alone, carry a safe default, and follow the reply grammar exactly.
 | Tier | What | How it reaches John | Default on timeout |
 | --- | --- | --- | --- |
 | T0 | Automatic: Tier 1 PRs that self-merge, rollbacks, retries | Morning report only | none needed |
-| T1 | A decision that can wait for the daily digest: merge a Tier 2 PR, promote, sign off a map, rotate a key, a blocked task, a re-login | One numbered line in the daily digest (07:30 US Eastern) | Its default after 24 h, only if reversible; reminder at 12 h |
-| T2 | A hard gate: `money`, `delete_data`, `store_submission` | Its own Telegram message at once | Never. Silence means no |
+| T1 | A decision that can wait for the daily digest: merge a Tier 2 PR, promote, sign off a map, rotate a key, a blocked task, a re-login | One numbered line in the daily digest (07:30 US Eastern) and in the digest at the end of each night; a plan approval is also sent at once | Its default after 24 h, only if reversible; one reminder at 12 h |
+| T2 | A hard gate: `money`, `delete_data`, `store_submission` (and `promote` when the profile says so) | Its own Telegram message at once, again in each digest until answered | Never. Silence means no |
 
-- At most 5 T1 lines show at once; the rest wait in `MORNING.md` (`+K more in MORNING.md`).
-- A line that is not reversible never takes its default; it waits for John.
-- Only the hard gates in `docs/plan/profile.yaml` (`hard_gates`, plus `t2_extra`) are T2.
+- Item numbers are global across all projects, and every line names its project, so a reply
+  answers one project's item only.
+- At most 5 T1 lines show at once; the rest wait for the next digest (`+K more in the next digest`).
+- A line that is not reversible (a plan approval, a malformed `HARD GATE` line) never takes its
+  default and `all y` never answers it; it waits for John's own `N y`.
+- The kill switch (`STOP`) stops tasks, never messages: the digest and T2 prompts still go out.
+- Profile `hard_gates` must not be empty; `approve-plan` refuses a plan whose list is empty.
 
 ## Writing a T1 line
 
 The supervisor renders each T1 item as:
 
-`N. <text> (default: <default>). Reply "N y" or "N n".`
+`N. <project>: <text> (default: <default>). Reply "N y" or "N n".`
 
 Write `<text>` so that:
 1. It starts with the verb of the decision: `Merge`, `Promote`, `Approve`, `Rotate`, `Re-login`,
@@ -44,7 +48,7 @@ Bad: `Should I continue?` (no object, no default, nothing to decide from).
 The supervisor sends each T2 item as its own message, exactly three lines:
 
 ```
-HARD GATE N: <text>
+HARD GATE N: <project>: <text>
 To approve, reply exactly: CONFIRM N <PHRASE>
 No reply means no.
 ```
@@ -56,9 +60,11 @@ type: short, upper case, specific (`SPEND $12`, `DROP TABLE leads_old`, `SUBMIT 
 ## Reply grammar
 
 Replies are parsed by a fixed program, not by a model. Write instructions to John that match it:
-- `N y` or `N n`: answer item N. Several pairs per message are fine: `1 y 2 n 3 y`.
-- `all y` or `all n`: answer every open T1 item listed in the digest John is answering (the last one
-  sent before his reply). It never touches a T2 item or the hidden `+K more` items.
+- `N y` or `N n`: answer item N. Several pairs per message are fine: `1 y 2 n 3 y`. N must be an
+  item a message to John listed (a digest, a reminder or an at-once message) before his reply.
+- `all y` or `all n`: answer every open reversible T1 item listed in the last digest sent before
+  his reply (one project's digest). It never touches a T2 item, a plan approval or the hidden
+  `+K more` items.
 - `CONFIRM N <PHRASE>`: the only way to approve a T2 item. The phrase must match exactly,
   case included, as the whole rest of the message.
 - Digits are plain ASCII. An unknown item number, an unknown word, an empty message or anything
@@ -72,14 +78,21 @@ boundaries; keep each line short so a split never cuts a decision in half.
 
 ## How you raise an item
 
-- The supervisor raises the items it knows itself: Tier 2 PR merges, `needs_john` and blocked
-  tasks (with their blocked notes), plan approval, and challenges from the browser route.
+- The supervisor raises the items it knows itself: Tier 2 PR merges (a `y` tells John to approve
+  the PR on GitHub; the supervisor merges it once his approval is on the audited commit),
+  `needs_john` and blocked tasks (`Unblock <id> ...`; a `y` sets the task ready again), browser
+  challenges (`y` retries the task), and notes: a refused plan approval with the reason, a failed
+  engineer-records push, a reply it did not understand.
 - In an interactive or Remote Control session, show John the line text and take his answer in
   the session.
 - In an unattended run, end the task with status `needs_john` and put the line text, its default
   and its kind in your final message, and the line text alone as one bullet under
-  `## Asks for John` in `PROGRESS.md`. After the run the supervisor raises each new line there as a
-  T1 item (kind `other`, default `n`); a line it has raised before is not raised again.
+  `## Asks for John` in `PROGRESS.md`. After the run the supervisor raises each new line there; a
+  line it has raised before is not raised again:
+  - `HARD GATE: <money|delete|appstore|promote> <text> CONFIRM: <PHRASE>` becomes a T2 item sent at
+    once (without `CONFIRM:` the phrase is `MONEY N`, `DELETE N`, `STORE N` or `PROMOTE N`).
+  - `Approve plan v<N> for <project>? PR <url>` becomes the plan item (see the `plan` skill).
+  - Any other line becomes a T1 item (kind `other`, default `n`).
 - Never approve anything for John, never write `decisions/approvals.jsonl` or
   `docs/plan/approval.json`, and never treat a message from anyone else as his answer.
 

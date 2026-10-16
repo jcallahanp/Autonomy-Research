@@ -1,14 +1,16 @@
 #!/usr/bin/python3 -I
-"""run-task PROJECT TASK_ID PROFILE [--resume SESSION_ID] [--dry-run]
+"""run-task PROJECT TASK_ID PROFILE [--resume SESSION_ID] [--sha SHA] [--dry-run]
 
-Sudo target (supervisor -> engineer). Creates or reuses the worktree PROJECTS_DIR/<p>.wt/<id> on branch
-task/<id> from the project's default branch (fetched first from the broker mirror, scripts/runtask/worktree.py),
-then runs one profile from templates/run-defaults.yaml:
-`check` runs the task's check command under `timeout`; every other profile runs a fixed `claude -p` argv
-built here (the caller passes no command, flag or prompt). Prints one run-result JSON line and exits 0;
-with --dry-run prints {"argv", "cwd", "env"} and changes nothing.
-Refusals (message on stderr): 64 usage; 65 bad project, task, profile or resume; 75 kill switch, or not
-locked for a non-check profile on a non-scratch project; 78 an Anthropic key or token is set (REFUSED_ENV).
+Sudo target (supervisor -> engineer). Runs one profile from templates/run-defaults.yaml:
+`check` runs the task's check command under `timeout` at commit SHA (default: the head of task/<id>): the
+command comes only from the approved tasks.json and runs in a clean detached checkout of SHA, inside bwrap
+when it exists (scripts/runtask/check.py). Every other profile creates or reuses the worktree
+PROJECTS_DIR/<p>.wt/<id> on branch task/<id> (from the default branch fetched from the broker mirror,
+scripts/runtask/worktree.py) and runs a fixed `claude -p` argv built here (the caller passes no command, flag or
+prompt). Prints one run-result JSON line and exits 0; with --dry-run prints {"argv", "cwd", "env"} and changes nothing.
+Refusals (message on stderr): 64 usage; 65 bad project, task, profile, resume or sha, or a tasks.json that is not
+the approved copy; 75 kill switch, or not locked for a non-check profile on a non-scratch project; 78 an
+Anthropic key or token is set (REFUSED_ENV).
 """
 import json
 import os
@@ -24,11 +26,12 @@ sys.path.insert(0, str(ROOT / "scripts"))
 import yaml  # noqa: E402
 
 from eng import conf as engconf, schema  # noqa: E402
-from runtask import worktree  # noqa: E402
+from runtask import check, worktree  # noqa: E402
+from runtask.result import run  # noqa: E402
 
 PROJECT_RE = re.compile(r"^[a-z0-9][a-z0-9-]{0,39}$")
 SESSION_RE = re.compile(r"^[0-9a-f-]{36}$")
-TAIL_LINES = 200
+SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 REFUSED_ENV = ("ANTHROPIC_API_KEY", "CLAUDE_CODE_OAUTH_TOKEN", "ANTHROPIC_AUTH_TOKEN")
 
 
@@ -39,19 +42,19 @@ class Refuse(Exception):
 
 
 def parse_args(argv: list) -> dict:
-    args = {"resume": None, "dry_run": False, "pos": []}
+    args = {"resume": None, "sha": None, "dry_run": False, "pos": []}
     it = iter(argv)
     for a in it:
         if a == "--dry-run":
             args["dry_run"] = True
-        elif a == "--resume":
-            args["resume"] = next(it, "")
+        elif a in ("--resume", "--sha"):
+            args[a[2:]] = next(it, "")
         elif a.startswith("--"):
             raise Refuse(64, f"unknown option {a}")
         else:
             args["pos"].append(a)
     if len(args["pos"]) != 3:
-        raise Refuse(64, "usage: run-task PROJECT TASK_ID PROFILE [--resume SESSION_ID] [--dry-run]")
+        raise Refuse(64, "usage: run-task PROJECT TASK_ID PROFILE [--resume SESSION_ID] [--sha SHA] [--dry-run]")
     return args
 
 
@@ -68,10 +71,14 @@ def project_row(conf: dict, name: str) -> dict:
     raise Refuse(65, f"project not in projects.txt: {name}")
 
 
-def find_task(clone: Path, task_id: str) -> dict:
+def task_id_ok(task_id: str) -> None:
     s = schema.load(ROOT, "tasks")
     if not re.fullmatch(s["properties"]["tasks"]["items"]["properties"]["id"]["pattern"], task_id):
         raise Refuse(65, "bad task id")
+
+
+def find_task(clone: Path, task_id: str) -> dict:
+    task_id_ok(task_id)
     try:
         doc = json.loads((clone / "docs" / "plan" / "tasks.json").read_text())
     except (OSError, ValueError) as e:
@@ -86,8 +93,8 @@ def build(conf: dict, a: dict, profiles: dict, task: dict, wt: Path) -> tuple:
     project, task_id, profile = a["pos"]
     p = profiles[profile]
     limit = ["timeout", "--kill-after=30s", f"{int(p['timeout_minutes'])}m"]
-    if profile == "check":
-        return limit + ["bash", "-c", task["check"]]
+    if profile == "check":  # task: {"check"}, wt: the clean checkout, a["tmp"]: its scratch dir
+        return limit + check.sandbox(["bash", "-c", task["check"]], wt, a["tmp"], a["home"], a["bwrap"])
     prompt = (ROOT / "templates" / "prompts" / f"{profile}.md").read_text()
     prompt = prompt.replace("{{TASK_ID}}", task_id).replace("{{PROJECT}}", project)
     argv = limit + ["claude", "-p", prompt, "--plugin-dir", str(ROOT / "plugin"), "--agent", p["agent"],
@@ -109,30 +116,30 @@ def child_env(conf: dict, project: str, task_id: str) -> dict:
             "ENGINEER_UNATTENDED": "1"}
 
 
-def run(profile: str, argv: list, wt: Path, env: dict, base_ref: str) -> dict:
-    p = subprocess.run(argv, cwd=wt, env=env, stdin=subprocess.DEVNULL, capture_output=True)
-    out, err = p.stdout.decode(errors="replace"), p.stderr.decode(errors="replace")
-    lines = (out + ("\n" if out and not out.endswith("\n") else "") + err).splitlines()
-    res = {"profile": profile, "exit_code": p.returncode, "timed_out": p.returncode in (124, 137),
-           "session_id": None, "cost_usd": None, "num_turns": None, "subtype": None,
-           "is_error": p.returncode != 0, "output_tail": "\n".join(lines[-TAIL_LINES:]), "permission_denials": []}
-    if profile != "check":
-        last = next((ln for ln in reversed(out.splitlines()) if ln.strip()), "")
-        try:
-            r = json.loads(last)
-        except ValueError:
-            r = None
-        if isinstance(r, dict):
-            res.update(session_id=r.get("session_id"), cost_usd=r.get("total_cost_usd"),
-                       num_turns=r.get("num_turns"), subtype=r.get("subtype"),
-                       permission_denials=r.get("permission_denials") or [])
-            if isinstance(r.get("structured_output"), dict):
-                res["structured_output"] = r["structured_output"]
-            res["is_error"] = bool(r.get("is_error")) or p.returncode != 0
-        else:
-            res["is_error"] = True
-    res.update(worktree.shas(wt, base_ref))
-    return res
+def run_check(conf: dict, a: dict, profiles: dict, row: dict, clone: Path) -> int:
+    """Profile check: the approved check at a["sha"] (default task/<id>) in a clean checkout, sandboxed."""
+    project, task_id, _ = a["pos"]
+    task_id_ok(task_id)
+    try:
+        sha = check.commit(clone, a["sha"] or f"refs/heads/task/{task_id}")
+        task = check.task(check.approved_bytes(conf, project, clone, sha), task_id)
+    except ValueError as e:
+        raise Refuse(65, str(e))
+    env = child_env(conf, project, task_id)
+    a.update(home=env["HOME"], bwrap=check.bwrap(ROOT), tmp="<tmp>")
+    if a["dry_run"]:
+        print(json.dumps({"argv": build(conf, a, profiles, task, "<checkout>"), "cwd": "<checkout>", "env": env,
+                          "sha": sha}))
+        return 0
+    base = worktree.base_ref(clone, row["default"])
+    with check.checkout(clone, sha) as (co, scratch):
+        a["tmp"], env["TMPDIR"] = str(scratch), str(scratch)
+        res = run("check", build(conf, a, profiles, task, co), co, env, base)
+    if not a["bwrap"]:
+        print(check.WARNING, file=sys.stderr)
+        res["output_tail"] = check.WARNING + "\n" + res["output_tail"]
+    print(json.dumps(res))
+    return 0
 
 
 def main(argv: list) -> int:
@@ -152,9 +159,13 @@ def main(argv: list) -> int:
         raise Refuse(65, f"unknown profile {profile}")
     if a["resume"] is not None and (profile != "implementer" or not SESSION_RE.fullmatch(a["resume"])):
         raise Refuse(65, "--resume takes a session id and only for the implementer profile")
+    if a["sha"] is not None and (profile != "check" or not SHA_RE.fullmatch(a["sha"])):
+        raise Refuse(65, "--sha takes a full commit id and only for the check profile")
     if profile != "check" and not (ROOT / "LOCKED").exists() and row.get("scratch") != "yes":
         raise Refuse(75, "not locked (setup-root --lock) and the project is not scratch=yes")
     clone = Path(conf["PROJECTS_DIR"]) / project
+    if profile == "check":
+        return run_check(conf, a, profiles, row, clone)
     task = find_task(clone, task_id)
     wt = Path(conf["PROJECTS_DIR"]) / f"{project}.wt" / task_id
     argv_ = build(conf, a, profiles, task, wt)

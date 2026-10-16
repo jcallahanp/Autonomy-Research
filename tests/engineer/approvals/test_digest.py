@@ -23,7 +23,7 @@ class Digest(unittest.TestCase):
         self.assertEqual(len(lines), 6)
         self.assertEqual(lines[0], '1. Merge PR 1 (default: no). Reply "1 y" or "1 n".')
         self.assertEqual(lines[4][:3], "5. ")
-        self.assertEqual(lines[5], "+1 more in MORNING.md")
+        self.assertEqual(lines[5], "+1 more in the next digest")
 
     def test_oldest_first(self):
         items = {1: t1(1, ts="2026-10-16T09:00:00Z"), 2: t1(2, ts="2026-10-16T01:00:00Z")}
@@ -42,6 +42,18 @@ class Digest(unittest.TestCase):
     def test_newlines_in_text_stay_one_line(self):
         msgs = digest.render({1: t1(1, text="a\nb")})
         self.assertEqual(msgs, ['1. a b (default: no). Reply "1 y" or "1 n".'])
+
+    def test_lines_carry_the_project(self):
+        msgs = digest.render({3: {**t1(3), "project": "gtm"}})
+        self.assertEqual(msgs, ['3. gtm: Merge PR 3 (default: no). Reply "3 y" or "3 n".'])
+        item = {"item": 4, "tier": "T2", "text": "Buy the domain", "phrase": "SPEND $12", "project": "gtm"}
+        self.assertTrue(digest.render_t2(item).startswith("HARD GATE 4: gtm: Buy the domain\n"))
+
+    def test_reminder(self):
+        self.assertEqual(digest.render_reminder({**t1(3), "project": "gtm"}),
+                         'Reminder: 3. gtm: Merge PR 3 (default: no). Reply "3 y" or "3 n".')
+        item = {"item": 4, "tier": "T2", "text": "Pay", "phrase": "PAY $5", "project": "gtm"}
+        self.assertEqual(digest.render_reminder(item), "Reminder: " + digest.render_t2(item))
 
     def test_render_t2(self):
         item = {"item": 4, "tier": "T2", "text": "Buy the domain", "phrase": "SPEND $12"}
@@ -64,9 +76,9 @@ class Digest(unittest.TestCase):
                                   "--events", str(ev), "--records", str(rec), "--now", "2026-10-16T07:30:00Z"],
                                  capture_output=True, text=True, check=True)
             msgs = json.loads(out.stdout)
-            self.assertEqual(msgs[0], "HARD GATE 2: ask 2\nTo approve, reply exactly: CONFIRM 2 DELETE ROWS\n"
+            self.assertEqual(msgs[0], "HARD GATE 2: demo: ask 2\nTo approve, reply exactly: CONFIRM 2 DELETE ROWS\n"
                                       "No reply means no.")
-            self.assertEqual(msgs[1], '1. ask 1 (default: no). Reply "1 y" or "1 n".')
+            self.assertEqual(msgs[1], '1. demo: ask 1 (default: no). Reply "1 y" or "1 n".')
 
     def test_cli_json_object_lists_shown_items(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -80,7 +92,7 @@ class Digest(unittest.TestCase):
                                   "--max-open", "5", "--json-object"], capture_output=True, text=True, check=True)
             doc = json.loads(out.stdout)
             self.assertEqual(doc["shown"], [1, 2, 3, 4, 5])
-            self.assertIn("+2 more in MORNING.md", doc["messages"][-1])
+            self.assertIn("+2 more in the next digest", doc["messages"][-1])
 
 
 if __name__ == "__main__":

@@ -8,5 +8,5 @@ HC_PING_URL	hc-ping ok	healthchecks.io shows the ping
 ATTIO_API_KEY	api-call attio GET /self	HTTP 200 with the workspace
 N8N_API_KEY	api-call n8n GET /workflows?limit=1	HTTP 200 with at most one workflow
 UPTIMEROBOT_API_KEY	manual	The API takes the key in the POST body; John checks a monitor in the dashboard
-Clay CLI session	manual	John checks the Clay CLI session as engineer (command confirmed on setup day)
+Clay CLI session	manual	Deferred: stage 1 installs no Clay CLI, so John marks this row n/a (a later stage installs it for secretbroker)
 Browser sessions	manual	John opens Google and Attio in the noVNC Chrome; both signed in, no challenge

@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 """Stop and TaskCompleted: hold the session open until the task's check and DEPENDENTS rule pass.
 
-Exit 0 when ENGINEER_TASK_ID is unset. Otherwise run the task's `check` from docs/plan/tasks.json
-with `bash -c` in the project (timeout: run-defaults profile `check`); then every changed file
-matching a `| <glob> | <doc> |` row of docs/DEPENDENTS.md needs its doc changed too. A failure
+Exit 0 when ENGINEER_TASK_ID is unset. Otherwise run the task's `check` with `bash -c` (timeout:
+run-defaults profile `check`) the way run-task does (scripts/runtask/check.py): the command comes only from
+the approved docs/plan/tasks.json at HEAD (sha256 equal to the live plan approval's), and it runs in a clean
+detached checkout of HEAD, inside bwrap when it exists, so uncommitted work does not count. Then every changed
+file matching a `| <glob> | <doc> |` row of docs/DEPENDENTS.md needs its doc changed too. A failure
 exits 2 with the reason on stderr (contract: https://code.claude.com/docs/en/hooks; Stop: Claude
 continues; TaskCompleted: the task stays open). At the 8th block of a session the gate gives up:
 exit 0 and a `gate_gave_up` spool line, so the audit fails the task instead of looping forever.
 """
-import json
 import os
 import pwd
 import subprocess
@@ -30,20 +31,26 @@ def check_timeout(root: Path) -> int:
 
 
 def run_check(ctx, task_id: str):
-    tasks = json.loads((ctx.project_dir / "docs/plan/tasks.json").read_text()).get("tasks", [])
-    task = next((t for t in tasks if t.get("id") == task_id), None)
-    if task is None or not task.get("check"):
-        return f"task {task_id} has no check in docs/plan/tasks.json"
-    secs = check_timeout(ctx.root)
+    from runtask import check
     try:
-        r = subprocess.run(["bash", "-c", task["check"]], cwd=ctx.project_dir, text=True,
-                           stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
-                           stderr=subprocess.STDOUT, timeout=secs, errors="replace")
-    except subprocess.TimeoutExpired:
-        return f"check for {task_id} timed out after {secs // 60} min: {task['check']}"
+        sha = check.commit(ctx.project_dir, "HEAD")
+        task = check.task(check.approved_bytes(ctx.conf, ctx.project, ctx.project_dir, sha), task_id)
+    except ValueError as e:
+        return f"stop gate: {e}"
+    secs, bw = check_timeout(ctx.root), check.bwrap(ctx.root)
+    if not bw:
+        print(check.WARNING, file=sys.stderr)
+    with check.checkout(ctx.project_dir, sha) as (co, scratch):
+        argv = check.sandbox(["bash", "-c", task["check"]], co, scratch, str(Path.home()), bw)
+        try:
+            r = subprocess.run(argv, cwd=co, text=True, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                               stderr=subprocess.STDOUT, timeout=secs, errors="replace")
+        except subprocess.TimeoutExpired:
+            return f"check for {task_id} timed out after {secs // 60} min: {task['check']}"
     if r.returncode != 0:
         tail = "\n".join(r.stdout.splitlines()[-TAIL_LINES:])
-        return f"check for {task_id} failed (exit {r.returncode}): {task['check']}\n{tail}"
+        return (f"check for {task_id} failed (exit {r.returncode}) on a clean checkout of HEAD {sha[:12]} "
+                f"(commit your work first): {task['check']}\n{tail}")
     return None
 
 

@@ -2,8 +2,8 @@
 # (copied to /etc/engineer/egress.txt). It is the runtime list (egress-allowlist.txt) plus the
 # package, release and sign-in hosts the install and the setup sitting need.
 # Provisional: the builder rewrites this list from the hosts logged during the setup sitting
-# (research/blueprint/stack.md, Egress). n8n hosts are added on setup day once John says where
-# n8n runs (Open decision 8). Never add a bare `*`.
+# (research/blueprint/stack.md, Egress). n8n hosts are added on setup day with `setup-root.sh --allow`
+# (guide step 15; Open decision 8). Never add a bare `*`.
 
 # ---- runtime list (keep in step with egress-allowlist.txt) ----
 # Claude (Max via /login, Remote Control)

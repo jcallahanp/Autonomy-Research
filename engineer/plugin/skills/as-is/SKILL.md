@@ -20,7 +20,9 @@ Find out what an existing system really does before you change it. Write what yo
 - When a source is only visible in a UI (Attio view filters and Workflows, Clay enrichment
   columns and functions), record it as a gap to ask John about, not as a finding.
 - When a change would delete or merge records in a live system, stop: that is a `delete_data`
-  hard gate (T2). Reconciliation is a read-only diff with John's approval per cluster.
+  hard gate (T2): write `HARD GATE: delete <what, how many rows> CONFIRM: <PHRASE>` under
+  `## Asks for John` (see the `digest` skill). Reconciliation is a read-only diff with John's
+  approval per cluster.
 
 ## Marks
 
@@ -101,7 +103,8 @@ Write `docs/map/credentials.md` with names and metadata only:
 
 - Find names in code with `rg` for env var reads and in n8n through `GET /credentials`.
 - Scan for committed secrets with `gitleaks detect --redact --no-banner --report-format json`.
-  Report a hit as `path:line kind`, never its value, and add a T1 line for John to rotate it.
+  Report a hit as `path:line kind`, never its value, and add a T1 line for John to rotate it
+  (a bullet under `## Asks for John` in `PROGRESS.md`).
 - Never run `n8n export:credentials --decrypted`, `trufflehog --verify` (or any TruffleHog mode
   that tests a secret against a live service), `env`, `printenv`, or `cat` on an `.env` file.
 

@@ -23,8 +23,9 @@ class SessionStartTest(HookCase):
         return out["hookSpecificOutput"]["additionalContext"]
 
     def approve(self):
-        for rel in approval.SIGNED:
-            self.write(self.proj / rel, f"{rel}\n")
+        for rel in approval.SIGNED:  # keep a tasks.json the test wrote (it is signed too)
+            if not (self.proj / rel).exists():
+                self.write(self.proj / rel, f"{rel}\n")
         rec = approval.make(self.proj, "john", "telegram", "r1", 1, [], "2026-10-16")
         self.write(Path(self.conf["STATE_DIR"]) / "approvals" / "demo.json", json.dumps(rec))
 

@@ -13,10 +13,11 @@ delete data or submit to an app store without his typed confirmation.
 - F35: When a deploy is due, deploy a preview with the platform CLI and one narrow token, then
   run the 11-item pre-promote checklist below.
 - F36: When the checklist passes, add a T1 promote line with default `hold`, unless
-  `docs/plan/profile.yaml` gates promotes as T2 (then send a T2 prompt instead).
+  `docs/plan/profile.yaml` gates promotes as T2 (then write a `HARD GATE: promote` line instead).
 - F37: If the watch window after a promote fails, then roll back at once and tell John.
-- F38: When an action spends money, deletes data or submits to an app store, send a separate
-  T2 prompt that needs John's typed `CONFIRM` and never apply a default on timeout.
+- F38: When an action spends money, deletes data or submits to an app store, write a
+  `HARD GATE:` line (below); the supervisor sends it as a separate T2 prompt that needs John's
+  typed `CONFIRM`, and no default ever applies.
 - Rolling back is allowed without approval. Rolling forward is not.
 - Use the platform CLI with a token from the broker. Use vendor MCP servers read-only (logs,
   status), never to deploy.
@@ -51,7 +52,8 @@ service, token scope and price (with the date) in `docs/plan/integrations.yaml`.
 4. If any item fails, fix it in a new task or record the blocker; do not ask for a promote.
 5. When every item passes, add one T1 line (see the `digest` skill):
    `Promote <project> <sha7> to production? Preview <url>. Rollback: <command>` with
-   default `hold`, `kind: promote`. If `profile.yaml` sets `promote` to `t2`, send a T2 prompt.
+   default `hold`, `kind: promote`. If `profile.yaml` sets `promote` to `t2`, write
+   `HARD GATE: promote Promote <project> <sha7> to production. Rollback: <command> CONFIRM: PROMOTE <sha7>`.
 6. Stage 1 has no promote runner: after John replies `y`, the promote is run from the command in
    the line by an attended session or by John. Never run it from an unattended session.
 
@@ -92,7 +94,11 @@ and add a T1 line saying what failed, what you rolled back to, and the evidence.
 ## Hard gates (T2)
 
 These need a separate T2 prompt and John's exact `CONFIRM <n> <PHRASE>` reply. No default ever
-applies, and silence means no.
+applies, and silence means no. Stop before the action, write one bullet under `## Asks for John`
+in `PROGRESS.md`, and end the task `needs_john`:
+`HARD GATE: <money|delete|appstore> <text> CONFIRM: <PHRASE>` (gate words: `money`, `delete` for
+`delete_data`, `appstore` for `store_submission`). The supervisor sends it at once as
+`HARD GATE N: <project>: <text>`; without `CONFIRM:` the phrase is `MONEY N`, `DELETE N` or `STORE N`.
 - `money`: any purchase, paid plan, domain, paid add-on or spend above the plan's ceiling.
 - `delete_data`: dropping or truncating a table, a contract migration, deleting records in a live
   system, deleting a bucket or a backup.

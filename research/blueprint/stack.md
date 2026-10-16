@@ -13,7 +13,7 @@ Costs are as seen in the findings on 2026-10-16 unless a row says otherwise. "Pl
 | DigitalOcean droplet, Ubuntu 24.04 LTS (updated 2026-10-16, John's decision) | Host and isolation boundary | DigitalOcean Basic, US East, 4 vCPU / 8 GiB | $48/month; snapshots $0.06/GB-month; weekly backups +20% (off by default) | runtime, host | engineer-host E64 |
 | Managed settings `/etc/claude-code/managed-settings.json` | Deny rules, `disableBypassPermissionsMode`; beats CLI flags | VM | Free | human-loop | E148-E151 |
 | Bash sandbox (bubblewrap) + AppArmor profile | Inner shell isolation, `allowUnsandboxedCommands: false` | VM | Free | human-loop, feasibility | E166-E171; C10 |
-| Rootless Podman (as `supervisor`) + host proxy (mitmproxy by default; Envoy or Squid alternatives) | Trial containers `--network none`; allowlist and credential injection | VM | Free | feasibility | C23, C24, C38 |
+| Rootless Podman (as `supervisor`; later stage, not stage 1 (updated 2026-10-16, stage-1 plan)) + host proxy (mitmproxy by default; Envoy or Squid alternatives) | Trial containers `--network none`; allowlist and credential injection | VM | Free | feasibility | C23, C24, C38 |
 | SOPS + age, `secretbroker` user, `agent-run` | Encrypted secrets; allowlisted jobs; engineer never reads values | VM | Free (licences not opened) | human-loop | E58-E60 |
 | Telegram Bot API (supervisor bot) | Digest, hard-gate prompts, long-poll replies, `from.id` allowlist | SaaS + VM | Free | human-loop, protocol | E16, E118, E103 |
 | Channels (Telegram plugin) | Daytime live tool prompts; research preview | VM + phone | Free | human-loop | E111-E114 |
@@ -29,7 +29,7 @@ Costs are as seen in the findings on 2026-10-16 unless a row says otherwise. "Pl
 | `auditor` agent + `audit.sh` | Script layer then narrow claim judge | VM | Tokens, about 2-4x per gated task (inference from E151) | protocol | E137-E151 |
 | backcheck, https://github.com/VectorInstitute/backcheck (spike first) | Claim vs transcript check, no LLM | VM | Free (Apache-2.0) | protocol | E152, E153 |
 | `gh`, `claude --worktree`, GitHub branch protection, CODEOWNERS | PR per task, server-side merge stop | VM + GitHub | Private-repo protection under GitHub Pro, which John bought (updated 2026-10-16, John's decision); Pro price not opened | protocol | E50-E59 |
-| GitHub bot account + fine-grained PAT | Repo-scoped agent credential | GitHub | Free | protocol, human-loop | E80, E81; E13, E40 |
+| GitHub bot account + classic PAT, `repo` scope only (fine-grained tokens cannot contribute to repos where the user is a collaborator: GitHub, "Managing your personal access tokens", read 2026-10-16) (updated 2026-10-16, stage-1 plan) | Agent credential, limited to the repos the bot is invited to | GitHub | Check on the day | protocol, human-loop | E80, E81; E13, E40 |
 | Playwright CLI skill (`@playwright/cli`) | Alternate browser driver | VM | Free, Apache-2.0 | browser | T4, T41 |
 | Playwright MCP, `--browser chrome` (updated 2026-10-16, stage-1 plan) | Primary browser driver; drives branded Chrome, `browser_drag` | VM, stdio | Free, Apache-2.0 | browser, host | T1, S1; engineer-host E12 |
 | Playwright Test Agents, trace viewer | Generate and heal `.spec.ts` flows | VM | Free | browser | T39, T40; R1, R2 |
@@ -68,18 +68,19 @@ Pins: the builder picks the current stable release on build day and records it i
 | Tool | Installed by | Runs where | Pin or source |
 | --- | --- | --- | --- |
 | Users `engineer`, `secretbroker`, `supervisor`, `egress` (runs the proxy) (updated 2026-10-16, stage-1 plan); AppArmor profile; managed settings; sudoers; nftables egress rules; systemd units | root | VM | n/a |
-| Rootless Podman with subuid/subgid for `supervisor` (no Docker Engine, no `docker` group) | root | VM | Ubuntu archive |
-| sops, age; age key and SOPS file skeleton for `secretbroker` | root | VM | Release binaries, checksum-verified |
+| Rootless Podman with subuid/subgid for `supervisor` (no Docker Engine, no `docker` group) | root, later stage: `--install` does not do it in stage 1 (updated 2026-10-16, stage-1 plan) | VM | Ubuntu archive |
+| sops, age; the age key for `secretbroker` (made once by `--install`; the SOPS file is made by the first `seed`) (updated 2026-10-16, stage-1 plan) | root | VM | Release binaries, checksum-verified |
 | Node.js | root | VM | 22 LTS or later from the NodeSource apt repo (mermaid-lint needs Node 22+, engineer-briefing E59) |
 | Google Chrome, Xvfb, a window manager, x11vnc, noVNC + websockify, Playwright system deps | root | VM | Distribution and Google apt repos (install steps are worker inference, engineer-browser setup 1) |
-| `gh`, `gcloud`, `cloudflared`, Lynis | root | VM | GitHub, Google, Cloudflare apt repos; Ubuntu archive (updated 2026-10-16, John's decision) |
+| `gh`, `cloudflared` | root | VM | GitHub, Cloudflare apt repos (updated 2026-10-16, John's decision) |
+| `gcloud`, Lynis | Deferred: not installed in stage 1 (updated 2026-10-16, stage-1 plan) | VM | Google apt repo; Ubuntu archive |
 | mitmproxy (the host proxy) | root | VM | Recorded pin; Envoy or Squid are the alternatives (engineer-feasibility C23) |
 | `/opt/engineer/` (bin wrappers, hooks, broker jobs, supervisor, the plugin with the vendored Superpowers subset) | root, copied from `/srv/autonomy-research/engineer/` (updated 2026-10-16, stage-1 plan) | VM | The merged SHA |
 | pyotp (later stage, when a project needs TOTP) (updated 2026-10-16, John's decision) | root, in a venv owned by `secretbroker` | VM | Recorded pin |
 | Claude Code CLI | bootstrap | VM, `engineer` | At least 2.1.234, the version the auto-continue docs name (engineer-protocol E117); exact pin recorded |
 | Playwright, `@playwright/mcp`, `@playwright/cli` (branded Chrome comes from the Google apt repo) (updated 2026-10-16, stage-1 plan) | bootstrap (user npm prefix and browser cache) | VM | Recorded pin (engineer-browser T4, T1) |
 | mermaid-lint, mermaid-cli | bootstrap | VM, CI | mermaid-cli 11.12.0, as in `tests/check-mermaid.sh` |
-| wrangler, Clay CLI (run by broker jobs) | root, into `/opt/engineer/node_modules` | VM | Recorded pin; Clay CLI package name not in the findings, builder takes it from Clay's docs (SP65) |
+| wrangler, Clay CLI (run by broker jobs as `secretbroker`) | Deferred: not installed in stage 1 (updated 2026-10-16, stage-1 plan) | VM | Recorded pin; Clay CLI package name not in the findings, builder takes it from Clay's docs (SP65) |
 | dependency-cruiser, docker-compose-to-mermaid | bootstrap (npm) | VM | Recorded pin |
 | Semgrep CE, Bandit or Ruff, OSV-Scanner, pip-audit, gitleaks, Checkov, n8nmermaid, pydeps | bootstrap (user venv or release binaries) | VM, CI | Version plus checksum (engineer-security E41, E42) |
 | backcheck (after SP20) | bootstrap, via its `install.sh` | VM | https://github.com/VectorInstitute/backcheck, Apache-2.0 (engineer-protocol notes `audit-gap.md`:92) |
@@ -88,7 +89,7 @@ Pins: the builder picks the current stable release on build day and records it i
 | n8n | Not installed by default; only if John moves n8n to the VM | VM | Open (open-questions 16) |
 
 ## Egress
-Mechanism (builder default, untested; SP09, SP13, SP26): root-owned nftables rules match the `engineer` and `supervisor` user IDs and allow outbound traffic only to the local mitmproxy, which enforces a domain allowlist; `HTTPS_PROXY` points Claude Code at it, and the Bash sandbox network settings sit inside that. Root's own traffic (apt) is not restricted. Trial containers get a per-trial list through the same proxy (engineer-feasibility C23, C24).
+Mechanism (builder default, untested; SP09, SP13, SP26): root-owned nftables rules match the `engineer` and `supervisor` user IDs and allow new outbound connections only to named loopback ports (the local mitmproxy for both, x11vnc for `engineer`), and drop port 53, so the local resolver is no way round the proxy (updated 2026-10-16, stage-1 plan); mitmproxy enforces a domain allowlist; `HTTPS_PROXY` points Claude Code, `bootstrap.sh` and the supervisor unit at it, and the Bash sandbox's `network.httpProxyPort` is the same proxy. Root's own traffic (apt) is not restricted. Trial containers get a per-trial list through the same proxy (engineer-feasibility C23, C24).
 - Install-mode list (`templates/egress-install.txt`, from `--install` until `--lock`): everything in the runtime list, the login and consent hosts for the sitting (Google sign-in and consent, GitHub, Cloudflare dashboard, Outreach, WHOOP and Withings developer and consent pages, Slack), plus registry.npmjs.org, github.com and its release and content hosts, the Playwright browser download host, pypi.org and its file host. Hosts are logged so `--lock` can drop what only installs needed. Outreach, WHOOP, Withings and Slack hosts join only with the project that needs them (setup.md, Per-project rows) (updated 2026-10-16, John's decision).
 - Runtime list (`templates/egress-allowlist.txt`, from `--lock`): Anthropic API and claude.ai hosts; github.com and its API host; api.telegram.org; the healthchecks.io and UptimeRobot API hosts; the API hosts of Attio, Clay, n8n, Outreach, Slack, Google, WHOOP, Withings, Cloudflare, Vercel, Supabase and Neon actually in use; osv.dev, deps.dev, the Scorecard API and the official MCP Registry; and, for Chrome, the web-app and login hosts of Attio, Clay, n8n, Outreach and Google sign-in that browser-only work and re-logins need (engineer-browser §Q11). The builder writes the exact host names from the logged requests of the sitting.
 - Adding a host: a denied request becomes a T1 digest line; John runs `sudo setup-root.sh --allow <host>`.
@@ -100,10 +101,10 @@ Rule: the model never receives a value through chat or a file it can read (engin
 | age private key | `secretbroker` home, 0600 | `secretbroker` only | engineer-human-loop E58-E60 |
 | SaaS keys: Attio, n8n (with expiry), Outreach, Google, Slack, WHOOP and Withings OAuth refresh tokens (written by `oauth-capture`, a later stage; per project) (updated 2026-10-16, stage-1 plan) | SOPS files | `secretbroker`; used by `agent-run` jobs; rotated refresh tokens written back on every refresh | engineer-human-loop E21-E25; engineer-feasibility spike 19 |
 | Parent tokens: Cloudflare (Account API Tokens Edit), Vercel, Supabase PAT, Slack config token (12 h) | SOPS files | `secretbroker`; children minted per job | engineer-human-loop E1-E11, E28-E34 |
-| GitHub bot fine-grained PAT (Contents, Pull requests, Metadata) | SOPS files | `secretbroker`; pushes and PRs go through an `agent-run` job (blueprint inference) | engineer-protocol E80, E81 |
+| GitHub bot classic PAT, `repo` scope (`GH_BOT_PAT`) (updated 2026-10-16, stage-1 plan) | SOPS files | `secretbroker`; pushes and PRs go through an `agent-run` job (blueprint inference) | engineer-protocol E80, E81 |
 | Telegram supervisor bot token | SOPS files | `secretbroker` only: the supervisor never holds it, it calls the `tg-send` and `tg-poll` broker jobs (builder default; repo-composition.md Enforcement) | engineer-human-loop E15, E118 |
 | healthchecks.io ping URL, UptimeRobot API key | SOPS files | `secretbroker`; the supervisor pings through the `hc-ping` broker job | engineer-deploy E129, E131 |
-| Clay CLI, `gh`, `gcloud` session stores | `secretbroker`'s home, created when John runs the sign-in as `secretbroker` | `secretbroker` only | setup.md step 27 (builder default) |
+| Clay CLI, `gh`, `gcloud` session stores (deferred with those CLIs (updated 2026-10-16, stage-1 plan)) | `secretbroker`'s home, created when John runs the sign-in as `secretbroker` | `secretbroker` only | setup.md step 27 (builder default) |
 | Deploy key for Autonomy-Research (read-only) (updated 2026-10-16, stage-1 plan) | `/root/.ssh/autonomy-research` | root, used by John for `git pull` before `--install` | setup.md step 5 (builder default) |
 | Telegram Channels bot token | The Channels plugin's config under `engineer`, because the daytime session uses it | `engineer` user, so the model can read it; this bot carries no approvals (ruling 3) | engineer-runtime C54, C57 (blueprint inference on location) |
 | Trial test credentials | Host proxy config | Proxy only; injected on the wire, never inside the trial container | engineer-feasibility C17, C23, C24 |

@@ -14,7 +14,13 @@
   },
   "sandbox": {
     "enabled": true,
-    "allowUnsandboxedCommands": false
+    "allowUnsandboxedCommands": false,
+    "excludedCommands": [
+      "sudo -n -u secretbroker /opt/engineer/bin/agent-run *"
+    ],
+    "network": {
+      "httpProxyPort": 3128
+    }
   },
   "cleanupPeriodDays": 7,
   "autoContinueAtUsageLimit": true,

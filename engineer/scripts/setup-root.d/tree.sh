@@ -51,28 +51,37 @@ install_tree() {
 
 # install_dirs: state, config, browser profile, projects and log dirs.
 install_dirs() {
-  local d
+  local d m="$P/var/lib/engineer/mirrors" pr="$P/home/engineer/projects"
   make_dir "$P/var/lib/engineer" 0755 supervisor:supervisor
   for d in records approvals checks audit-clones; do
     make_dir "$P/var/lib/engineer/$d" 0755 supervisor:supervisor
   done
   make_dir "$P/var/lib/engineer/spool" 1770 supervisor:engineer
   # Bare mirrors: the broker's sync-mirror job writes them; run-task (engineer) reads them; setgid keeps group engineer.
-  make_dir "$P/var/lib/engineer/mirrors" 2750 secretbroker:engineer
+  make_dir "$m" 2750 secretbroker:engineer
   # supervisor reads them too (records.ensure clones engineer-records from a mirror); never writes.
-  run setfacl -m u:supervisor:rX "$P/var/lib/engineer/mirrors"
-  run setfacl -R -d -m u:supervisor:rX "$P/var/lib/engineer/mirrors"
+  # Set by the owner, with a physical walk (-P), so no symlink inside is followed.
+  run runuser -u secretbroker -- setfacl -m u:supervisor:rX "$m"
+  run runuser -u secretbroker -- setfacl -R -P -d -m u:supervisor:rX "$m"
   make_dir "$ETC" 0755
   make_dir "$P/home/engineer/.engineer" 0700 engineer:engineer
   make_dir "$P/home/engineer/.engineer/chrome-profile" 0700 engineer:engineer
-  make_dir "$P/home/engineer/projects" 0755 engineer:engineer
+  make_dir "$pr" 0755 engineer:engineer
   # The egress proxy (user egress) appends egress-denied.log; sticky, so it cannot remove others' logs.
   make_dir "$P/var/log/engineer" 1775 root:egress
-  [ -e "$P/var/log/engineer/egress-denied.log" ] || : > "$P/var/log/engineer/egress-denied.log"
-  chmod 0640 "$P/var/log/engineer/egress-denied.log"
-  run chown egress:egress "$P/var/log/engineer/egress-denied.log"
-  # supervisor reads (never writes) the projects; default ACLs cover files made later.
-  run setfacl -m u:supervisor:x "$P/home/engineer"
-  run setfacl -R -m u:supervisor:rX "$P/home/engineer/projects"
-  run setfacl -R -d -m u:supervisor:rX "$P/home/engineer/projects"
+  egress_log
+  # supervisor reads (never writes) the projects; default ACLs cover files made later. engineer owns
+  # the tree, so engineer sets the ACLs: root never walks a tree the model can write.
+  run runuser -u engineer -- setfacl -m u:supervisor:x "$P/home/engineer"
+  run runuser -u engineer -- setfacl -R -P -m u:supervisor:rX "$pr"
+  run runuser -u engineer -- setfacl -R -P -d -m u:supervisor:rX "$pr"
+}
+
+# egress_log: the proxy's deny log, made by root in a dir egress can write, so never through a symlink.
+egress_log() {
+  local log="$P/var/log/engineer/egress-denied.log"
+  fsafe check "$log" -
+  [ -e "$log" ] || [ -L "$log" ] || printf '' | fsafe write "$log" 0640
+  fsafe chmod "$log" 0640
+  own egress:egress "$log"
 }

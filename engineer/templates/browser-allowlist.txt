@@ -6,4 +6,5 @@ app.attio.com
 *.attio.com
 app.clay.com
 *.clay.com
-# John's n8n host is added here on setup day (Open decision 8: n8n Cloud or self-hosted, and its host name).
+# John's n8n host is added here by a PR on setup day (guide step 15; Open decision 8); its egress entry
+# comes from `setup-root.sh --allow <host>`, kept in /etc/engineer/egress-added.txt.

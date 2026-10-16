@@ -1,4 +1,5 @@
 """records.ensure: clone engineer-records from the broker's mirror when it has the branch, else start one."""
+import json
 import subprocess
 import sys
 import tempfile
@@ -61,7 +62,88 @@ class RecordsTest(unittest.TestCase):
                                                pushed.append, mirror_dir=self.mirrors))
         clone = self.records_dir / "demo"
         self.assertEqual(git("rev-parse", "HEAD~1", cwd=clone), sha)
-        self.assertEqual(pushed, [["push-branch", str(clone), records.BRANCH]])
+        self.assertEqual(pushed, [["sync-mirror", "demo"], ["push-branch", str(clone), records.BRANCH]])
+
+    def run_stub(self, sync_rc=0, sync_out="", push_rc=0, on_sync=None):
+        calls = []
+
+        def run(args):
+            calls.append(list(args))
+            if args[0] == "sync-mirror":
+                if on_sync:
+                    on_sync()
+                return subprocess.CompletedProcess(args, sync_rc, sync_out, "sync failed" if sync_rc else "")
+            return subprocess.CompletedProcess(args, push_rc, "", "push refused" if push_rc else "")
+        run.calls = calls
+        return run
+
+    def test_fork_repro_syncs_mirror_before_first_clone(self):
+        """No mirror copy of engineer-records yet, but GitHub has it: sync first, then clone, never init."""
+        state = {}
+
+        def github_has_records():
+            state["sha"] = self.add_records_branch()
+        run = self.run_stub(on_sync=github_has_records)
+        clone = records.ensure(self.records_dir, "demo", mirror_dir=self.mirrors, run=run)
+        self.assertEqual(run.calls[0], ["sync-mirror", "demo"])
+        self.assertEqual(git("rev-parse", "HEAD", cwd=clone), state["sha"])
+
+    def test_no_init_when_sync_reports_records_the_mirror_lacks(self):
+        run = self.run_stub(sync_out=json.dumps({"project": "demo", "records": "ab" * 20}))
+        with self.assertRaises(records.RecordsError):
+            records.ensure(self.records_dir, "demo", mirror_dir=self.mirrors, run=run)
+        self.assertFalse((self.records_dir / "demo").exists())
+
+    def test_no_init_when_sync_fails(self):
+        with self.assertRaises(records.RecordsError):
+            records.ensure(self.records_dir, "demo", mirror_dir=self.mirrors, run=self.run_stub(sync_rc=1))
+        self.assertFalse((self.records_dir / "demo").exists())
+
+    def test_failed_clone_leaves_no_clone(self):
+        self.add_records_branch()
+        real = records._mirror_git
+
+        def broken(mirror, *args, **kw):
+            if "clone" in args:
+                raise subprocess.CalledProcessError(128, ["git", "clone"])
+            return real(mirror, *args, **kw)
+        records._mirror_git = broken
+        self.addCleanup(setattr, records, "_mirror_git", real)
+        with self.assertRaises(records.RecordsError):
+            records.ensure(self.records_dir, "demo", mirror_dir=self.mirrors)
+        self.assertEqual([p.name for p in self.records_dir.iterdir()], [])
+
+    def test_crash_loop_repro_broken_clone_moved_aside(self):
+        """A crash mid-clone left records/demo/.git empty: every pass used to raise; now it is set aside."""
+        sha = self.add_records_branch()
+        (self.records_dir / "demo" / ".git").mkdir(parents=True)
+        clone = records.ensure(self.records_dir, "demo", mirror_dir=self.mirrors)
+        self.assertEqual(git("rev-parse", "HEAD", cwd=clone), sha)
+        self.assertTrue([p for p in self.records_dir.iterdir() if p.name.startswith("demo.broken-")])
+        self.assertEqual(records.ensure(self.records_dir, "demo", mirror_dir=self.mirrors), clone)
+
+    def test_push_failure_recorded_not_raised_then_retried(self):
+        self.add_records_branch()
+        run = self.run_stub(push_rc=1)
+        self.assertTrue(records.write_and_push(self.records_dir, "demo", "a.md", "x\n", "docs: a", run,
+                                               mirror_dir=self.mirrors))
+        self.assertIn("push-branch exited 1", records.failure(self.records_dir, "demo"))
+        self.assertFalse(records.retry_push(self.records_dir, "demo", self.run_stub(push_rc=1)))
+        self.assertTrue(records.retry_push(self.records_dir, "demo", self.run_stub()))
+        self.assertIsNone(records.failure(self.records_dir, "demo"))
+
+    def test_sync_failure_recorded_not_raised(self):
+        self.assertFalse(records.write_and_push(self.records_dir, "demo", "a.md", "x\n", "docs: a",
+                                                self.run_stub(sync_rc=1), mirror_dir=self.mirrors))
+        self.assertIn("sync-mirror", records.failure(self.records_dir, "demo"))
+
+    def test_write_files_returns_commit(self):
+        out = records.write_files(self.records_dir, "demo", {"approvals/demo/v1/docs/plan/brief.md": b"b\n"},
+                                  "records: plan v1", self.run_stub(), mirror_dir=self.mirrors)
+        clone = self.records_dir / "demo"
+        self.assertEqual((out["committed"], out["pushed"], out["sha"]),
+                         (True, True, git("rev-parse", "HEAD", cwd=clone)))
+        self.assertEqual((clone / "approvals/demo/v1/docs/plan/brief.md").read_bytes(), b"b\n")
 
     def test_default_mirror_dir_is_beside_records_dir(self):
         sha = self.add_records_branch()

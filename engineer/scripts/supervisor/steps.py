@@ -1,6 +1,8 @@
 """Supervisor steps: one task attempt (implementer session, checks, audit, PR) and its outcome.
 
 The commands themselves are in commands.py, the asks in asks.py; loop.py reaches both through here.
+A PASS publishes only the audited sha: push-branch --expect, open-pr, automerge pinned to it; the task is then
+`in_review` until merges.py sees the merge in the broker mirror.
 """
 import hashlib
 import json
@@ -10,7 +12,7 @@ from pathlib import Path
 
 from supervisor import asks, breaker, events, limits, morning, records
 from supervisor.commands import (agent_run, approve_plan, audit, auditor_verdict, automerge, digest,  # noqa: F401
-                                 open_pr, poll_replies, run_task)
+                                 open_pr, poll_replies, push_branch, run_task)
 
 
 class Ctx:
@@ -72,41 +74,57 @@ def attempt(c, task, resume=None) -> dict:
 
 def _verify(c, task, r) -> dict:
     tid = task["id"]
-    chk = run_task(c.conf, c.name, tid, "check")
+    chk = run_task(c.conf, c.name, tid, "check", sha=r.get("head_sha"))
     path = Path(c.conf["STATE_DIR"]) / "checks" / c.name / f"{tid}.json"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(chk, sort_keys=True) + "\n")
     c.ev("check", tid, exit_code=chk["exit_code"], head_sha=chk.get("head_sha"))
+    agent_run(c.conf, "sync-mirror", c.name)  # the audit's base is the mirror's default branch (clone.sh)
     a = audit(c.conf, c.name, tid)
+    head = a.get("head_sha")
     if a["verdict"] != "PASS":
-        return outcome(c, task, r, a["verdict"], a["lines"])
+        return outcome(c, task, r, a["verdict"], a["lines"], head=head)
     ar = run_task(c.conf, c.name, tid, "auditor")
     v, cost = auditor_verdict(ar), ar.get("cost_usd")
     if v is None:
-        return outcome(c, task, r, "FAIL", ["auditor verdict missing or not valid against the schema"], cost)
-    if v["head_sha"] != a["head_sha"]:
-        why = f"auditor head_sha {v['head_sha'][:12]} differs from audit.sh head_sha {a['head_sha'][:12]}"
-        return outcome(c, task, r, "FAIL", [why], cost)
+        return outcome(c, task, r, "FAIL", ["auditor verdict missing or not valid against the schema"], cost, head=head)
+    if v["head_sha"] != head:
+        why = f"auditor head_sha {v['head_sha'][:12]} differs from audit.sh head_sha {head[:12]}"
+        return outcome(c, task, r, "FAIL", [why], cost, head=head)
     if v["verdict"] != "PASS":
-        return outcome(c, task, r, v["verdict"], v["lines"], cost)
+        return outcome(c, task, r, v["verdict"], v["lines"], cost, head=head)
     md = morning.audit_md(task, a, v)
-    c.push(f"audit/AUDIT-{tid}.md", md, f"audit: {tid} PASS at {a['head_sha'][:12]}")
-    pr = open_pr(c.conf, c.name, f"task/{tid}", f"{task['type']}: {task['title']}"[:72], md)
+    c.push(f"audit/AUDIT-{tid}.md", md, f"audit: {tid} PASS at {head[:12]}")
+    return publish(c, task, r, head, md, v["lines"], cost)
+
+
+def publish(c, task, r, sha, body, lines, cost) -> dict:
+    """Push task/<id> at exactly the audited sha, open its PR and ask for the merge; the task is in_review."""
+    tid = task["id"]
+    p = push_branch(c.conf, Path(c.conf["PROJECTS_DIR"]) / c.name, f"task/{tid}", sha)
+    if p.returncode:
+        why = f"push of the audited {sha[:12]} refused or failed (exit {p.returncode}): {p.stderr.strip()[-160:]}"
+        return outcome(c, task, r, "NEEDS-JOHN", [why], cost, head=sha)
+    pr = open_pr(c.conf, c.name, f"task/{tid}", f"{task['type']}: {task['title']}"[:72], body)
     if not pr:
-        return outcome(c, task, r, "NEEDS-JOHN", ["open-pr failed; the audited branch is waiting"], cost)
-    c.ev("pr_open", tid, head_sha=a["head_sha"], detail=pr)
-    m = automerge(c.conf, c.name, pr["number"])
-    if m.get("tier") == 1 and m.get("auto_merge"):
-        c.ev("merge", tid, detail={"tier": 1, "auto_merge": True, "number": pr["number"], "url": pr.get("url")})
+        return outcome(c, task, r, "NEEDS-JOHN", ["open-pr failed; the audited branch is pushed and waiting"], cost,
+                       head=sha)
+    c.ev("pr_open", tid, head_sha=sha, detail=pr)
+    m = automerge(c.conf, c.name, pr["number"], sha)
+    if m.get("auto_merge"):
+        c.ev("merge", tid, head_sha=sha, detail={"tier": m.get("tier"), "auto_merge": True, "number": pr["number"],
+                                                 "url": pr.get("url")})
     else:
         why = ", ".join(m.get("reasons") or []) or "auto-merge not enabled"
-        asks.ask(c, tid, "merge", f"Merge PR {pr.get('url') or pr['number']}? ({why})", ref=pr.get("url"))
-    return outcome(c, task, r, "PASS", v["lines"], cost)
+        asks.ask(c, tid, "merge", f"Review PR {pr.get('url') or pr['number']} on GitHub ({why}); it merges once "
+                 f"you approve commit {sha[:12]}", ref=pr.get("url"))
+    return outcome(c, task, r, "PASS", lines, cost, status="in_review", head=sha)
 
 
-def outcome(c, task, r, verdict, lines, auditor_cost=None, status=None) -> dict:
-    """Append the attempt's `audit` outcome event (status done|retry|blocked|needs_john); return it.
+def outcome(c, task, r, verdict, lines, auditor_cost=None, status=None, head=None) -> dict:
+    """Append the attempt's `audit` outcome event (status in_review|retry|blocked|needs_john); return it.
 
+    head: the sha audit.sh audited (recorded as head_sha and detail.audited_sha), else the run's head.
     diff: the run left a commit since its base (run-result base_sha) that no earlier attempt had.
     """
     tid, evs = task["id"], events.read(c.events)
@@ -120,6 +138,6 @@ def outcome(c, task, r, verdict, lines, auditor_cost=None, status=None) -> dict:
     head = r.get("head_sha")
     detail = {"verdict": verdict, "status": status, "reason": "; ".join(lines)[:300], "lines": list(lines)[:15],
               "sig": sig, "diff": bool(head) and head != r.get("base_sha") and head not in heads,
-              "auditor_cost_usd": auditor_cost}
-    c.ev("audit", tid, head_sha=r.get("head_sha"), detail=detail)
+              "auditor_cost_usd": auditor_cost, "audited_sha": head}
+    c.ev("audit", tid, head_sha=head or r.get("head_sha"), detail=detail)
     return {"status": status}

@@ -1,5 +1,10 @@
-"""MORNING.md: the night in one page, rendered from events.jsonl and RUN_STATUS.json."""
+"""MORNING.md: the night in one page, rendered from events.jsonl and RUN_STATUS.json, and the end of a night."""
+import sys
 from collections import Counter
+
+from approvals import telegram
+from supervisor import events as _events
+from supervisor import nightwin, run_status
 
 
 def _outcomes(events: list) -> dict:
@@ -38,13 +43,15 @@ def render(events: list, run_status: dict) -> str:
     out = [f"# Morning report: {project}" + (f", night of {night}" if night else ""), "",
            f"State: **{state}**" + (f" - {reason}" if reason else ""), ""]
     outcomes = _outcomes(events)
-    by = {s: [t for t, d in outcomes.items() if d["status"] == s] for s in ("done", "blocked", "needs_john")}
+    by = {s: [t for t, d in outcomes.items() if d["status"] == s]
+          for s in ("done", "in_review", "blocked", "needs_john")}
 
     def noted(tid):
         note = outcomes[tid].get("reason")
         return f"- {tid}: {note}" if note else f"- {tid}"
 
     out += _section("Done", [f"- {t}" for t in by["done"]])
+    out += _section("In review (PR open, waiting for the merge)", [f"- {t}" for t in by["in_review"]])
     out += _section("Blocked", [noted(t) for t in by["blocked"]])
     out += _section("Needs John", [noted(t) for t in by["needs_john"]])
     prs = []
@@ -69,3 +76,28 @@ def audit_md(task: dict, script: dict, auditor: dict) -> str:
     return "\n".join([f"# AUDIT {task['id']}: {auditor['verdict']}", "", f"Task: {task['title']}",
                       f"HEAD: {script['head_sha']}", "", "## audit.sh", *[f"- {x}" for x in script["lines"]], "",
                       "## Auditor", *[f"- {x}" for x in auditor["lines"]], ""])
+
+
+def finish_night(c, state, reason):
+    """Terminal state: RUN_STATUS.json, MORNING.md (local and on engineer-records), night_end, digest.
+    A records failure never stops night_end or the digest (records keeps it for the retry and the ask)."""
+    evs = _events.read(c.events)
+    idx, _ = _events.current_night(evs)
+    night = evs[idx or 0:]
+    st = _events.state(night)
+    key = ((night[0].get("detail") or {}).get("night") if night and idx is not None
+           else nightwin.local_date(c.now, c.tz))
+    counts = {k: len(st[k]) for k in ("done", "blocked", "needs_john")}
+    counts["sessions"] = sum(1 for e in night if e["event"] == "task_end")
+    last = next((e["task_id"] for e in reversed(night) if e.get("task_id")), None)
+    status = run_status.write(c.status, state, reason=reason, last_task=last, counts=counts, project=c.name,
+                              started=night[0]["ts"] if night else None, ended=_events.now_iso(c.now),
+                              updated=_events.now_iso(c.now))
+    md = render(night, status)
+    (c.dir / "MORNING.md").write_text(md)
+    try:
+        c.push(f"docs/runs/{key}-MORNING.md", md, f"records: morning report {key}")
+    except Exception as e:  # noqa: BLE001 - the night must still end and John must still hear of it
+        print(f"supervisor: records push of MORNING.md failed: {type(e).__name__}: {e}", file=sys.stderr)
+    c.ev("night_end", detail={"state": state, "reason": reason})
+    telegram.send_digest(c, f"{c.name}: night of {key} ended {state}" + (f" ({reason})" if reason else ""))

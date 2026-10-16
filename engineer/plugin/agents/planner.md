@@ -25,4 +25,5 @@ Rules:
 - When debugging a blocked task: read its blocked note, its check output and the files it
   touched; state the root cause with `path:line` evidence before you change the plan.
 
+You have no shell, so you never commit or push; the session that started you commits `docs/plan/`.
 Finish with a short summary: files written, tasks added or changed, open questions for John.

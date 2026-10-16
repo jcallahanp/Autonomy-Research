@@ -31,11 +31,11 @@ install_users() {
 AGE_DIR=/home/secretbroker/.config/sops/age
 
 # install_age_key: make the key with age-keygen if there is none (never replaced, never printed) and write
-# its public recipient beside it. age-keygen comes from apt-packages.txt (`age`).
+# its public recipient beside it. age-keygen comes from apt-packages.txt (`age`). It runs as secretbroker,
+# and root writes in that home only through fsafe (no symlink followed).
 install_age_key() {
   local d pub key="$P$AGE_DIR/keys.txt" rec="$P$AGE_DIR/recipient.txt"
   for d in .config .config/sops .config/sops/age; do
-    [ ! -L "$P/home/secretbroker/$d" ] || die "$P/home/secretbroker/$d is a symlink"
     make_dir "$P/home/secretbroker/$d" 0700 secretbroker:secretbroker
   done
   [ ! -L "$key" ] && [ ! -L "$rec" ] || die "age key or recipient path is a symlink"
@@ -43,15 +43,16 @@ install_age_key() {
     echo "setup-root: age key exists; not replaced"
   else
     # age-keygen writes the private key only to the file (0600) and the public key to stderr.
-    (umask 077 && run age-keygen -o "$key")
+    (umask 077 && run runuser -u secretbroker -- age-keygen -o "$key")
   fi
-  run chown secretbroker:secretbroker "$key"
   if [ "$DRY_RUN" = 1 ] && [ ! -e "$key" ]; then
+    own secretbroker:secretbroker "$key"
     echo "RUN: age-keygen -y $key > $rec"
   else
-    chmod 0600 "$key"
+    fsafe chmod "$key" 0600
+    own secretbroker:secretbroker "$key"
     pub=$(age-keygen -y "$key") && [[ $pub =~ ^age1[a-z0-9]+$ ]] || die "cannot read the recipient of $key"
-    printf '%s\n' "$pub" | write_file "$rec" 0644
-    run chown secretbroker:secretbroker "$rec"
+    printf '%s\n' "$pub" | fsafe write "$rec" 0644
+    own secretbroker:secretbroker "$rec"
   fi
 }

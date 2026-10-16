@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """The supervisor loop (runs as `supervisor` under systemd): one task at a time from each project's DAG.
 
-Per iteration and project: ingest the hook spool, reconcile, ping hc-ping, apply Telegram replies, then
-inside the night window run the first ready task; outside it, end an open night and send the digest when due.
+Per iteration: poll Telegram once and apply replies and timeouts for every project at once (item numbers
+are global). Then per project: ingest the hook spool, reconcile, ping hc-ping, retry a failed records push,
+raise PROGRESS.md asks, run the merge pass, send reminders; inside the night window run the first ready task;
+outside it, end an open night and send the digest when due. The kill switch stops tasks, never messages.
 Usage: loop.py [--projects FILE] [--project NAME] [--once] [--now ISO]
 """
 import argparse
@@ -17,7 +19,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import yaml  # noqa: E402
 
 from eng import conf as engconf  # noqa: E402
+from approvals import telegram  # noqa: E402
 from supervisor import asks, breaker, dag, events, morning, nightwin, run_status, spool, steps  # noqa: E402
+
+try:
+    from supervisor import merges  # noqa: E402  (the merge pass; F1's module, absent in older trees)
+except ImportError:  # pragma: no cover
+    merges = None
 
 ROOT = Path(__file__).resolve().parents[2]
 SLEEP_SECONDS = 60
@@ -51,39 +59,13 @@ def read_projects(path, only=None) -> list:
     return rows
 
 
-def send_digest(c, header=None):
-    """Send the digest; record which T1 items it listed, the only ones a later `all y` may cover."""
-    msgs, shown = steps.digest(c)
-    for text in ([header] if header else []) + msgs:
-        steps.agent_run(c.conf, "tg-send", stdin=text)
-    if shown is not None:
-        c.ev("digest", detail={"items": shown})
-    c.dir.mkdir(parents=True, exist_ok=True)
-    (c.dir / "last-digest").write_text(nightwin.local_date(c.now, c.tz) + "\n")
-
-
 def end_night(c, state, reason):
-    """Terminal state: RUN_STATUS.json, MORNING.md (local and on engineer-records), night_end, digest."""
-    evs = events.read(c.events)
-    idx, _ = events.current_night(evs)
-    night = evs[idx or 0:]
-    st = events.state(night)
-    key = ((night[0].get("detail") or {}).get("night") if night and idx is not None
-           else nightwin.local_date(c.now, c.tz))
-    counts = {k: len(st[k]) for k in ("done", "blocked", "needs_john")}
-    counts["sessions"] = sum(1 for e in night if e["event"] == "task_end")
-    last = next((e["task_id"] for e in reversed(night) if e.get("task_id")), None)
-    status = run_status.write(c.status, state, reason=reason, last_task=last, counts=counts, project=c.name,
-                              started=night[0]["ts"] if night else None, ended=events.now_iso(c.now),
-                              updated=events.now_iso(c.now))
-    md = morning.render(night, status)
-    (c.dir / "MORNING.md").write_text(md)
-    c.push(f"docs/runs/{key}-MORNING.md", md, f"records: morning report {key}")
-    c.ev("night_end", detail={"state": state, "reason": reason})
-    send_digest(c, f"{c.name}: night of {key} ended {state}" + (f" ({reason})" if reason else ""))
+    """Terminal state (morning.finish_night): RUN_STATUS.json, MORNING.md, night_end, digest."""
+    morning.finish_night(c, state, reason)
 
 
 def _after(c, res: dict):
+    asks.deadends(c)  # a blocked or needs_john outcome becomes a T1 line before the digest
     if "night" in res:
         end_night(c, res["night"], res["reason"])
     elif "wait" in res:
@@ -91,26 +73,40 @@ def _after(c, res: dict):
                          project=c.name, updated=events.now_iso(c.now))
 
 
-def iterate(c, polled: str):
+def housekeeping(c):
+    """Every pass, STOP or not: spool, reconcile, heartbeat, records retry, asks, merge pass, reminders."""
     spool.ingest(c.conf["SPOOL_DIR"], c.events, c.name)
     events.reconcile(c.events, c.name)
     steps.agent_run(c.conf, "hc-ping")
-    asks.apply_replies(c, polled)
+    asks.records_health(c)
     asks.from_progress(c)  # the clone's asks (a plan approval comes before any task runs)
+    if merges is not None and hasattr(merges, "pass_open_prs"):
+        merges.pass_open_prs(c.conf, c.name, c.now)
+    asks.deadends(c)
+    telegram.reminders(c)
+
+
+def _stop(c, open_night, reason):
+    if open_night:
+        return end_night(c, "stopped_by_bound", reason)
+    return run_status.write(c.status, "stopped_by_bound", reason=reason, project=c.name,
+                            updated=events.now_iso(c.now))
+
+
+def iterate(c):
+    housekeeping(c)
     win = c.defaults["night"]
     idx, open_night = events.current_night(events.read(c.events))
-    if Path(c.conf["KILL_SWITCH"]).exists():
-        if open_night:
-            return end_night(c, "stopped_by_bound", "kill switch")
-        return run_status.write(c.status, "stopped_by_bound", reason="kill switch", project=c.name,
-                                updated=events.now_iso(c.now))
+    stop = Path(c.conf["KILL_SWITCH"]).exists()
     if not nightwin.in_window(c.now, win["start"], win["end"], c.tz):
-        if open_night:
-            return end_night(c, "stopped_by_bound", "night window ended")
+        if open_night or stop:
+            _stop(c, open_night, "kill switch" if stop else "night window ended")
         last = c.dir / "last-digest"
         if nightwin.digest_due(c.now, last.read_text().strip() if last.exists() else None, win["digest_at"], c.tz):
-            send_digest(c)
+            telegram.send_digest(c)
         return None
+    if stop:
+        return _stop(c, open_night, "kill switch")
     key = nightwin.night_key(c.now, win["start"], c.tz)
     evs = events.read(c.events)
     if idx is None or (evs[idx].get("detail") or {}).get("night") != key:
@@ -131,18 +127,23 @@ def iterate(c, polled: str):
     if reason:
         return end_night(c, "stopped_by_bound", reason)
     st, by_id = events.state(evs), {t["id"]: t for t in tasks}
+    again = asks.unblocked(evs)
     for tid, wait in st["waiting"].items():
         if tid in by_id:
             if c.now < _when(wait["reset_at"]):
                 return _after(c, {"wait": wait["reset_at"]})
             return _after(c, steps.attempt(c, by_id[tid], resume=wait["session_id"]))
     done = st["done"] | {t["id"] for t in tasks if t["status"] == "done"}
-    stuck = st["blocked"] | st["needs_john"] | {t["id"] for t in tasks if t["status"] in ("blocked", "needs_john")}
-    ready = dag.ready(tasks, done, stuck, st["running"])
+    stuck = (st["blocked"] | st["needs_john"]) - again
+    stuck |= {t["id"] for t in tasks if t["status"] in ("blocked", "needs_john")}
+    review = st.get("in_review", set()) - done
+    ready = dag.ready(tasks, done, stuck | review, st["running"])
     if ready:
         return _after(c, steps.attempt(c, by_id[ready[0]]))
     if all(t["id"] in done for t in tasks):
         return end_night(c, "done", "all tasks done")
+    if review and not stuck:
+        return end_night(c, "done", "waiting for merge: " + ", ".join(sorted(review)))
     return end_night(c, "blocked", "no task ready; stuck: " + (", ".join(sorted(stuck)) or "none"))
 
 
@@ -167,10 +168,12 @@ def main(argv=None) -> int:
     try:
         while True:
             now = _when(a.now) if a.now else datetime.now(timezone.utc)
-            polled = steps.agent_run(conf, "tg-poll").stdout
+            poll = steps.agent_run(conf, "tg-poll")
+            telegram.apply_all([steps.Ctx(ROOT, conf, defaults, r, now) for r in rows],
+                               poll.stdout if poll.returncode == 0 else "")
             for row in rows:
                 current = steps.Ctx(ROOT, conf, defaults, row, now)
-                iterate(current, polled)
+                iterate(current)
             current = None
             if a.once:
                 return 0

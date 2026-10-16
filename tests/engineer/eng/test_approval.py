@@ -21,8 +21,9 @@ class ApprovalTest(unittest.TestCase):
     def tearDown(self):
         self._tmp.cleanup()
 
-    def test_make_has_four_hashes_and_validates(self):
-        self.assertEqual(len(self.a["files"]), 4)
+    def test_make_has_five_hashes_and_validates(self):
+        self.assertIn("docs/plan/tasks.json", approval.SIGNED)  # the plan John approves includes the task list
+        self.assertEqual(len(self.a["files"]), 5)
         self.assertTrue(all(len(v) == 64 for v in self.a["files"].values()))
         self.assertEqual(schema.validate(self.a, schema.load(REPO / "engineer", "approval")), [])
 
@@ -40,6 +41,12 @@ class ApprovalTest(unittest.TestCase):
         errs = approval.check(self.repo, self.a)
         self.assertEqual(len(errs), 1)
         self.assertIn("docs/plan/profile.yaml", errs[0])
+
+    def test_check_edited_tasks_json(self):
+        (self.repo / "docs/plan/tasks.json").write_text('{"version": 1, "tasks": []}\n')
+        errs = approval.check(self.repo, self.a)
+        self.assertEqual(len(errs), 1)
+        self.assertIn("docs/plan/tasks.json", errs[0])
 
     def test_check_none(self):
         self.assertEqual(approval.check(self.repo, None), ["no approval"])

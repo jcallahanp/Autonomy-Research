@@ -14,14 +14,9 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT / "scripts") not in sys.path:
     sys.path.insert(0, str(ROOT / "scripts"))
 from approvals import items as _items  # noqa: E402
+from approvals.render import line, one_line, render_reminder, render_t2  # noqa: E402,F401
 
 LIMIT = 4096
-
-
-def one_line(text) -> str:
-    """Collapse whitespace and control characters so an item is exactly one line."""
-    text = "".join(c if c.isprintable() else " " for c in str(text))
-    return " ".join(text.split())
 
 
 def chunk(lines: list, limit: int = LIMIT) -> list:
@@ -54,24 +49,12 @@ def shown(open_items: dict, max_open: int = 5) -> list:
 
 
 def render(open_items: dict, max_open: int = 5) -> list:
-    """T1 digest messages: oldest first, at most max_open lines plus "+K more in MORNING.md"."""
+    """T1 digest messages: oldest first, at most max_open lines plus "+K more in the next digest"."""
     t1 = [it for it in _oldest_first(open_items) if it.get("tier") == "T1"]
-    lines = []
-    for it in shown(open_items, max_open):
-        n = it["item"]
-        lines.append(f'{n}. {one_line(it.get("text", ""))} (default: {one_line(it.get("default", "no"))}). '
-                     f'Reply "{n} y" or "{n} n".')
+    lines = [line(it) for it in shown(open_items, max_open)]
     if len(t1) > max_open:
-        lines.append(f"+{len(t1) - max_open} more in MORNING.md")
+        lines.append(f"+{len(t1) - max_open} more in the next digest")
     return chunk(lines)
-
-
-def render_t2(item: dict) -> str:
-    """The separate hard-gate message; no reply means no."""
-    n = item["item"]
-    return (f"HARD GATE {n}: {one_line(item.get('text', ''))}\n"
-            f"To approve, reply exactly: CONFIRM {n} {one_line(item['phrase'])}\n"
-            "No reply means no.")
 
 
 def _max_open_default() -> int:

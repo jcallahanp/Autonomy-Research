@@ -29,7 +29,8 @@
         "docs/plan/brief.md",
         "docs/plan/requirements.md",
         "docs/plan/integrations.yaml",
-        "docs/plan/profile.yaml"
+        "docs/plan/profile.yaml",
+        "docs/plan/tasks.json"
       ],
       "properties": {
         "docs/plan/brief.md": {
@@ -45,6 +46,10 @@
           "pattern": "^[0-9a-f]{64}$"
         },
         "docs/plan/profile.yaml": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "docs/plan/tasks.json": {
           "type": "string",
           "pattern": "^[0-9a-f]{64}$"
         }

@@ -43,9 +43,10 @@ def valid(value, name) -> bool:
     return isinstance(value, dict) and not schema.validate(value, schema.load(ROOT, name))
 
 
-def run_task(conf, project, task_id, profile, resume=None) -> dict:
-    """RUN_TASK P ID PROFILE [--resume S]; its run-result line, or {exit_code, is_error: true} if none."""
-    p = _cmd(conf, "RUN_TASK", project, task_id, profile, *(["--resume", resume] if resume else []))
+def run_task(conf, project, task_id, profile, resume=None, sha=None) -> dict:
+    """RUN_TASK P ID PROFILE [--resume S] [--sha SHA]; its run-result line, or {exit_code, is_error: true} if none."""
+    extra = (["--resume", resume] if resume else []) + (["--sha", sha] if sha else [])
+    p = _cmd(conf, "RUN_TASK", project, task_id, profile, *extra)
     result = json_line(p.stdout)
     if not valid(result, "run-result"):
         return {"exit_code": p.returncode, "is_error": True, "output_tail": (p.stdout + p.stderr)[-TAIL:]}
@@ -78,8 +79,14 @@ def open_pr(conf, project, branch, title, body) -> dict | None:
     return pr if pr and isinstance(pr.get("number"), int) else None
 
 
-def automerge(conf, project, number) -> dict:
-    return json_line(agent_run(conf, "automerge", project, number).stdout) or {}
+def push_branch(conf, repo_dir, branch, sha) -> subprocess.CompletedProcess:
+    """push-branch REPO_DIR BRANCH --expect SHA: push exactly the audited commit (refused if the head moved)."""
+    return agent_run(conf, "push-branch", repo_dir, branch, "--expect", sha)
+
+
+def automerge(conf, project, number, sha) -> dict:
+    """automerge P PR SHA: merges only GitHub's head == SHA (the audited commit); its JSON reply or {}."""
+    return json_line(agent_run(conf, "automerge", project, number, sha).stdout) or {}
 
 
 def _approvals(c, script, *extra, stdin=None):

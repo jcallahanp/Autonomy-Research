@@ -1,8 +1,8 @@
 # Engineer egress: runtime list, active from `setup-root.sh --lock` (copied with egress-added.txt
 # to /etc/engineer/egress.txt). One eng.hosts pattern per line: an exact host or `*.suffix`.
 # Provisional: the builder rewrites this list from the hosts logged during the setup sitting
-# (research/blueprint/stack.md, Egress). n8n hosts are added on setup day once John says where
-# n8n runs (Open decision 8). Never add a bare `*`.
+# (research/blueprint/stack.md, Egress). n8n hosts are added on setup day with `setup-root.sh --allow`
+# (guide step 15; Open decision 8). Never add a bare `*`.
 
 # Claude (Max via /login, Remote Control)
 claude.ai

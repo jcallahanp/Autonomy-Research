@@ -69,6 +69,34 @@ class Items(unittest.TestCase):
         self.assertEqual(items.next_item([ask(3), ask(7)]), 8)
         self.assertEqual(items.next_item([]), 1)
 
+    def test_next_global_counts_every_project(self):
+        import json
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            for name, n in (("demo", 3), ("gtm", 9)):
+                (Path(tmp) / name).mkdir()
+                ev = ask(n)
+                ev["project"] = name
+                (Path(tmp) / name / "events.jsonl").write_text(json.dumps(ev) + "\n")
+            (Path(tmp) / "approvals").mkdir()
+            self.assertEqual(items.next_global(tmp), 10)
+            self.assertEqual(items.next_global(Path(tmp) / "nope"), 1)
+
+    def test_open_items_carry_project_and_task(self):
+        ev = ask(1)
+        ev["task_id"] = "t1"
+        got = items.open_items([ev], [], NOW)[1]
+        self.assertEqual((got["project"], got["task_id"]), ("demo", "t1"))
+
+    def test_seen_last_digest_and_listed(self):
+        def sent(event, ts, nums):
+            return {"ts": ts, "project": "demo", "event": event, "detail": {"items": nums}}
+        evs = [sent("digest", "2026-10-20T07:30:00Z", [1, 2]), sent("notify", "2026-10-20T08:00:00Z", [5]),
+               sent("digest", "2026-10-20T09:00:00Z", [3]), sent("digest", "2026-10-20T11:00:00Z", [4])]
+        at = int(items.parse_ts("2026-10-20T10:00:00Z").timestamp())
+        self.assertEqual(items.seen(evs, at), ({3}, {1, 2, 3, 5}))
+        self.assertEqual(items.seen(evs, 0), (set(), set()))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -12,7 +12,10 @@ from hookfix import testlib
 HOOKS = testlib.ENGINEER / "plugin" / "hooks" / "hooks.json"
 MANAGED = testlib.ENGINEER / "templates" / "managed-hooks.json"
 PLUGIN_VAR = "${CLAUDE_PLUGIN_ROOT}"
-CMD = re.compile(r'^python3 -I "(?P<path>[^"]+)"$')
+# R1-6: the system interpreter by absolute path, isolated (-I), so nothing on engineer's PATH
+# (~/.local/bin comes first) or in the hook's directory or environment can stand in for it.
+PY = "/usr/bin/python3 -I"
+CMD = re.compile(r'^/usr/bin/python3 -I "(?P<path>[^"]+)"$')
 EXPECTED = {  # event: (matcher or None, script, timeout seconds)
     "SessionStart": ("startup|resume|compact", "session_start.py", None),
     "PreToolUse": ("*", "pre_tool_use.py", 10),
@@ -42,7 +45,7 @@ class RegistrationTest(unittest.TestCase):
                 self.assertEqual(group.get("matcher"), matcher)
                 (h,) = group["hooks"]
                 self.assertEqual(h["type"], "command")
-                self.assertEqual(h["command"], f'python3 -I "{PLUGIN_VAR}/hooks/{script}"')
+                self.assertEqual(h["command"], f'{PY} "{PLUGIN_VAR}/hooks/{script}"')
                 self.assertEqual(h.get("timeout"), timeout)
 
     def test_stop_gate_outlives_its_check(self):
@@ -60,6 +63,11 @@ class RegistrationTest(unittest.TestCase):
             self.assertIsNotNone(m, h["command"])
             path = m.group("path").replace(PLUGIN_VAR, str(testlib.ENGINEER / "plugin"))
             self.assertTrue(testlib.Path(path).is_file(), path)
+
+    def test_no_bare_interpreter(self):
+        for path in (HOOKS, MANAGED):
+            for h in self.commands(json.loads(path.read_text())):
+                self.assertTrue(h["command"].startswith(PY + " "), f"{path.name}: {h['command']}")
 
     def test_managed_equals_plugin_after_substitution(self):
         text = HOOKS.read_text().replace(PLUGIN_VAR, "/opt/engineer/plugin")

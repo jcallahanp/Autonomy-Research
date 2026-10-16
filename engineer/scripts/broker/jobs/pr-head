@@ -1,0 +1,27 @@
+#!/bin/bash
+set -euo pipefail
+# pr-head PROJECT PR   (agent-run job; caller supervisor only)
+# Reads one PR of the project's repo with gh (bot PAT as GH_TOKEN in the environment only) and prints
+# {"number", "state", "head_sha", "head", "base", "url"}. The supervisor uses it to bind a plan approval
+# ask to the exact commit John can see on GitHub (approvals/plansnap.py), then fetches that commit into
+# the broker mirror with `sync-mirror PROJECT --pr N` and hashes the signed files there.
+# Exit: 64 usage, 65 refused, 77 caller not allowed, 1 gh failed or gave no head commit.
+root=$(cd "$(dirname "$(readlink -f "$0")")/../../.." && pwd)
+# shellcheck disable=SC1091
+. "$root/scripts/broker/common.sh"
+need_caller
+[ "$AGENT_RUN_CALLER" = supervisor ] || die 77 "only supervisor may read a PR head"
+[ $# -eq 2 ] || die 64 "usage: pr-head PROJECT PR"
+project=$1 pr=$2
+[[ "$pr" =~ ^[1-9][0-9]{0,8}$ ]] || die 65 "PR must be a number"
+project_row "$project"
+
+tok=$(secret GH_BOT_PAT)
+[ -n "$tok" ] || die 1 "GH_BOT_PAT is empty"
+view=$(GH_TOKEN=$tok gh pr view "$pr" --repo "$P_REPO" --json number,state,headRefOid,headRefName,baseRefName,url) \
+  || die 1 "gh pr view failed"
+unset tok
+head=$(jq -r '.headRefOid // ""' <<<"$view")
+[[ "$head" =~ ^[0-9a-f]{40}$ ]] || die 1 "gh gave no head commit"
+jq -c '{number: .number, state: .state, head_sha: .headRefOid, head: .headRefName, base: .baseRefName,
+  url: .url}' <<<"$view"

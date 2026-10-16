@@ -18,6 +18,9 @@ mkdir -p "$p/src" "$p/tests"
 echo 'x = 1' > "$p/src/a.py"
 printf 'def test_a():\n    assert 1\n' > "$p/tests/test_a.py"
 g add -A; g commit -qm base
+# The broker's mirror of GitHub's default branch: the audit's only source for the base.
+mirror="$MIRROR_DIR/demo.git"
+git clone -q --bare "$p" "$mirror"
 g checkout -qb task/t1
 echo 'x = 2' > "$p/src/a.py"; g commit -qam change
 
@@ -136,3 +139,42 @@ set_result "$(g rev-parse HEAD)" 'TESTS_RUN=3'
 audit
 [ ! -e "$T/pwned" ] || fail "test_audit_ignores_repo_config: a trap in the project's git config ran"
 [ "$rc" -eq 0 ] || fail "repo config: exit $rc: $out $(cat "$T/err")"
+
+# --- test_audit_ignores_local_main_commits: a commit on the engineer clone's own main is not the base.
+g checkout -q main
+mkdir -p "$p/.github/workflows"; echo 'on: push' > "$p/.github/workflows/sneak.yml"
+g add -A; g commit -qm "ci: sneak" --no-verify
+g checkout -q -B task/t1 main
+echo 'x = 6' > "$p/src/a.py"; g commit -qam benign --no-verify
+set_result "$(g rev-parse HEAD)" 'TESTS_RUN=3'
+audit
+[ "$rc" -eq 1 ] || fail "test_audit_ignores_local_main_commits: exit $rc: $out $(cat "$T/err")"
+grep -q '.github/workflows/sneak.yml' <<< "$(field lines)" || fail "test_audit_ignores_local_main_commits: no line: $out"
+g checkout -q main; g reset -q --hard HEAD~1; g checkout -q -B task/t1 main
+echo 'x = 7' > "$p/src/a.py"; g commit -qam again --no-verify
+
+# The task diff may not touch docs/plan/** (plan work goes through the plan PR).
+mkdir -p "$p/docs/plan"; echo '{"version": 1, "tasks": []}' > "$p/docs/plan/tasks.json"
+g add -A; g commit -qm "chore: status" --no-verify
+set_result "$(g rev-parse HEAD)" 'TESTS_RUN=3'
+audit
+[ "$rc" -eq 1 ] || fail "plan path: exit $rc: $out"
+grep -q '^plan: docs/plan/tasks.json' <<< "$(field lines)" || fail "plan path: no line: $out"
+g reset -q --hard HEAD~1
+set_result "$(g rev-parse HEAD)" 'TESTS_RUN=3'
+audit
+[ "$rc" -eq 0 ] || fail "plan path reset: exit $rc: $out $(cat "$T/err")"
+
+# A head that does not contain the mirror's default branch fails.
+git clone -q "$mirror" "$T/up"
+echo upstream > "$T/up/UP.md"; git -C "$T/up" add UP.md; git -C "$T/up" commit -qm "docs: up"
+git -C "$T/up" push -q origin main
+audit
+[ "$rc" -eq 1 ] || fail "not descendant: exit $rc: $out"
+grep -q '^base: ' <<< "$(field lines)" || fail "not descendant: no base line: $out"
+
+# No mirror: the branch cannot be audited.
+rm -rf "$mirror"
+audit
+[ "$rc" -eq 3 ] || fail "no mirror: exit $rc: $out"
+exit 0

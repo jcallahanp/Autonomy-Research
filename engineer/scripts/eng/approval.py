@@ -1,4 +1,7 @@
-"""Plan approval: the four files John signs, their sha256 hashes, and the check the hooks run.
+"""Plan approval: the five files John signs, their sha256 hashes, and the check the hooks run.
+
+tasks.json is signed too: each task's `check` command runs on the droplet, so only the approved bytes may
+supply it (runtask/check.py), and a task never edits it (task status lives in the supervisor's events).
 
 The live approval is $STATE_DIR/approvals/<project>.json, written by the supervisor only.
 """
@@ -6,7 +9,7 @@ import hashlib
 from pathlib import Path
 
 SIGNED = ("docs/plan/brief.md", "docs/plan/requirements.md",
-          "docs/plan/integrations.yaml", "docs/plan/profile.yaml")
+          "docs/plan/integrations.yaml", "docs/plan/profile.yaml", "docs/plan/tasks.json")
 
 
 def _sha256(path: Path) -> str:

@@ -56,6 +56,21 @@ for f in "$T/argv.log" "$T/out" "$T/err" "$BROKER_STATE_DIR/agent-run.log"; do
   grep -qe TEST-TOKEN-PAT -e "$b64" "$f" && fail "test_sync_mirror_token_not_in_argv: token in $f"
 done
 
+# --- test_sync_mirror_pr_head: --pr N also fetches GitHub's refs/pull/N/head (the plan PR John approves).
+git -C "$T/seed" checkout -q -b plan/v1
+echo plan > "$T/seed/plan.txt" && git -C "$T/seed" add plan.txt && git -C "$T/seed" commit -qm "docs: plan v1"
+psha=$(git -C "$T/seed" rev-parse HEAD)
+git -C "$T/seed" checkout -q main
+git -C "$T/seed" push -q "$remote" "$psha:refs/pull/3/head"
+jq -e '.pr == null' "$T/out" >/dev/null || fail "pr without --pr: $(cat "$T/out")"
+expect 0 "sync with --pr" as supervisor sync-mirror demo --pr 3
+[ "$(git --git-dir="$m" rev-parse refs/pull/3/head 2>/dev/null)" = "$psha" ] || fail "PR head not in the mirror"
+jq -e --arg s "$psha" '.pr == {number: 3, sha: $s} and .branch == "main"' "$T/out" >/dev/null \
+  || fail "--pr output: $(cat "$T/out")"
+expect 1 "unknown PR" as supervisor sync-mirror demo --pr 4
+expect 65 "PR not a number" as supervisor sync-mirror demo --pr 3x
+expect 64 "--pr without number" as supervisor sync-mirror demo --pr
+
 # --- test_sync_mirror_refusals
 expect 77 "engineer may not sync" as engineer sync-mirror demo
 expect 65 "bad project name" as supervisor sync-mirror Bad_Name

@@ -9,7 +9,7 @@ from approvals import replies  # noqa: E402
 
 
 def t1(n):
-    return {"item": n, "tier": "T1", "kind": "merge", "text": f"item {n}", "default": "no"}
+    return {"item": n, "tier": "T1", "kind": "merge", "text": f"item {n}", "default": "no", "reversible": True}
 
 
 def t2(n, phrase):
@@ -35,6 +35,21 @@ class Replies(unittest.TestCase):
         self.assertTrue(out["errors"])
         out = replies.parse("2 y", {1: t1(1), 2: t1(2)}, shown={1})
         self.assertEqual(out["decisions"], [{"item": 2, "answer": "yes"}])
+
+    def test_reply_all_never_covers_irreversible(self):
+        plan = {**t1(2), "kind": "plan", "reversible": False}
+        out = replies.parse("all y", {1: t1(1), 2: plan}, shown={1, 2})
+        self.assertEqual(out["decisions"], [{"item": 1, "answer": "yes"}])
+        self.assertRejected("all y", {2: plan})
+        out = replies.parse("2 y", {2: plan}, shown={2}, listed={2})
+        self.assertEqual(out["decisions"], [{"item": 2, "answer": "yes"}])
+
+    def test_reply_number_must_have_been_listed(self):
+        out = replies.parse("2 y", {1: t1(1), 2: t1(2)}, listed={1})
+        self.assertEqual(out["decisions"], [])
+        self.assertIn("item 2 was not in a message", out["errors"][0])
+        out = replies.parse("1 y", {1: t1(1), 2: t1(2)}, listed={1})
+        self.assertEqual(out["decisions"], [{"item": 1, "answer": "yes"}])
 
     def test_reply_all_y_skips_t2(self):
         out = replies.parse("all y", {1: t1(1), 4: t2(4, "SPEND $12")})

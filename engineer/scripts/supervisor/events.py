@@ -11,7 +11,8 @@ from eng import schema
 
 ROOT = Path(__file__).resolve().parents[2]
 _SCHEMA = schema.load(ROOT, "event")
-OUTCOMES = {"done": "done", "blocked": "blocked", "needs_john": "needs_john"}
+OUTCOMES = {"done": "done", "in_review": "in_review", "blocked": "blocked", "needs_john": "needs_john"}
+FAILED = ("retry", "blocked", "needs_john")
 
 
 def now_iso(now: datetime | None = None) -> str:
@@ -68,11 +69,13 @@ def state(events: list) -> dict:
     """Fold events into task sets.
 
     running: task_start or resume without a later task_end or crash. attempts: failed attempts
-    (an outcome `audit` event whose detail.status is not done, or a crash). waiting: tasks with a
-    reset_wait not yet followed by a resume. John's `yes` to a task's relogin ask unblocks it.
+    (an outcome `audit` event whose detail.status is retry, blocked or needs_john, or a crash). waiting: tasks
+    with a reset_wait not yet followed by a resume. John's `yes` to a task's relogin ask unblocks it.
+    in_review: the audited sha is pushed and its PR open; only a `merge` event with detail.merged (the
+    broker mirror's default branch has it, merges.py) makes the task done, so dependents wait for the merge.
     """
-    st = {"done": set(), "blocked": set(), "needs_john": set(), "running": set(), "attempts": {},
-          "waiting": {}}
+    st = {"done": set(), "in_review": set(), "blocked": set(), "needs_john": set(), "running": set(),
+          "attempts": {}, "waiting": {}}
     for e in events:
         tid, kind, detail = e.get("task_id"), e["event"], e.get("detail") or {}
         if not tid:
@@ -88,9 +91,13 @@ def state(events: list) -> dict:
             st["waiting"][tid] = {"session_id": e.get("session_id"), "reset_at": detail.get("reset_at")}
         elif kind == "approval_answer" and detail.get("kind") == "relogin" and detail.get("answer") == "yes":
             st["blocked"].discard(tid)
+        elif kind == "merge" and detail.get("merged") is True:
+            for key in OUTCOMES.values():
+                st[key].discard(tid)
+            st["done"].add(tid)
         elif kind == "audit" and detail.get("status"):
             status = detail["status"]
-            if status != "done":
+            if status in FAILED:
                 st["attempts"][tid] = st["attempts"].get(tid, 0) + 1
             if status in OUTCOMES:
                 for key in OUTCOMES.values():

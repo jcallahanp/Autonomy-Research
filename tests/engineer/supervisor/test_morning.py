@@ -53,6 +53,10 @@ class MorningTest(unittest.TestCase):
         self.assertIn("$1.75", self.md)
         self.assertIn("Open T1 items: 1", self.md)
 
+    def test_in_review_section(self):
+        md = morning.render([ev("audit", "d", detail={"verdict": "PASS", "status": "in_review"})], {"state": "done"})
+        self.assertIn("- d", md.split("## In review")[1].split("##")[0])
+
     def test_empty_night(self):
         md = morning.render([], {"state": "done"})
         self.assertIn("done", md)

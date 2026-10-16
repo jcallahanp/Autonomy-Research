@@ -16,7 +16,7 @@ Steps:
 4. Run the task's `check` command and read the output. It must exit 0 and show a test count
    above zero.
 5. Check that the diff does what the task and its requirements say, touches only the task's
-   files (plus `docs/plan/tasks.json` status and `PROGRESS.md`), weakens no test, adds no skip,
+   files (plus `PROGRESS.md`; any change under `docs/plan/` is a FAIL), weakens no test, adds no skip,
    puts no secret in code or logs, and leaves every document in `docs/DEPENDENTS.md` in step.
 
 Verdict:

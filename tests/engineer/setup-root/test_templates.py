@@ -64,6 +64,23 @@ class ManagedSettingsTest(unittest.TestCase):
         self.assertEqual(s["env"]["NO_PROXY"], "127.0.0.1,localhost")
         self.assertNotIn("hooks", s)
 
+    def test_broker_call_leaves_the_sandbox(self):
+        # R1-7: bwrap sets no_new_privs, so sudo cannot work inside the Bash sandbox. The key name and its
+        # pattern syntax are from https://code.claude.com/docs/en/settings-reference#sandbox-excludedcommands
+        # (read 2026-10-16). That page also says a call starting with sudo stays sandboxed, so setup day
+        # checks this entry really takes agent-run out (SP09, SP11; research/open-questions.md).
+        self.assertEqual(self.s["sandbox"]["excludedCommands"],
+                         ["sudo -n -u secretbroker /opt/engineer/bin/agent-run *"])
+
+    def test_sandbox_uses_the_egress_proxy(self):
+        # R1-8: nft lets engineer open only the proxy port on loopback, so the sandbox's host-side relay must
+        # go to the egress proxy, not to a proxy of Claude Code's own on a random port (settings-reference,
+        # sandbox.network.httpProxyPort, read 2026-10-16).
+        conf = (REPO / "engineer" / "etc" / "engineer.conf").read_text()
+        port = int(re.search(r"^PROXY_PORT=(\d+)$", conf, re.M).group(1))
+        self.assertEqual(self.s["sandbox"]["network"]["httpProxyPort"], port)
+        self.assertEqual(self.s["env"]["HTTPS_PROXY"], f"http://127.0.0.1:{port}")
+
     def test_deny(self):
         deny = self.s["permissions"]["deny"]
         for rule in ["Read(//home/engineer/.engineer/chrome-profile/**)", "Read(//home/secretbroker/**)",
@@ -96,8 +113,23 @@ class UnitsTest(unittest.TestCase):
         self.assertIn("/opt/engineer/scripts/supervisor/loop.py --projects /etc/engineer/projects.txt", svc["ExecStart"][0])
         self.assertEqual(svc["Restart"], ["on-failure"])
         self.assertIn("hc-ping fail", svc["ExecStopPost"][0])
-        self.assertIn("TZ=America/New_York", svc["Environment"])
+        self.assertIn("TZ=America/New_York", " ".join(svc["Environment"]).split())
         self.assertNotIn("NoNewPrivileges", svc)
+        # R1-4: under nft the supervisor's scanners (osv-scanner, semgrep rules) reach the net only via the proxy.
+        port = re.search(r"^PROXY_PORT=(\d+)$", (REPO / "engineer/etc/engineer.conf").read_text(), re.M).group(1)
+        env = [w for line in svc["Environment"] for w in line.split()]
+        for var in ("HTTPS_PROXY", "HTTP_PROXY", "https_proxy", "http_proxy"):
+            self.assertIn(f"{var}=http://127.0.0.1:{port}", env)
+        self.assertIn("NO_PROXY=127.0.0.1,localhost", env)
+
+    def test_chat_units_find_claude(self):
+        # R3-5: bootstrap installs claude to ~engineer/.local/bin, which systemd's default PATH lacks.
+        for name in ("engineer-remote-control", "engineer-channels"):
+            env = unit(name)["[Service]"].get("Environment", [])
+            paths = [e.split("=", 1)[1] for e in env if e.startswith("PATH=")]
+            self.assertEqual(len(paths), 1, name)
+            self.assertEqual(paths[0].split(":")[0], "/home/engineer/.local/bin", name)
+            self.assertIn("/usr/bin", paths[0].split(":"), name)
 
     def test_others(self):
         self.assertEqual(unit("engineer-remote-control")["[Service]"]["Restart"], ["always"])

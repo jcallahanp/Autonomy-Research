@@ -16,7 +16,8 @@ p=$1 id=$2
 clone=$("$checks/clone.sh" "$p" "$id") || exit $?
 G() { git -c core.hooksPath=/dev/null -c core.fsmonitor= --git-dir="$clone" "$@"; }
 head=$(G rev-parse --verify -q 'refs/audit/head^{commit}') || { echo "audit: no task/$id" >&2; exit 3; }
-base=$(G merge-base "$head" refs/audit/base) || { echo "audit: no merge base" >&2; exit 3; }
+# The base is the mirror's default branch (GitHub's head, clone.sh); the task must contain it.
+base=$(G rev-parse --verify -q 'refs/audit/base^{commit}') || { echo "audit: no base from the mirror" >&2; exit 3; }
 
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
@@ -67,13 +68,38 @@ at_head() {  # at_head PATH: copy PATH at head into $tmp/tree; fails when absent
   G cat-file blob "$head:$1" > "$tmp/tree/$1"
 }
 
+verdict() {  # verdict PASS|FAIL LINE...: print the audit-verdict JSON (at most 15 lines); exit 0 PASS, 1 FAIL
+  python3 - "$@" <<'PY'
+import json, sys
+verdict, head, lines = sys.argv[1], sys.argv[2], [l[:300] for l in sys.argv[3:]]
+if len(lines) > 15:
+    lines = lines[:14] + [f"... {len(lines) - 14} more lines"]
+print(json.dumps({"verdict": verdict, "head_sha": head, "lines": lines}))
+PY
+  [ "$1" = PASS ]
+}
+if ! G merge-base --is-ancestor "$base" "$head"; then
+  verdict FAIL "$head" "base: task/$id does not contain the default branch at ${base:0:12} (broker mirror);" \
+    "base: merge or rebase it onto refs/remotes/mirror/<default> and commit again"
+  exit 1
+fi
+changed=$(G diff --name-only --no-renames --no-ext-diff --no-textconv "$base" "$head" --)
+
+plan_lines() {  # the task diff may not touch docs/plan/**: plan work goes through the plan PR John approves
+  local hits
+  hits=$(grep -E '^docs/plan/' <<< "$changed" || true)
+  [ -n "$hits" ] || return 0
+  sed 's|$| changed: a task never edits docs/plan/ (status lives in supervisor events; plan changes go through the plan PR)|' <<< "$hits"
+  return 1
+}
+
 step check python3 "$checks/testcount.py" --result "$STATE_DIR/checks/$p/$id.json" --head "$head"
 step protected protected_lines
+step plan plan_lines
 step test-diff-guard guard_lines
 step secret-scan python3 "$checks/secret-scan.py" --diff "$clone" "$base" "$head"
 step scanners python3 "$checks/scanners.py" --repo "$clone" --base "$base" --head "$head"
 
-changed=$(G diff --name-only --no-renames --no-ext-diff --no-textconv "$base" "$head" --)
 if grep -qxE 'docs/plan/integrations\.yaml|\.env\.example' <<< "$changed" && at_head docs/plan/integrations.yaml; then
   at_head .env.example || true
   step integrations-env python3 "$checks/integrations-env.py" --repo "$tmp/tree"
@@ -86,13 +112,6 @@ fi
 n=$(grep -c . <<< "$changed" || true)
 [ "$failed" -eq 1 ] || lines+=("diff: $n files from ${base:0:12} to ${head:0:12}, no findings")
 
-verdict=PASS
-[ "$failed" -eq 0 ] || verdict=FAIL
-python3 - "$verdict" "$head" "${lines[@]}" <<'PY'
-import json, sys
-verdict, head, lines = sys.argv[1], sys.argv[2], [l[:300] for l in sys.argv[3:]]
-if len(lines) > 15:
-    lines = lines[:14] + [f"... {len(lines) - 14} more lines"]
-print(json.dumps({"verdict": verdict, "head_sha": head, "lines": lines}))
-PY
-[ "$verdict" = PASS ]
+v=PASS
+[ "$failed" -eq 0 ] || v=FAIL
+verdict "$v" "$head" "${lines[@]}"

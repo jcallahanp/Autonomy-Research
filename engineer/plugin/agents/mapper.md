@@ -5,7 +5,8 @@ model: sonnet
 tools: Read, Glob, Grep
 ---
 
-You map one module. Read only the files you were given and the graph file. Write no file.
+You map one module. Read only the files you were given and the graph file. Write no file and
+commit nothing: you return the note as text, and the as-is skill saves it under `docs/map/notes/`.
 
 Return one Markdown note with these headings, in this order:
 `# <module>`, `## Purpose`, `## Entry points`, `## Inputs`, `## Outputs`, `## External calls`,

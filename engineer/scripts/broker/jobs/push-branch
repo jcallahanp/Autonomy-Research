@@ -1,10 +1,12 @@
 #!/bin/bash
 set -euo pipefail
-# push-branch REPO_DIR BRANCH [--tag plan-approved-N]   (agent-run job; callers engineer, supervisor)
+# push-branch REPO_DIR BRANCH [--tag plan-approved-N] [--expect SHA]   (agent-run job; callers engineer, supervisor)
 # REPO_DIR: PROJECTS_DIR/<name>, a worktree PROJECTS_DIR/<name>.wt/<id>, or RECORDS_DIR/<name> (supervisor only);
 # <name> must be in ETC_DIR/projects.txt. Refuses the default branch, main, master and bad names; engineer-records
-# and tags (only ^plan-approved-[0-9]+$) are for supervisor only. Fetches into the broker mirror (mirror.sh), then
-# pushes from the mirror without --force; the bot PAT reaches git only as an http.extraheader in the environment.
+# and tags (only ^plan-approved-[0-9]+$) are for supervisor only. task/* branches are supervisor only too and need
+# --expect: the supervisor pushes task/<id> after a PASS, and only when the branch head is exactly the audited sha.
+# Fetches into the broker mirror (mirror.sh), then pushes from the mirror without --force; the bot PAT reaches git
+# only as an http.extraheader in the environment.
 # Prints {"branch", "sha", "tag"}. Exit: 64 usage, 65 refused, 77 caller not allowed, else git's failure.
 root=$(cd "$(dirname "$(readlink -f "$0")")/../../.." && pwd)
 # shellcheck disable=SC1091
@@ -12,14 +14,24 @@ root=$(cd "$(dirname "$(readlink -f "$0")")/../../.." && pwd)
 need_caller
 sup() { [ "$AGENT_RUN_CALLER" = supervisor ]; }
 
-[ $# -eq 2 ] || [ $# -eq 4 ] || die 64 "usage: push-branch REPO_DIR BRANCH [--tag plan-approved-N]"
-dir=${1%/}; branch=$2; tag=
-if [ $# -eq 4 ]; then
-  [ "$3" = --tag ] || die 64 "usage: push-branch REPO_DIR BRANCH [--tag plan-approved-N]"
-  tag=$4
+usage="usage: push-branch REPO_DIR BRANCH [--tag plan-approved-N] [--expect SHA]"
+[ $# -ge 2 ] || die 64 "$usage"
+dir=${1%/}; branch=$2; tag=; expect=
+shift 2
+while [ $# -gt 0 ]; do
+  [ $# -ge 2 ] || die 64 "$usage"
+  case "$1" in
+    --tag) [ -z "$tag" ] || die 64 "$usage"; tag=$2 ;;
+    --expect) [ -z "$expect" ] || die 64 "$usage"; expect=$2 ;;
+    *) die 64 "$usage" ;;
+  esac
+  shift 2
+done
+if [ -n "$tag" ]; then
   sup || die 77 "only supervisor may push a tag"
   [[ "$tag" =~ ^plan-approved-[0-9]+$ ]] || die 65 "tag must match ^plan-approved-[0-9]+$"
 fi
+[ -z "$expect" ] || [[ "$expect" =~ ^[0-9a-f]{40}$ ]] || die 65 "--expect takes a full 40-character sha"
 
 # Where the repo is decides the project name and who may push from it.
 case "$dir" in /*) ;; *) die 65 "REPO_DIR must be absolute" ;; esac
@@ -43,6 +55,11 @@ if [ "$branch" = engineer-records ]; then
 else
   branch_ok "$branch"
 fi
+case "$branch" in
+  task/*)
+    sup || die 77 "task/* branches are pushed by the supervisor after the audit"
+    [ -n "$expect" ] || die 65 "task/* needs --expect <audited sha>" ;;
+esac
 
 # No symlinked path component below the base, and a .git that stays inside this project.
 base=$PROJECTS_DIR; [ "$kind" = records ] && base=$RECORDS_DIR
@@ -68,6 +85,11 @@ if [ -n "$tag" ]; then
 fi
 mirror=$("$root/scripts/broker/mirror.sh" "$name" "$dir" "${refs[@]}")
 sha=$(git --git-dir="$mirror" rev-parse --verify "refs/heads/$branch^{commit}")
+if [ -n "$expect" ]; then
+  # Push exactly the audited commit: the mirror's copy of the branch must be it, and the push names the sha.
+  [ "$sha" = "$expect" ] || die 65 "$branch is at ${sha:0:12}, not the expected ${expect:0:12}; refusing"
+  push[0]="$expect:refs/heads/$branch"
+fi
 
 # The PAT stays in shell variables and the environment of the one push; printf is a builtin.
 pat=$(secret GH_BOT_PAT)

@@ -29,6 +29,13 @@ esac
 
 die() { echo "bootstrap: $*" >&2; exit 1; }
 
+# Under the nft egress rules engineer reaches the net only through the egress proxy (PROXY_PORT in
+# engineer.conf), so npm, pipx, curl and claude go through it; loopback stays direct.
+px=$(sed -n 's/^PROXY_PORT="\{0,1\}\([0-9]\{1,5\}\)"\{0,1\}$/\1/p' "$root/etc/engineer.conf" | tail -1)
+[ -n "$px" ] || die "no numeric PROXY_PORT in $root/etc/engineer.conf"
+export HTTPS_PROXY="http://127.0.0.1:$px" HTTP_PROXY="http://127.0.0.1:$px"
+export https_proxy="$HTTPS_PROXY" http_proxy="$HTTP_PROXY" NO_PROXY=127.0.0.1,localhost no_proxy=127.0.0.1,localhost
+
 # John's decision 1: Claude Max via /login only; no API key, no setup-token.
 for v in ANTHROPIC_API_KEY CLAUDE_CODE_OAUTH_TOKEN ANTHROPIC_AUTH_TOKEN; do
   [ -z "${!v:-}" ] || die "$v is set; Path A (Max /login) only: unset it and run again"

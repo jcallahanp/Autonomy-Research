@@ -97,6 +97,21 @@ class EventsTest(unittest.TestCase):
         self.assertEqual(st["attempts"]["b"], 2)
         self.assertEqual(st["attempts"].get("a", 0), 0)
 
+    def test_state_in_review_until_merged(self):
+        """A PASS with an open PR is in_review (not done, not a failed attempt); `merge` with merged makes it done."""
+        self.add("task_start", "a")
+        self.add("task_end", "a", exit_code=0)
+        self.add("audit", "a", head_sha=SHA, detail={"verdict": "PASS", "status": "in_review", "audited_sha": SHA})
+        self.add("pr_open", "a", head_sha=SHA, detail={"number": 7, "url": "https://example.invalid/pull/7"})
+        self.add("merge", "a", head_sha=SHA, detail={"tier": 1, "auto_merge": True, "number": 7})
+        st = events.state(events.read(self.path))
+        self.assertEqual(st["in_review"], {"a"})
+        self.assertEqual(st["done"], set())
+        self.assertEqual(st["attempts"].get("a", 0), 0)
+        self.add("merge", "a", head_sha=SHA, detail={"merged": True, "number": 7, "merge_commit": SHA})
+        st = events.state(events.read(self.path))
+        self.assertEqual((st["in_review"], st["done"]), (set(), {"a"}))
+
     def test_state_waiting_and_resume(self):
         self.add("task_start", "a")
         self.add("task_end", "a", exit_code=1, session_id="s1")

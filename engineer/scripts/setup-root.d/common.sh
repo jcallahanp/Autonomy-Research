@@ -23,11 +23,30 @@ write_file() {
   cat > "$tmp" && chmod "$2" "$tmp" && mv -f "$tmp" "$1"
 }
 
-# make_dir DIR MODE [OWNER]: create DIR (prefixed) with MODE; chown is privileged, so it goes through run.
+FSAFE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/fsafe.py"
+
+# fsafe OP PATH ARG: fsafe.py under the prefix; never follows a symlink a non-root user planted.
+fsafe() { python3 -I "$FSAFE" "${P:-/}" "$@" || exit "$?"; }
+
+# own OWNER PATH: chown PATH without following a symlink anywhere on it (privileged: dry run prints it).
+own() {
+  if [ "$DRY_RUN" = 1 ]; then echo "RUN: chown -h $1 $2"; else fsafe chown "$2" "$1"; fi
+}
+
+# make_dir DIR MODE [OWNER]: create DIR (prefixed) with MODE, refusing a symlink on its path.
+# Engineer's own dirs are made and chmodded as engineer (runuser), so root never acts inside a tree
+# the model can write; any other owner is set by a no-follow chown after the mode.
 make_dir() {
-  mkdir -p "$1"
-  chmod "$2" "$1"
-  [ -z "${3:-}" ] || run chown "$3" "$1"
+  local dir=$1 mode=$2 owner=${3:-}
+  if [ "${owner%%:*}" = engineer ]; then
+    fsafe check "$dir" -
+    if [ "$DRY_RUN" = 1 ]; then fsafe mkdir "$dir" "$mode"; fi
+    run runuser -u engineer -- mkdir -p "$dir"
+    run runuser -u engineer -- chmod "$mode" "$dir"
+    return
+  fi
+  fsafe mkdir "$dir" "$mode"
+  [ -z "$owner" ] || own "$owner" "$dir"
 }
 
 # rows FILE: the non-comment, non-blank lines of FILE.

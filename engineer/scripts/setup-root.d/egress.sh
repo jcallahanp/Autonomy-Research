@@ -23,15 +23,29 @@ egress_runtime_list() {
   } | write_file "$EGRESS" 0644
 }
 
+# X11VNC_PORT: where novnc-session's x11vnc listens; websockify (engineer) connects to it on loopback.
+X11VNC_PORT=5900
+
+# conf_port KEY: a numeric port from the installed engineer.conf.
+conf_port() {
+  local v
+  v=$(sed -n "s/^$1=\"\{0,1\}\([0-9]\{1,5\}\)\"\{0,1\}\$/\1/p" "$OPT/etc/engineer.conf" | tail -1)
+  [ -n "$v" ] || die "no numeric $1 in $OPT/etc/engineer.conf"
+  echo "$v"
+}
+
 # install_nft: render the rules for engineer and supervisor, load them atomically, load them at boot.
+# On loopback, engineer may open only the proxy and x11vnc ports, supervisor only the proxy (R1-8).
 install_nft() {
-  local render="$OPT/scripts/egress/render-nft.py" e s
-  e=$(uid_of engineer); s=$(uid_of supervisor)
+  local render="$OPT/scripts/egress/render-nft.py" e s px args
+  e=$(uid_of engineer); s=$(uid_of supervisor); px=$(conf_port PROXY_PORT)
+  args="--uid engineer=$e --uid supervisor=$s --lo engineer=$px,$X11VNC_PORT --lo supervisor=$px"
   if [ "$DRY_RUN" = 1 ]; then
-    echo "RUN: python3 $render --uid engineer=$e --uid supervisor=$s > $NFT_FILE"
+    echo "RUN: python3 $render $args > $NFT_FILE"
   else
     # The rendered file starts "table X; delete table X", so a reload replaces the table atomically.
-    python3 "$render" --uid "engineer=$e" --uid "supervisor=$s" > "$NFT_FILE.setup-root.tmp"
+    # shellcheck disable=SC2086  # args holds plain words checked above
+    python3 "$render" $args > "$NFT_FILE.setup-root.tmp"
     grep -qx "delete table $NFT_TABLE" "$NFT_FILE.setup-root.tmp" || die "render-nft.py output does not replace $NFT_TABLE"
     chmod 0644 "$NFT_FILE.setup-root.tmp"; mv -f "$NFT_FILE.setup-root.tmp" "$NFT_FILE"
   fi

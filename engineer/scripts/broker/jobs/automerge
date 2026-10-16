@@ -1,21 +1,30 @@
 #!/bin/bash
 set -euo pipefail
-# automerge PROJECT PR   (agent-run job; caller supervisor)
+# automerge PROJECT PR SHA   (agent-run job; caller supervisor)
+# SHA is the commit the supervisor audited. Nothing merges unless GitHub's head of the PR is exactly SHA, and the
+# merge is pinned to it (--match-head-commit SHA), so a later push to the branch can never ride along.
 # Self-merge is on by default (John's decision 2): requires self_merge=on for the project in projects.txt.
-# Reads the PR with gh, asks scripts/checks/merge-tier.py for the tier, then:
-#   tier 1 -> gh pr merge --auto --squash (pinned to the head commit); prints {"tier":1,"auto_merge":true}
-#   tier 2 -> the same only when owner_login's latest decisive review on headRefOid is APPROVED;
+# Reads the PR with gh, then:
+#   merged          -> prints {"merged":true,"merge_commit":OID}; exit 0 (nothing to do)
+#   closed          -> prints {"closed":true,"auto_merge":false,...}; exit 3
+#   head is not SHA -> prints {"auto_merge":false,"reasons":["head moved ..."]}; exit 65
+#   auto-merge already requested for SHA -> prints {"auto_merge":true,"already":true}; exit 0
+# Otherwise asks scripts/checks/merge-tier.py for the tier, then:
+#   tier 1 -> gh pr merge --auto --squash --match-head-commit SHA; prints {"tier":1,"auto_merge":true}
+#   tier 2 -> the same only when owner_login's latest decisive review on SHA is APPROVED;
 #             otherwise prints {"tier":2,"auto_merge":false,"reasons":[...]} and exits 3.
 # merge-tier failing, exiting non-zero or answering anything but tier 1 or 2 counts as tier 2 and never merges.
-# Exit: 0 auto-merge enabled; 3 not merged (tier 2 without approval, unclassified, self_merge off); 64, 65, 77; 1 failure.
+# Exit: 0 auto-merge enabled or already merged; 3 not merged (tier 2 without approval, unclassified, closed,
+# self_merge off); 64 usage; 65 refused (bad input, head is not SHA); 77; 1 failure.
 root=$(cd "$(dirname "$(readlink -f "$0")")/../../.." && pwd)
 # shellcheck disable=SC1091
 . "$root/scripts/broker/common.sh"
 need_caller
 
-[ $# -eq 2 ] || die 64 "usage: automerge PROJECT PR"
-project=$1 pr=$2
+[ $# -eq 3 ] || die 64 "usage: automerge PROJECT PR SHA"
+project=$1 pr=$2 sha=$3
 [[ "$pr" =~ ^[1-9][0-9]{0,8}$ ]] || die 65 "PR must be a number"
+[[ "$sha" =~ ^[0-9a-f]{40}$ ]] || die 65 "SHA must be a full 40-character commit id"
 project_row "$project"
 if [ "$P_SELF_MERGE" != on ]; then
   jq -cn '{tier: null, auto_merge: false, reasons: ["self_merge is off for this project"]}'
@@ -24,10 +33,31 @@ fi
 
 tok=$(secret GH_BOT_PAT)
 [ -n "$tok" ] || die 1 "GH_BOT_PAT is empty"
-view=$(GH_TOKEN=$tok gh pr view "$pr" --repo "$P_REPO" --json title,files,reviews,headRefOid) \
-  || die 1 "gh pr view failed"
+view=$(GH_TOKEN=$tok gh pr view "$pr" --repo "$P_REPO" \
+  --json title,files,reviews,headRefOid,state,mergeCommit,autoMergeRequest) || die 1 "gh pr view failed"
 head=$(jq -r '.headRefOid // ""' <<<"$view")
 [[ "$head" =~ ^[0-9a-f]{40}$ ]] || die 1 "gh gave no head commit"
+state=$(jq -r '.state // ""' <<<"$view")
+
+if [ "$state" = MERGED ]; then
+  jq -cn --arg h "$head" --arg m "$(jq -r '.mergeCommit.oid // ""' <<<"$view")" \
+    '{merged: true, head: $h, merge_commit: (if $m == "" then null else $m end), auto_merge: false}'
+  exit 0
+fi
+if [ "$state" = CLOSED ]; then
+  jq -cn '{closed: true, auto_merge: false, reasons: ["the PR is closed without merging"]}'
+  exit 3
+fi
+if [ "$head" != "$sha" ]; then
+  jq -cn --arg h "${head:0:12}" --arg s "${sha:0:12}" \
+    '{tier: null, auto_merge: false, reasons: ["head moved: GitHub has \($h), the audit passed \($s)"]}'
+  echo "automerge: PR $pr head ${head:0:12} is not the audited ${sha:0:12}; refusing" >&2
+  exit 65
+fi
+if [ "$(jq -r '.autoMergeRequest != null' <<<"$view")" = true ]; then
+  jq -cn '{tier: null, auto_merge: true, already: true}'
+  exit 0
+fi
 
 tier_in=$(jq -c '{title: .title, files: [.files[]? | {path, additions, deletions}]}' <<<"$view")
 # A failed or unreadable classification counts as Tier 2 and never merges, whatever the reviews say.
@@ -46,8 +76,8 @@ reasons=$(jq -c '.reasons // []' <<<"$tier")
 
 approved=no
 if [ "$t" = 2 ] && [ -n "$P_OWNER" ]; then
-  # The owner's latest APPROVED / CHANGES_REQUESTED / DISMISSED review on the head commit decides.
-  last=$(jq -r --arg o "$P_OWNER" --arg h "$head" '[.reviews[]?
+  # The owner's latest APPROVED / CHANGES_REQUESTED / DISMISSED review on the audited commit decides.
+  last=$(jq -r --arg o "$P_OWNER" --arg h "$sha" '[.reviews[]?
       | select(.author.login == $o and .commit.oid == $h)
       | select(.state == "APPROVED" or .state == "CHANGES_REQUESTED" or .state == "DISMISSED")]
     | last | .state // ""' <<<"$view")
@@ -55,7 +85,7 @@ if [ "$t" = 2 ] && [ -n "$P_OWNER" ]; then
 fi
 
 if [ "$t" = 1 ] || { [ "$t" = 2 ] && [ "$approved" = yes ]; }; then
-  GH_TOKEN=$tok gh pr merge "$pr" --auto --squash --repo "$P_REPO" --match-head-commit "$head" >&2 \
+  GH_TOKEN=$tok gh pr merge "$pr" --auto --squash --repo "$P_REPO" --match-head-commit "$sha" >&2 \
     || die 1 "gh pr merge failed"
   jq -cn --argjson t "$t" '{tier: $t, auto_merge: true}'
   exit 0
