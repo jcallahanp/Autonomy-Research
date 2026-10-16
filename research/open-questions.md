@@ -14,6 +14,7 @@ the cross-cutting set.
 - [ ] Does `maxTurns` count tool calls one-to-one (needed to map a 10-15 call budget onto a turn cap)?
 - [ ] Do structured return schemas measurably improve merge quality? Run an A/B on two questions with and without `_FORMAT.md`.
 - [ ] Real cost of the proposed `/self-test` fast suite (8 cases x 3 runs x 2 arms plus judge calls).
+- [ ] Does `claude plugin eval --runs 3` override a case's `runs: 1` frontmatter, or the reverse? The `self-improve` paired re-measure assumes the flag wins; check the run counts in the JSON.
 - [ ] Rate limits for Parallel, Exa (keyless) and DeepWiki are undocumented; how many calls does one research run need?
 - [ ] Who owns the Exa connector account and its $10/month free credit?
 

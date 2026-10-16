@@ -25,8 +25,9 @@ paths. If you are not sure which one you want, read [plugin-vs-template.md](plug
 
 ### Verify path A
 - `claude plugin list` shows `research-agent`.
-- At session start, Claude's context holds the skill index (`using-research-agent`) and the first
-  30 lines of `research/findings/INDEX.md`, when that file exists in your project.
+- At session start, Claude's context holds the skill index (`using-research-agent`), the newest
+  30 lines of `research/findings/INDEX.md`, and the top of an unfinished run's `PLAN.md`, when
+  those files exist in your project.
 - Type `/` and look for `/research-agent:setup`.
 - `/research-agent:setup` ends with "All seven tools present." or one line per missing tool,
   `<tool>: missing, fallback <fallback>`.

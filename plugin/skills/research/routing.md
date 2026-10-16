@@ -10,7 +10,7 @@ output (see `setup`). Evidence: `research/findings/tool-routing.md`.
 | Find MCP servers | Official MCP registry API (curl) | Parallel search with `site:github.com mcp` |
 | Find code across GitHub | Sourcegraph stream API (curl) | Exa with code phrasing |
 | Read a page | Parallel web_fetch with objective | Exa fetch, Firecrawl keyless, Playwright in a subagent |
-| Verify and cite | WebFetch with a pointed prompt | Parallel fetch with full content, in a subagent |
+| Verify and cite | WebFetch with a pointed prompt | Firecrawl scrape, then Parallel or Exa fetch with an objective |
 | Understand a repo | DeepWiki ask_wiki_question | `git clone --depth 1` + grep (also the confirmation step) |
 | Library API syntax | Context7, at most 3 calls | WebFetch the official docs page |
 | Test an edge case | Bash (curl, clone, run) | Playwright in a subagent |
