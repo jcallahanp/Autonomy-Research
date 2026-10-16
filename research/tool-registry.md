@@ -510,3 +510,14 @@ packaging.md, architecture.md, engineer-intake.md, engineer-existing-systems.md)
 | Managed settings file `/etc/claude-code/managed-settings.json` (permissions.md) | https://code.claude.com/docs/en/devcontainer | Highest precedence, not overridable by flags; holds deny rules, `disableBypassPermissionsMode` | Linux | 2026-10-16 | Use; spike read by non-root agent user |
 | anthropics/cwc-long-running-agents (opened) | https://github.com/anthropics/cwc-long-running-agents | Kill-switch/steer/verify-gate/commit-on-stop hooks, evaluator subagent; unmaintained event demo; README has agent-addressed install prompt, not followed | clone read only, commit ad107a9 | 2026-10-16 | Reference; copy kill-switch.sh idea; supersedes "not opened" row above |
 | Bash deny rules as a boundary (permissions.md) | https://code.claude.com/docs/en/permissions | Text-matched; `git -C . push`, `sh -c`, `/bin/rm` bypass | Claude Code | 2026-10-16 | Defence in depth only; docs say not a security boundary |
+
+## Engineer briefing and tool discovery
+
+| Tool | Link | What it does | Where it runs | Verified | Verdict |
+| --- | --- | --- | --- | --- | --- |
+| Structurizr DSL (agent-counterpart.md) | https://docs.structurizr.com/as-code | Text C4 model, generated views, JSON compiled form, export to Mermaid/PlantUML | local, Java tooling | 2026-10-16 | Fallback if model rules matter; spike runtime cost |
+| Structurizr MCP server | https://docs.structurizr.com/ai/mcp | Free OSS MCP: DSL validate, Mermaid/PlantUML export; hosted instance at mcp.structurizr.com | standalone or hosted | 2026-10-16 | Fallback; use standalone not hosted; not run |
+| Code-Vision benchmark | https://arxiv.org/html/2502.11829 | Flowchart-to-code benchmark, image vs Mermaid input | dataset | 2026-10-16 | Evidence; possible harness for text-vs-image spike |
+| FlowVQA / FlowLearn / GITQA | https://aclanthology.org/2024.findings-acl.78.pdf | Flowchart and graph VQA benchmarks | datasets | 2026-10-16 | Evidence only |
+| FlowSight dataset | https://github.com/herbit2004/FlowSight-Dataset | Mermaid + PNG + QA per architecture diagram | local Python, OpenRouter key | 2026-10-16 (search text only) | Skip; not opened |
+| DiagramEval | https://aclanthology.org/2025.emnlp-main.640.pdf | Node/path F1 for LLM diagrams | research code | 2026-10-16 | Idea: parity check of diagram vs model |
