@@ -99,7 +99,7 @@ flowchart TD
 1. Start slow approvals: Outreach app (needs your employer's OK), Google sign-in app, WHOOP and Withings developer apps.
 2. Sign up for healthchecks.io and UptimeRobot.
 3. Make a GitHub bot account, its token and branch protection.
-4. Merge the builder's first pull request.
+4. Merge the builder's template pull request.
 5. Two Telegram bots; Remote Control (phone view) push.
 6. Cloudflare account and one main token.
 7. Attio and n8n keys, Clay sign-in, Google Cloud roles, Slack token.

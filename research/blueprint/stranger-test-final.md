@@ -80,3 +80,31 @@ CLOSED: 26. OPEN: 0.
 ## 3. Verdict
 **FAIL: 26 of 26 gaps CLOSED, 0 OPEN; 2 new contradictions that would mislead a builder (N1, N2), plus 7 minor
 items a builder can decide and record.**
+
+## Re-check after fixes
+
+Date: 2026-10-16. I re-read the same set of files, plus `brief-for-john.md`, which is new in this folder. I checked
+only the four items below and looked for new contradictions in paths, users, sudo rights, branches and step numbers.
+
+| Item | Status | Where |
+| --- | --- | --- |
+| N1: the supervisor writes into project repos it can only read | CLOSED | The supervisor now has its own records clone `/var/lib/engineer/records/<project>/` on branch `engineer-records`, pushed with `push-branch`, and never writes into `engineer`'s clones (repo-composition.md:123-124). The same rule appears in repo-composition.md:88, 90, 96, 161, 165-166, flow.md:64, decisions.md:35 and setup.md:49 (step 20 protects `engineer-records`). Trial clones come from a supervisor-owned copy (repo-composition.md:124) |
+| N2: "nothing at user scope" vs user-scope installs | CLOSED | The vendor MCP servers are now in the root-owned `/opt/engineer/plugin/.mcp.json` (repo-composition.md:118, 126-133). The Channels plugin is the one stated exception, disabled in `run-task` sessions, and stack.md:83, setup.md:35 and repo-composition.md:118 all agree |
+| Minor: plugin `hooks.json` active before `--lock` | CLOSED | `--install` replaces `hooks/hooks.json` with an empty stub, and `--lock` installs the real hooks (repo-composition.md:118, 105; setup.md:9) |
+| Minor: `oauth-capture` callable by `engineer` | CLOSED | It has been removed from the `agent-run` job list (repo-composition.md:114). It runs only through John's own password sudo (repo-composition.md:113; setup.md:41) |
+
+New contradictions from these fixes that would stop or mislead a builder: **none**.
+
+Noted, not counted (a builder can decide and record):
+- `engineer` can also call `agent-run push-branch`, and it uses the same bot PAT. So "only the bot may push to
+  `engineer-records`" (repo-composition.md:124; setup.md:49) does not stop the model from pushing a fake record. The
+  job should allow `engineer-records` only when the caller (`SUDO_USER`) is `supervisor`.
+- `push-branch` runs as `secretbroker`, so it needs read access to the supervisor's records clone. The records clone
+  also needs a credentialed fetch of `engineer-records` before each push. Neither is stated (repo-composition.md:124).
+- brief-for-john.md:102 calls the step 21 merge "the builder's first pull request". The first pull request is the
+  phase A one (setup.md:15; brief-for-john.md:139).
+- The other minor items in section 2 were not part of this re-check and still stand as noted.
+
+### Updated verdict
+**PASS: 26 of 26 gaps CLOSED; N1 and N2 CLOSED; both security items CLOSED; 0 new contradictions that would stop or
+mislead a builder. 3 new minor items are noted above.**
