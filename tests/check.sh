@@ -4,7 +4,7 @@
 cd "$(dirname "$0")/.." || exit 1
 fails=0
 fail() { echo "FAIL $1: $2"; fails=$((fails+1)); }
-fm() { awk -v k="$2" 'NR==1&&$0!="---"{exit} NR>1&&$0=="---"{exit} NR>1&&index($0,k":")==1{sub(/^[^:]*:[ ]*/,"");print;exit}' "$1"; }
+. tests/lib.sh
 
 # Manifests
 [ -f .claude-plugin/marketplace.json ] || fail manifest "missing .claude-plugin/marketplace.json"

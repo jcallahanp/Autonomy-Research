@@ -16,7 +16,7 @@ packaging.md, architecture.md).
 | DeepWiki MCP | https://docs.devin.ai/work-with-devin/deepwiki-mcp | Q&A and wiki over public GitHub repos, no auth | `.mcp.json` (http) | 2026-10-16 | **Primary** for understanding repos; `read_wiki_contents` subagent-only (905k chars seen) |
 | git clone --depth 1 + grep | (local) | Exact source for verification | Bash | 2026-10-16 | **Primary** verification of DeepWiki claims |
 | Context7 MCP | https://context7.com/plans | Versioned library docs snippets; 1,000 calls/month free | claude.ai connector | 2026-10-16 | Keep, for API syntax of a known library only |
-| Playwright MCP | https://github.com/microsoft/playwright-mcp | Headless Chromium via accessibility snapshots | `.mcp.json` (stdio, `scripts/playwright-mcp.sh`) | 2026-10-16 | Last resort, subagent only; blocked by Cloudflare/Vercel bot checks; 45-95 KB snapshots |
+| Playwright MCP | https://github.com/microsoft/playwright-mcp | Headless Chromium via accessibility snapshots | `.mcp.json` (stdio, `plugin/scripts/playwright-mcp.sh`) | 2026-10-16 | Last resort, subagent only; blocked by Cloudflare/Vercel bot checks; 45-95 KB snapshots |
 | Mermaid Chart MCP | https://mermaid.ai/docs/ai/mcp-server | Validate and render Mermaid (free account) | claude.ai connector | 2026-10-16 | Keep for validation via subagent; 60k-char output per render |
 | GitHub MCP | https://github.com/github/github-mcp-server | Repo/file/PR tools | claude.ai connector | 2026-10-16 | Own-repo reads only; search returns 403 in cloud sessions |
 | Superpowers | https://github.com/obra/superpowers | Engineering methodology skills | plugin, via `scripts/cloud-setup.sh` | 2026-10-15 | In use; brainstorming flow reused for the interview skill |
