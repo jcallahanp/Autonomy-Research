@@ -23,7 +23,7 @@ Rulings: Claude Code is the engine and is not up for debate; everything else att
 - [x] Observability and crash resumption for unattended runs - notes/observability.md - medium - headless behaviour at a usage limit untested; StopFailure hook schema not read; SigNoz, Grafana, ccusage code not opened
 
 ## Gap round
-- [ ] Audit-agent evidence: fetch the sources the synthesizer dropped as search-text-only (hallucination rates, LLM-judge limits, fresh vs cross-family reviewers, Proof-or-Stop, review-bot prices) - notes/audit-gap.md - pending
+- [x] Audit-agent evidence: fetch the sources the synthesizer dropped as search-text-only (hallucination rates, LLM-judge limits, fresh vs cross-family reviewers, Proof-or-Stop, review-bot prices) - notes/audit-gap.md - medium - Claude 5 system cards, Qodo and Entelligence benchmark pages not opened; no opened source measures fabricated test-run claims on implementation tasks
 
 ## Outputs
 - Findings: research/findings/engineer-protocol.md - written (61 search-text-only claims dropped to Open questions, 42 from the audit note; to be revised after the gap round)

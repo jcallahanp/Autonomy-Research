@@ -577,3 +577,18 @@ packaging.md, architecture.md, engineer-intake.md, engineer-existing-systems.md)
 | libraries.io API | https://libraries.io/api/search | Package search; 401 without key | curl | 2026-10-16 | Skip |
 | GitHub REST search | https://docs.github.com/en/rest/search/search | 10/min unauth, 30/min auth, code 9-10/min; 403 in cloud sandbox | curl / gh | 2026-10-16 | Local machine with token only |
 | Official MCP registry API (re-test, discovery) | https://registry.modelcontextprotocol.io/openapi.yaml | Supports `version=latest`, `updated_since`; 14-23 s latency; unmoderated; 155 expired-domain entries hijackable (Air Security 2026-08-27) | curl | 2026-10-16 | Use with `version=latest`, vendor-namespace filter, 60 s timeout; always followed by vetting |
+
+## Engineer protocol and audit (audit-gap.md)
+
+| Tool | Link | What it does | Where it runs | Verified | Verdict |
+| --- | --- | --- | --- | --- | --- |
+| backcheck | https://github.com/VectorInstitute/backcheck | Apache-2.0 Rust CLI; checks Claude Code claims (tests, lint, commit, file) against session JSONL, no LLM; optional `--block` Stop hook; install.sh | local, not installed | 2026-10-16 | Spike first for the claim-vs-transcript layer; pattern-matched claims |
+| Proof (EricFinland/proof) | https://github.com/EricFinland/proof | MIT Python Stop hook: reruns tests, diff tamper rules, red-green, blocks up to 3 cycles | local, not installed | 2026-10-16 | Reference; copy tamper rules; unvetted |
+| Proof-or-Stop (paper) | https://arxiv.org/abs/2607.14890 | Evidence-gated lifecycle claims; amplification 31/1800 to 2/1800; 3.80x tokens | research | 2026-10-16 | Pattern reference only |
+| ImpossibleBench | https://arxiv.org/abs/2510.20270 | Impossible-task variants measuring test cheating | local Python | 2026-10-16 | Possible harness for test-guard spike |
+| OverclaimBench | https://arxiv.org/abs/2609.20812 | File-review overclaim suite; artifacts controlled access | research | 2026-10-16 | Evidence only |
+| CodeRabbit | https://www.coderabbit.ai/pricing | PR/CLI review bot, $24/dev/mo annual, $30 monthly | hosted | 2026-10-16 | Paid fallback; spike on a public repo (free) |
+| Greptile | https://www.greptile.com/pricing | PR review $30/seat, 50 credits, $1 extra | hosted | 2026-10-16 | Skip unless spike shows gain |
+| Qodo | https://www.qodo.ai/pricing/ | PR review, $0.012/credit, no free tier | hosted | 2026-10-16 | Skip unless spike shows gain |
+| Claude Code Review (managed) | https://code.claude.com/docs/en/code-review | Multi-agent PR review, usage billed, Team/Enterprise | Anthropic infra | 2026-10-16 | Skip; use `/code-review` or own subagent |
+| Martian Code Review Bench | https://codereview.withmartian.com/?mode=offline | Third-party leaderboard; Claude Code Reviewer F2 47.7% (Sep 2026) | web | 2026-10-16 | Evidence source |
