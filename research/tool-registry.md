@@ -237,3 +237,18 @@ packaging.md, architecture.md, engineer-intake.md, engineer-existing-systems.md)
 | Hyperbrowser / Browserless | https://ryanalberts.github.io/best-of-Agent-Harnesses/compare/browser-infrastructure/ | Hosted browsers; stealth/CAPTCHA are headline features | hosted | 2026-10-16 (third-party page only) | Reject (evasion focus) |
 | Stealth plugins, CAPTCHA solvers, residential proxies | https://github.com/blhutchings/google-login-service | Bot-detection evasion | n/a | 2026-10-16 (search highlights only) | Rejected as evasion; not evaluated |
 | Claude Code computer use | https://code.claude.com/docs/en/computer-use | GUI control; macOS CLI; Desktop macOS/Windows; interactive only | John's machine | 2026-10-16 | Not a login path for the VM |
+| Playwright actionability + trace viewer + retries (reliability-and-guardrails.md) | https://playwright.dev/docs/trace-viewer-intro | Auto-wait before actions; `trace: 'on-first-retry'`; trace.zip with per-step DOM, network, console | local | 2026-10-16 | **Use** as the deterministic reliability layer |
+| Claude in Chrome safety features (reliability-and-guardrails.md) | https://support.claude.com/en/articles/12902428-use-claude-in-chrome-safely | Injection probes, per-action classifier, site blocklists, confirmations, Manually-approve mode, separate-profile advice | John's machine | 2026-10-16 | Use for attended work; vendor says risk is not zero |
+| Claude Code PreToolUse hooks + MCP deny rules (browser guard) | https://code.claude.com/docs/en/hooks | Deny/ask `mcp__<server>__.*` browser calls in any mode; deny beats hook allow; timed-out hook does not block unless `onFailure: "block"` | Claude Code | 2026-10-16 | **Build point** for destructive-click and domain guard; spike `tool_input` fields; incident anthropics/claude-code#65563 (reporter claim) shows need |
+| Checkly Playwright monitors | https://www.checklyhq.com/docs/detect/synthetic-monitoring/browser-checks/visual-regressions/ | Hosted scheduled Playwright checks, golden-image diff on production | hosted, paid (price not checked) | 2026-10-16 | Fallback; self-host a cron smoke run first |
+
+## Engineer feasibility and trials
+
+| Tool | Link | What it does | Where it runs | Verified | Verdict |
+| --- | --- | --- | --- | --- | --- |
+| MADR | https://adr.github.io/madr/ | Markdown ADR template: decision drivers, considered options, pros/cons, confirmation | notation, no install | 2026-10-16 | Use as the path-decision record (mapping-and-rubric.md) |
+| mermaid-lint | https://github.com/jasonworden/mermaid-lint | MIT Mermaid validator using official parser; npx, Node 22+; exit 0/1/2 | local, CI, hook (not installed) | 2026-10-16 | Use as diagram gate; spike on generated diagrams |
+| Mermaid C4 diagram type | https://mermaid.js.org/syntax/c4.html | C4 in Mermaid, labelled experimental | Mermaid renderers | 2026-10-16 | Skip as default; plain flowchart instead; GitHub rendering contested |
+| Structurizr DSL | https://docs.structurizr.com/dsl | Text C4 model; exports PlantUML/Mermaid | local | 2026-10-16 | Fallback for multi-view models |
+| Pugh matrix / weighted scoring / mini-ATAM | https://www.ifm.eng.cam.ac.uk/research/dmg/tools-and-techniques/controlled-convergence/ | Datum-based non-numeric comparison; frozen-weight scoring; SEI utility tree with High/Medium/Low | notation | 2026-10-16 | Use gates + Pugh/H-M-L ratings + tie rule; no summed decimals; full ATAM rejected |
+| rune-kit ADR criteria | https://github.com/rune-kit/rune/blob/master/skills/journal/references/adr-criteria.md | Gate for when to write an ADR; 1-5 reversibility scale | reference (not installed) | 2026-10-16 | Reference: copy gate and counter-test |

@@ -19,7 +19,7 @@ Rulings: Claude Code is the engine and is not up for debate; everything else att
 - [x] Browser-automation tool landscape and benchmarks - notes/tool-landscape.md - medium - no Attio or Clay benchmark; repo release dates from Exa metadata only (GitHub API blocked); screenshot token cost unmeasured; healer and drag replay unspiked
 - [x] Full-machine and desktop control (computer use, OpenClaw direction, sandboxed desktops) - notes/computer-control.md - medium - several sources seen only in search results; latency and E2B and Cua pricing not retrieved; Withings and WHOOP pairing on an emulator not researched
 - [x] Logged-in sessions, two-factor, bot detection, terms, and where the browser runs - notes/sessions-and-hosting.md - medium - real per-site session lifetimes and 2FA types unknown; hosted-browser prices from comparisons only; Clay terms read partly; Outreach terms via a summarising fetch
-- [ ] Reliability engineering and safety guardrails for UI automation - notes/reliability-and-guardrails.md - pending
+- [x] Reliability engineering and safety guardrails for UI automation - notes/reliability-and-guardrails.md - medium - no published act-in-UI-verify-via-API example for Attio or Clay; Claude in Chrome high-risk list and hook firing on its tools untested; several sources from search highlights only (not cited)
 - [ ] API versus browser per task for Attio, Clay, n8n and portals - notes/api-vs-browser.md - pending
 
 ## Gap round
