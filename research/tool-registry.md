@@ -327,6 +327,20 @@ packaging.md, architecture.md, engineer-intake.md, engineer-existing-systems.md)
 | Google Cloud Run | https://cloud.google.com/run/pricing | Free tier per billing account; `gcloud run deploy --source .` no Dockerfile needed | GCP | 2026-10-16 | Use for container APIs in John's GCP project |
 | Tailscale Funnel | https://tailscale.com/kb/1223/funnel | Public exposure of local service, bandwidth capped | hosted + client | 2026-10-16 | Reject as private login |
 | Claude Marketplace deploy plugins (Vercel, Cloudflare, Netlify, Supabase) | https://claude.com/marketplace/plugins | Vendor plugins/connectors; marketing copy only, not installed | plugin | 2026-10-16 | Reference; prefer CLI + scoped token |
+| Cloudflare API tokens (zone-scoped DNS) | https://developers.cloudflare.com/fundamentals/api/get-started/create-token/ | Per-zone DNS Edit/Read token, IP filter, TTL | hosted | 2026-10-16 | Use: narrowest DNS token (operations.md) |
+| Cloudflare Registrar API (beta) | https://developers.cloudflare.com/registrar/registrar-api/ | Search, check, register; no renew/transfer/contact update | hosted | 2026-10-16 | Use only behind a spend gate; engineer does not hold the Registrar-write token |
+| Vercel CLI domains buy/rollback/env | https://vercel.com/docs/cli/domains | Non-interactive price quote then human-approved `--amount` charge; rollback; env via stdin | CLI | 2026-10-16 | Use; copy the two-step approval pattern |
+| Wrangler secret/rollback/tail | https://developers.cloudflare.com/workers/wrangler/commands/workers/ | Piped secrets, `rollback`, `tail`, `deployments --json` | CLI | 2026-10-16 | Use |
+| Fly secrets import / deploy --image | https://docs.fly.io/flyctl/secrets-import | Stdin secrets with `--stage`; deploy a prior image (rollback derived, not documented) | CLI | 2026-10-16 | Use |
+| GitHub OIDC + environment reviewers | https://docs.github.com/en/actions/reference/security/oidc | Short-lived cloud tokens, subject pinning; reviewer approval before secrets | GitHub | 2026-10-16 | Use; reviewer availability on plan unverified |
+| Infisical free | https://infisical.com/pricing | Secrets manager: 5 identities, 3 envs/project | hosted/self-host | 2026-10-16 | Fallback vault if no 1Password |
+| UptimeRobot free | https://uptimerobot.com/pricing/ | 50 monitors, 5 min | hosted | 2026-10-16 | Use; alert integrations unverified |
+| healthchecks.io Hobbyist | https://healthchecks.io/pricing/ | 20 cron checks free | hosted | 2026-10-16 | Use for cron |
+| Sentry Developer (free) | https://sentry.io/pricing/ | 5k errors, 1 user, email alerts only | hosted | 2026-10-16 | Use for errors, not paging |
+| ntfy | https://docs.ntfy.sh/publish/ | HTTP push by topic; topic acts as password | hosted/self-host | 2026-10-16 | Use for alerts; auth section unread |
+| Pushover | https://pushover.net/pricing | $4.99 one-time, 10k msgs/month | hosted | 2026-10-16 | Fallback push |
+| Twilio SMS | https://www.twilio.com/en-us/sms/pricing/us | $0.0083/segment, $1.15/mo number, 10DLC fees | hosted | 2026-10-16 | Reject by default |
+| Apple Developer enrollment | https://developer.apple.com/programs/enroll/ | $99/yr, legal-name verification, 2FA, D-U-N-S for orgs | web | 2026-10-16 | Human-only step |
 
 ## Engineer multi-model
 
@@ -349,3 +363,13 @@ packaging.md, architecture.md, engineer-intake.md, engineer-existing-systems.md)
 | Mistral Large 4 / Small 4 | https://docs.mistral.ai/inference/pricing | Large 4 $1.36/$4.18 (preview sale $0.68/$2.09); Small 4 $0.15/$0.60 | Mistral API | 2026-10-16 | Cheap EU alternative; window not checked |
 | Meta Muse Spark Open | https://research.meta.ai/blog/muse-spark-open | Open weights 816B/42B active, 1M window, Muse Model License (limited commercial), released 2026-10-15 | self-host or US hosts | 2026-10-16 | Skip unless self-hosting; hardware heavy |
 | Claude 1M models | https://platform.claude.com/docs/en/build-with-claude/context-windows | Opus 5.5, Sonnet 5.5 etc. have 1M at standard price (Haiku 5.5 premium above 100k) | Claude Code | 2026-10-16 | Baseline engine; 1M alone is no reason to leave Claude |
+| openai/codex-plugin-cc | https://github.com/openai/codex-plugin-cc | Official Claude Code plugin: /codex:review, adversarial-review, rescue; Apache-2.0; commit db52e28 (2026-07-07); ChatGPT login or OpenAI key | local plugin | 2026-10-16 | **Use** for Codex second opinion; spike on real diffs (integration-and-routing.md) |
+| Codex CLI (`codex exec`) | https://github.com/openai/codex | Headless, read-only sandbox default, --json/--output-schema; Apache-2.0 | local | 2026-10-16 | Use via plugin/wrapper; API key per call only |
+| Gemini CLI | https://github.com/google-gemini/gemini-cli | Apache-2.0; consumer free/Pro/Ultra serving ended 2026-06-18; paid API keys still work | local | 2026-10-16 | Fallback, paid key only; never free tier |
+| Antigravity CLI (agy) | https://antigravity.google/product/antigravity-cli | Gemini successor CLI (page not opened) | local | 2026-10-16 (README banner only) | Spike first |
+| PAL MCP (ex Zen MCP) | https://github.com/BeehiveInnovations/pal-mcp-server | Apache-2.0 multi-model MCP, clink CLI bridge; last commit 2025-12-15 | local MCP | 2026-10-16 | Fallback/reference; stale |
+| claude-code-router | https://github.com/musistudio/claude-code-router | MIT local gateway with fallback models; active 2026-10-10 | local | 2026-10-16 | Skip as front door; Anthropic does not support non-Claude via gateways |
+| LiteLLM | https://github.com/BerriAI/litellm | LLM proxy; PyPI 1.82.7/1.82.8 malicious 2026-03-24 | self-host | 2026-10-16 | Reject as front proxy |
+| OpenRouter + Claude Code | https://openrouter.ai/docs/guides/guides/claude-code-integration | Env-var routing; only Anthropic 1P guaranteed | hosted | 2026-10-16 | Reject for non-Claude brains |
+| Agent SDK custom tools (data-class gate) | https://code.claude.com/docs/en/agent-sdk/custom-tools | In-process MCP tool wrapper | local/VM | 2026-10-16 | Use for the routing gate |
+| noelweichbrodt/second-opinion | https://github.com/noelweichbrodt/second-opinion | MCP sending session context to Gemini/GPT | local MCP | 2026-10-16 (search excerpt only) | Reference only |

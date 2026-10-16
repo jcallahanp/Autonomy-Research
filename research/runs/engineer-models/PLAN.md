@@ -18,10 +18,10 @@ Rulings: Claude Code is the engine and is not up for debate; everything else att
 ## Facets
 - [x] Verify Argon 4 and other candidate models - notes/candidate-models.md - medium (high on Argon facts) - Argon rate limits and model card not opened; Antigravity CLI and Codex pricing unopened; Claude prices from search highlights only; some quotes are fetch summaries
 - [x] Where large-context and second-opinion models help, and long-context reliability - notes/long-context-evidence.md - medium - no Claude 5.x 1M-token scores or Claude Code whole-repo test; several benchmark per-model scores not obtained; three sources from search text only (not cited)
-- [ ] Integration patterns, routing criteria and risks - notes/integration-and-routing.md - pending
+- [x] Integration patterns, routing criteria and risks - notes/integration-and-routing.md - medium - no measured cross-model review results; Antigravity CLI headless flags and terms not opened first-hand; health-data BAA and zero-retention terms not researched
 
 ## Gap round
-- pending
+- not run: the remaining gaps weaken evidence strength but leave no key question unanswered; they are carried as open questions and spike items
 
 ## Outputs
 - Findings: research/findings/engineer-models.md - pending
