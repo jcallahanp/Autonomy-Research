@@ -762,31 +762,35 @@ All sources were opened on 2026-10-16. Each bullet gives the source, the tool, t
   - Academy "Trust it" hook-gated runs, plus its exit-2 claim (https://academy.claude.com/courses/claude-code-in-action/trust-it-verifying-unsupervised-runs; 2 claims).
   - Design compliance Cramér's V <= 0.11 (https://www.arxiv.org/pdf/2604.05955).
   - Planner stays high-level (https://ai.engineer/talks/mR-WAvEPRwE-build-agents-that-run-hours-without-losing).
-- *audit-agent note (42 claims):*
+- *audit-agent note (25 claims still excluded):*
   - Package rates 0.22%-46.15% (https://arxiv.org/html/2501.19012v1, 2 claims).
   - METR risk report Feb-Mar 2026 (https://metr.org/risk-report-feb-mar-2026.pdf, 2 claims).
   - Claude 3.7 Sonnet system card special-casing and its monitor list (https://www.anthropic.com/claude-3-7-sonnet-system-card, 2 claims).
   - Claude 4.1 system card hack rates (https://www-cdn.anthropic.com/9fa30625273bafdf5af82c93719d7ca606485a16/Claude%204.1%20System%20Card.pdf).
-  - ImpossibleBench GPT-5 54.0% and Claude >79% via test edits (ICLR PDF).
-  - False success and LLM-judge AUROC (https://arxiv.org/html/2606.09863, 3 claims).
-  - OverclaimBench (https://arxiv.org/html/2609.20812v3, 3 claims).
+  - OverclaimBench's attribution "Anthropic's Claude 5 system cards score "false completion claims"". The page is now opened, but the gap worker declined to cite it, because the system cards are second-hand.
   - Silent semantic failure, 100% submit vs 44% resolve (https://arxiv.org/html/2603.25764v3).
   - DOCER 23.0% stale references (https://arxiv.org/abs/2606.09090, 2 claims).
   - Surface (https://github.com/Connorrmcd6/surface-bench/blob/main/PAPER.md).
-  - Proof-or-Stop 31/1800 vs 2/1800 (https://arxiv.org/html/2607.14890, 3 claims).
   - METR GPT-5 monitor 15/49 (https://metr.org/evaluations/gpt-5-report/).
   - AppWorld duplicate writes (https://arxiv.org/html/2610.09142).
   - Mutation 100% coverage / 4% score (https://doi.org/10.1109/tse.2026.3682975).
   - Mutation not applicable for buggy code (https://arxiv.org/html/2607.22880).
-  - Fresh same-model beats cross-family (https://stephens.page/blog/fresh-eyes-beat-a-second-family/paper/fresh-eyes-beat-a-second-family.pdf, 2 claims).
   - Cross-model 56.7% vs 42.7% and 9.4% model bias (https://arxiv.org/html/2610.01471v1, 2 claims).
-  - Static review raises GPT-5.5 / lowers Opus drafts (https://arxiv.org/html/2607.21656v1, 2 claims).
   - Correlated errors (https://proceedings.mlr.press/v267/goel25b.html).
-  - Claude Code Review managed (https://code.claude.com/docs/en/code-review, 2 claims).
-  - REVIEW.md and `/code-review` (https://code.claude.com/docs/en/code-review-customize, 2 claims).
-  - Review-bot prices (https://www.cubic.dev/blog/ai-code-review-pricing; https://reviewpricing.fyi/).
+  - REVIEW.md evidence bar and `/code-review` reading CLAUDE.md (https://code.claude.com/docs/en/code-review-customize, 2 claims).
   - Vendor benchmarks (https://macroscope.com/content/best-code-review-tools-2026; https://www.greptile.com/content-library/best-ai-code-review-tools).
   - Noise and PR-Agent self-host (https://www.contextstudios.ai/guides/best-ai-code-review-tools-2026, 2 claims).
+- *audit-agent claims restored by the gap round (17):*
+  - ImpossibleBench per-model rates (E133).
+  - 2606.09863 (E132, E137, E166, E167).
+  - OverclaimBench (E127, E128, E168).
+  - Proof-or-Stop (E149, E169, E170).
+  - Stephens (E144, E145).
+  - 2607.21656 (E146, E147).
+  - Claude Code Review (E171, E172).
+  - cubic (E162).
+  - reviewpricing.fyi (E173).
+  - E166-E173 keep the audit note's search-text quotes on pages the gap round opened; the verifier should re-check those quotes on the page.
 - *observability note (10 claims):*
   - ccusage reports and `blocks --json` (https://github.com/ccusage/ccusage; https://github.com/ccusage/ccusage/blob/main/docs/guide/json-output.md). The note says "Exa fetch highlights" in the citation but "search highlights" in Gaps, so it is treated as not opened.
   - Langfuse stack, licences and the Dynatrace acquisition (https://langfuse.com/compare/arize-phoenix, 3 claims).
@@ -796,11 +800,15 @@ All sources were opened on 2026-10-16. Each bullet gives the source, the tool, t
   - OvernightAgent (https://github.com/a20185/OvernightAgent).
   - Max weekly reset (https://support.claude.com/en/articles/11049741-what-is-the-max-plan).
 
-**Contradictions left unresolved because one side was not opened.**
-- Prompting cut GPT-5 cheating "from 92% to 1%" in ImpossibleBench (ICLR PDF, search text) versus METR's negligible effect (E31).
-- Cross-model review adds coverage (https://arxiv.org/html/2610.01471v1) versus a fresh same-model reviewer being as good (stephens.page). Both are search text only, so model diversity is unproven.
-- Static review helps weaker writers but hurts stronger ones (https://arxiv.org/html/2607.21656v1), search text only.
-- Review-bot rankings conflict between vendors (Macroscope versus Greptile), search text only.
+**Contradictions still open.**
+- *Both sides opened, unresolved:*
+  - Prompting against cheating. The ImpossibleBench claim reports 92% to 1% (https://arxiv.org/html/2510.20270v1, E134; the value is in the claim, not the quote) versus METR's "nearly negligible effect" (E31). Different tasks; spike on John's tasks (Q4).
+  - Neutral review-bot rankings: Martian offline (E164) versus ReviewBench (E165). Different corpora (Q3).
+- *Both sides opened, evidence favours one side:* fresh same-model review (E144, preregistered, controlled) over cross-vendor review (E148, an observational exhibit). Still to settle for Tier 2 changes with spike 4 (Q3).
+- *One side still unopened:*
+  - Cross-model review adds coverage (https://arxiv.org/html/2610.01471v1) versus fresh same-model review (E144, now opened).
+  - Static review helps weaker writers (https://arxiv.org/html/2607.21656v1, now opened, E146) versus reviewers generally positive (2610.01471v1, unopened). The setups differ (rewrite versus flag).
+  - Vendor review-bot benchmarks: Macroscope versus Greptile, and Qodo versus Entelligence. Search text only.
 - Test-first value (Otter https://arxiv.org/html/2502.05368, TDFlow, Academy) versus no gain or harm (E1, E2). The positive side was not opened.
 - "Plan-and-execute is brittle" (https://github.com/frankbria/codeframe/blob/main/docs/archive/AGENT_ARCHITECTURE_RESEARCH.md, practitioner opinion via Exa) and harness-design ablation (https://bittide.aicompass.dev/article/fe85a7a9-3514-4d12-bec2-2f04e55e25ef, aggregator abstract) versus the plan evidence (E10).
 - Secondary blogs (getclaudeskills.com, builderwithin.com) say Claude Code resumes after usage limits; the official page excludes `-p` (E117). Not opened; the official page is taken as the authority.
@@ -822,11 +830,18 @@ All sources were opened on 2026-10-16. Each bullet gives the source, the tool, t
   - OpenAI reward-hacking reports were not opened.
   - The Claude 4.1 table cells are garbled.
   - No published precision for test-diff heuristics or coverage-delta detectors.
-  - Proof-or-Stop and fresh-eyes are single-author.
-  - Martian Code Review Bench was not opened.
+  - Proof-or-Stop and fresh-eyes are single-author. The fresh-eyes paper is a personal-blog PDF, not peer reviewed, and its harness names (Opus 5.5, GPT-6.1 Sol) are as reported there.
   - The Qodo PR-Agent repo and licence were not opened.
-  - The official pricing pages of CodeRabbit, Greptile and Qodo were not opened.
-  - The scope of the local `/code-review` command is unverified.
+  - The scope of the local `/code-review` command is unverified. The gap worker says it runs on any plan; the opened quote covers only the managed service.
+  - *Gap round:*
+    - No opened benchmark measures fabricated test-run claims in implementation tasks; OverclaimBench covers file review.
+    - No controlled test of an evidence-bound versus a plain judge prompt.
+    - No opened study of Claude Code reviewing Claude Code on multi-file agentic diffs with execution available, at scale.
+    - The cwc-long-running-agents GitHub page excerpt did not show the evaluator/default-FAIL contract. The earlier git clone (E32-E34) did show it, so this is no contradiction.
+    - backcheck and Proof were not cloned or run, and their behaviour under `claude -p` is a spike. backcheck parses session JSONL, which the Claude Code docs say can break on any release (E97).
+    - Anthropic's own per-review average for Code Review was not on the page excerpt; the $15-25 figure comes from a competitor (E162).
+    - Cubic, Macroscope, Copilot code review and Bugbot prices were not verified from official pages.
+    - The ReviewBench repo was not opened; only a secondary report was.
 - *Git:*
   - No Anthropic post on PR size, squash versus merge, or agent self-merge.
   - The worktrees page (https://code.claude.com/docs/en/worktrees) was not opened.
