@@ -87,5 +87,5 @@ if [ -f "$s" ]; then
 fi
 grep -qE '`researcher`' plugin/skills/repo-triage/SKILL.md || fail tool-skills "repo-triage does not say the reading runs in a researcher worker"
 grep -qi 'DeepWiki.*untrusted\|untrusted.*DeepWiki' plugin/skills/tool-scan/SKILL.md || fail tool-skills "tool-scan does not mark DeepWiki output untrusted"
-grep -qiE 'quote.*(instead|never)|flag' plugin/skills/tool-scan/SKILL.md || fail tool-skills "tool-scan lacks the quote-and-flag injection rule"
+grep -qiE 'instruction-like text.*quote|quote.*instruction-like text' plugin/skills/tool-scan/SKILL.md || fail tool-skills "tool-scan lacks the quote-and-flag injection rule"
 grep -qE 'outside the project tree' plugin/skills/tool-scan/SKILL.md || fail tool-skills "tool-scan does not clone outside the project tree"
