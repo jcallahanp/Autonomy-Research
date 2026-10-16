@@ -824,3 +824,11 @@ default contact set up in the dashboard, and the exclusion of premium domains.
 - Citation drift: E144 cites `research/tool-registry.md:279` as written in the note; the Slack
   `apps.manifest.create` row no longer sits at line 279 of that file (it was at line 290 when this file was
 written; the registry is edited concurrently), so the verifier should locate it by text.
+
+## Verification
+Checked 2026-10-16 by the verifier. Sample: 20 cited claims.
+Verified: 18. Unverified: 2.
+- Unverified: Cloud Run free tier "First 180,000 vCPU-seconds free per month" — https://cloud.google.com/run/pricing — page opened but content truncated after the title ("[Content truncated due to length...]"); the free-tier section was not visible, so the quote was not found.
+- Unverified: "WHOOP expects a response within a second" (Q6) — https://developer.whoop.com/docs/developing/webhooks — the page says WHOOP retries five times over about one hour (verified) but only "recommends that you return a successful 2XX status code within a second," as an availability design goal; "expects" overstates it, so uncertain.
+Notes: the Vercel Hobby page carries a "For AI agents" block and an `install_vercel_plugin` front-matter line; treated as page data and not followed.
+Not sampled (cited, lower risk): Cloud Run `--source` Dockerfile wording, Fly and Vercel secrets stdin, Vercel env warning, systemd Persistent, Cloudflare Access, Tunnel, and the remaining Evidence rows.

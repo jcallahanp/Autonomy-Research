@@ -25,4 +25,4 @@ Rulings: Claude Code is the engine and is not up for debate; everything else att
 
 ## Outputs
 - Findings: research/findings/engineer-deploy.md - written (26 unsourced claims dropped to Open questions; 3 contradictions unresolved and listed as spikes)
-- Verification: pending
+- Verification: 18 of 20 verified, needs-review (Cloud Run free vCPU-seconds not visible on the fetched page; WHOOP one-second response is a recommendation, not a requirement)

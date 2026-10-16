@@ -448,3 +448,17 @@ packaging.md, architecture.md, engineer-intake.md, engineer-existing-systems.md)
 | Qorum Method (git-and-merge.md) | https://github.com/shiyamaz/qorum-method | Three-tier risk gate convention, protected-path list, classifier script (not run) | repo files | 2026-10-16 (clone fbcfa2c) | Reference; copy tier limits and protected paths |
 | Fullsend autonomy spectrum / Taiga autonomous merge (git-and-merge.md) | https://fullsend.sh/docs/problems/autonomy-spectrum ; https://docs.tai.ga/deliver/auto-merge/ | CODEOWNERS as autonomy escape hatch, shadow mode; hosted agent that never bypasses branch rules | docs / hosted | 2026-10-16 | Reference only; reject Taiga as product |
 | Conventional Commits 1.0.0 (git-and-merge.md) | https://www.conventionalcommits.org/en/v1.0.0/ | Commit/PR title format mapped to SemVer | convention | 2026-10-16 | Use |
+
+## Engineer security (engineer-security/llm-review-and-risks.md)
+
+| Tool | Link | What it does | Where it runs | Verified | Verdict |
+| --- | --- | --- | --- | --- | --- |
+| Claude Security plugin (`/claude-security`) | https://code.claude.com/docs/en/claude-security | Multi-agent repo/diff scan, independent finding review, patches; python3 3.9+ | Claude Code session, plan usage | 2026-10-16 | Use for deep scans; spike on a seeded repo |
+| `/security-review` | https://code.claude.com/docs/en/claude-security | Single-pass branch review | Claude Code | 2026-10-16 | Use per change, behind an evidence contract (file:line, repro, scope) |
+| anthropics/claude-code-security-review | https://github.com/anthropics/claude-code-security-review | GitHub Action diff review, JSON findings, FP filter; README says not hardened against prompt injection | GitHub runners | 2026-10-16 (clone commit 0c6a49f, not run) | Fallback for CI on trusted PRs only |
+| OpenAI Codex Security (ex-Aardvark) | https://github.com/openai/codex-security/ | CLI/SDK/Action, sandbox-validated findings, SARIF; OpenAI API key | local, CI | 2026-10-16 (search page text only) | Fallback second-model opinion; price unverified |
+| Google CodeMender | https://cloud.google.com/security/codemender | Hosted find, PoC-verify, patch agent; human approval | Gemini Enterprise Agent Platform | 2026-10-16 | Skip: enterprise hosted, price unverified |
+| SecVulEval / SecLLMHolmes / CyberGym | https://arxiv.org/html/2506.02548v3 | LLM vulnerability-detection benchmarks (23.8% stmt F1; ~20% PoC success) | datasets, not run | 2026-10-16 | Evidence only |
+| n8n SSRF protection + hardening vars | https://docs.n8n.io/deploy/host-n8n/configure-n8n/basic-configuration/use-environment-variables/ssrf-protection | Off by default; block private ranges, env access | self-hosted n8n | 2026-10-16 | Use; enable explicitly |
+| CaMeL / design patterns | https://arxiv.org/html/2503.18813v2 | Privileged/quarantined LLM with capability tags | research | 2026-10-16 | Design reference, not a dependency |
+| Docker MCP Gateway interceptors | https://www.docker.com/blog/mcp-horror-stories-github-prompt-injection/ | Per-session cross-repo blocker | Docker | 2026-10-16 (Exa text only) | Idea only: copy one-repo-per-session as a hook |
