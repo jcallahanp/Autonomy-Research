@@ -16,7 +16,7 @@ Rulings: Claude Code is the engine and is not up for debate; everything else att
 
 ## Facets
 - [ ] What Superpowers, Beads, Ralph and Claude Code's own features do for context and memory - notes/named-tools-and-native-features.md - pending
-- [ ] Evidence on context rot and its mitigations - notes/context-rot-evidence.md - pending
+- [x] Evidence on context rot and its mitigations - notes/context-rot-evidence.md - medium - ContextRotBench blocked by a browser check; some items read from search highlights; no study covers Claude Code on multi-hour coding
 - [ ] Subagent architecture and model tiers - notes/subagents-and-model-tiers.md - pending
 - [ ] Loop protection and token economy - notes/loop-protection-and-tokens.md - pending
 - [ ] Task tracking across sessions and keeping dependent documents updated - notes/task-tracking-and-doc-updates.md - pending
