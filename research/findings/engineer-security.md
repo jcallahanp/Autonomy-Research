@@ -950,3 +950,8 @@ Note on numbering: E15a-E15d sit between E15 and E16; there is no E65-E67.
 
 *Source-strength caveat.* Most LLM-review and several tooling sources were read as Exa page text or highlights rather
 than full page fetches (marked "Exa" or "Exa highlights" in Evidence); the verifier should weight its sample toward them.
+
+## Verification
+Checked 2026-10-16 by the verifier. Sample: 20 cited claims.
+Verified: 19. Unverified: 1.
+- Unverified: EASE 2024 per-tool attribution, "Semgrep's default 15.3%" (Q2 contradiction 1; E30) — https://dl.acm.org/doi/fullHtml/10.1145/3661167.3661262 — page says otherwise: Table 4 gives CodeQL 15.3% (26/170), Semgrep 15.9% (27/170), and the sentence quoting 15.3% refers to the Semgrep baseline only in the text; the finding's resolution in favour of Semgrep 15.3% conflicts with the table. The other EASE numbers (CodeQL 15.3, Semgrep 15.9, FindSecBugs 26.5, Snyk 11.2, Semgrep* 44.7) and the verbatim quote were verified. Fetched via Parallel (WebFetch returned 403).

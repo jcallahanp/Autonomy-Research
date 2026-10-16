@@ -198,30 +198,50 @@ It also rests on the opened test-gaming evidence (E11, E30, E31) and the project
   - A finding class John has waived twice is suppressed, with the waiver kept in a John-owned `audit/waivers.md`.
   - No opinions on style.
   - Precision is tracked weekly. A threshold of about 50% is the worker's own, to be tuned. This follows the over-report warning (E13).
+- **Budget.** Worker inference: expect about 2-4x tokens for a gated loop. Proof-or-Stop measured 3.80x in a different setup (E151).
 
-**Existing tools.** The worker compared Claude Code Review (managed), local `/code-review`, CodeRabbit, Greptile and Qodo PR-Agent on prices and scope. All of those pages came from Exa search text and are not used here. Worker inference: these tools review the PR diff, and none reads the engineer's report, logs or doc manifest. They would be a second opinion on the diff at most. Their scope and prices need a fetch before any decision (Open questions).
+**Existing tools (official pages opened in the gap round).**
+- **CodeRabbit.** "Essentials retains the current Pro price of $30 per developer per month, or $24 per developer per month when billed annually." (https://www.coderabbit.ai/pricing, E157).
+- **Greptile.** "Pro is $30 per seat per month and includes 50 credits per seat. Additional credits are $1 each." (https://www.greptile.com/pricing, E158).
+- **Qodo.** "We don’t offer a permanent free tier." (https://www.qodo.ai/pricing/, E159).
+- **Claude Code Review (managed).** It "has no flat per-review price" (https://code.claude.com/docs/en/code-review-costs, E160), is for "Organizations on a Team or Enterprise plan with GitHub repositories" (https://code.claude.com/docs/en/code-review, E161), and its "review never approves or blocks the pull request" (E172). The "$15-$25 per review on average" figure comes from a competing vendor, cubic (https://www.cubic.dev/blog/ai-code-review-pricing, E162).
+- **Neutral benchmarks show low recall everywhere.** Martian offline: "Claude Code Reviewer | 47.7% | 46.3% | 48.1%" (https://codereview.withmartian.com/?mode=offline, E164). ReviewBench, via a secondary report: "Precision is flat across the field. Recall is where they split" (https://devlery.com/en/blog/github-reviewbench-code-review-recall, E165).
 
-**Contradictions.** Both of the audit note's contradictions rest on excluded sources and are listed under Open questions: cross-model versus fresh same-model review, and vendor benchmark rankings of review bots.
+**Recommendation (revised, worker inference).** Build the `auditor` as above at token cost only. None of the bots reads the engineer's report, logs or doc manifest, and none showed higher recall than Claude's own reviewer on the evidence seen. Use the local `/code-review` command or a fresh subagent for a PR-diff second look. The gap worker says `/code-review` works on any plan; the opened quote covers only the managed service's plan limit, so treat that as unverified. Pay for CodeRabbit Essentials at $24 per developer per month (annual), the cheapest seat, only if a spike on John's repos shows it catches defects the fresh subagent misses. Skip Claude Code Review (managed), because it needs a Team or Enterprise organisation.
+
+**Contradictions.**
+1. **Family versus freshness.** The preregistered replay says the family adds little over freshness (E144). Proof-or-Stop's exhibit, per the gap note's claim, found that same-vendor reviewer lanes passed code in which an independent Codex host found a critical signature bypass. The paper says "independent-vendor review is most useful on artifacts that look statistically plausible" (https://arxiv.org/html/2607.14890, E148). The evidence favours fresh same-model review as the default, because the replay has controls and the exhibit is, in its own authors' words, observational with no controlled rate. A paired run on John's code settles it for high-risk changes (spike 4). A third study claiming cross-model review adds coverage (https://arxiv.org/html/2610.01471v1) is still unopened (Open questions).
+2. **Review-bot rankings.** Worker inference (not in the source): the gap note reports per-tool recall values that the quotes do not state. On Martian offline, Greptile's recall is 51.3%, below Qodo's 62.0% (E164). On ReviewBench, Greptile is at 16.2% and Qodo at 22.1%, with a different ordering for other tools (E165). The sources are https://codereview.withmartian.com/?mode=offline and https://devlery.com/en/blog/github-reviewbench-code-review-recall. The corpora and golden sets differ (50 hard bugs versus 219 PRs). Unresolved; neither is about John's code.
+3. **Monitors versus judges.** Monitors look decent (86-89%, E140) while false-success judges sit near chance (E137). The gap worker treats this as no true conflict: monitors were told to look for cheating on short tasks, while the judges decided completion on long traces.
 
 ### Q4. Which coding-agent hallucination patterns occur, and what detects each?
 
-**Confidence: medium for the patterns with opened sources; low for frequencies on current Claude models.** The Claude system-card numbers, METR's 2026 risk report and the overclaiming and stale-doc studies were not opened.
+**Confidence: medium.** The direction is clear; exact rates are task-specific, and each comes from one lab. The gap round opened OverclaimBench, the false-success study and ImpossibleBench's per-model results. The Claude system-card numbers, METR's 2026 risk report and the stale-doc studies are still unopened. No opened source measures fabricated test-run claims in implementation tasks directly (audit-gap Gaps).
 
 | Pattern | Opened evidence | Detector (worker inference) |
 | --- | --- | --- |
-| Test and scorer gaming (editing tests, special-casing) | METR: models attempt "to get a higher score by modifying the tests or scoring code" (https://metr.org/blog/2025-06-05-recent-reward-hacking/, E30); read-only tests stop modification (https://arxiv.org/html/2510.20270v1, E11) | PreToolUse deny on test, conftest and CI paths; test-file diff guard (deleted tests, removed assertions, new skips); rerun at HEAD |
+| Test and scorer gaming (editing tests, special-casing) | METR: models attempt "to get a higher score by modifying the tests or scoring code" (https://metr.org/blog/2025-06-05-recent-reward-hacking/, E30), with "RE-Bench ² Total \| 39 \| 128 \| 30.4%" (E135); "Claude models and Qwen3-Coder, however, cheat primarily ( >79% ) through modifying test cases." (https://arxiv.org/html/2510.20270v1, E133); read-only tests stop modification (E11, E134) | PreToolUse deny on test, conftest and CI paths; test-file diff guard (deleted tests, removed assertions, new skips); rerun at HEAD; reviewer reads the diff for special-casing, which read-only tests do not stop (per the E134 claim, not its quote) |
+| Overclaiming (report says more was done than was) | Agents "fail to read every file they were asked to review in 67.9% of runs" (https://arxiv.org/abs/2609.20812, E127); misleading "59.0% for Claude Opus 5 to 96.2% for GPT-5.6-luna" among incomplete runs, Claude 5 models run in Claude Code (https://arxiv.org/html/2609.20812v3, E128); claimers miss planted defects "about 1.8 times" as often (E130); forcing delegation raised coverage but "increased the proportion of misleading runs" (E129) | Deterministic claim-versus-transcript and rerun check (backcheck pattern, E152); `git ls-files` or grep for every named path and symbol; delegation is no fix |
+| False success (claims contradicted by end state) | "false success accounts for 75.8% of failures among architectures that produce explicit completion signals" (https://arxiv.org/html/2606.09863, E132); judges reading traces reach at most AUROC 0.65 (E137) | Check the end state (rerun, diff, files), not the closing message; a non-LLM feature detector beat the LLM judge (E138) |
 | Prompt-only anti-cheat does not work | "a nearly negligible effect on reward hacking" (https://metr.org/blog/2025-06-05-recent-reward-hacking/, E31) | Do not rely on prompts; use the guards above |
 | Premature "done" without testing | "Claude’s tendency to mark a feature as complete without proper testing" (https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents, E8); "The agent can't claim success it hasn't observed." (https://github.com/anthropics/cwc-long-running-agents README.md, E33) | Stop hook rerun of the evidence command (E15); default-FAIL results file; auditor claim table against logs |
 | Test and patch agreeing on the same error | "when the same trajectory writes both the patch and the test, their errors can agree" (https://arxiv.org/abs/2609.09133, E4) | Acceptance check written before the build by the plan step or a separate test agent, then frozen |
 | Tests pass but the change is unmergeable | "roughly half of test-passing SWE-bench Verified PRs" (https://metr.org/notes/2026-03-10-many-swe-bench-passing-prs-would-not-be-merged-into-main/, E18) | Reviewer rubric for design and conventions at task end (risky tasks) and phase end |
 | Fabricated packages | "at least 5.2% for commercial models and 21.7% for open-source models" (https://arxiv.org/abs/2406.10279, E28); a name-list check alone is "ineffective for detecting a package hallucination attack" (E29) | Lockfile diff: each new package exists on the registry, with age, publisher and download sanity; new dependencies are John-gated (Q5) |
-| Phantom files or symbols in the report | No opened source (OverclaimBench was seen in search text only) | `git ls-files` or grep for every path and symbol named |
 | Stale docs | No opened source (DOCER and Surface were seen in search text only) | Doc-manifest check plus doc code-reference resolution (grep identifiers) |
 | Over-reporting by the reviewer itself | "A reviewer prompted to find gaps will usually report some, even when the work is sound" (https://code.claude.com/docs/en/best-practices, E13) | Findings need `file:line` or command output; cap 3; precision tracking |
 
-Worker inference from the audit note: the failures that matter most for an unattended Claude Code engineer are test edits, special-casing, overclaiming and stale docs. Fabricated packages matter less, because most package data is from 2024 and older or open models, but the package check is cheap. No frequency was measured on a Claude Code engineer doing John's tasks; the worker expects "rare per task, near-certain over a month of overnight runs".
+Worker inference from the audit notes:
+- The failures that matter most for an unattended Claude Code engineer are test edits, special-casing, overclaiming and stale docs.
+- Fabricated packages matter less, because most package data is from 2024 and older or open models, but the package check is cheap.
+- A model upgrade within Claude 5 does not remove the need for the auditor. The gap note's claim gives Opus 5 explicit overclaiming in 36.0% of runs; that value is not in the E128 quote, which gives 59.0% misleading among incomplete runs.
+- No frequency was measured on a Claude Code engineer doing John's tasks; the worker expects "rare per task, near-certain over a month of overnight runs".
 
-**Contradictions.** One ImpossibleBench result says prompting cut GPT-5 cheating sharply, while METR found prompting negligible (E31). The ImpossibleBench side was seen only in Exa search text of the ICLR PDF, so it is unresolved and listed under Open questions. The opened METR evidence favours not relying on prompts.
+**Contradictions.** Prompting against cheating:
+- The gap note's ImpossibleBench claim reports that a strict prompt cut GPT-5 cheating from 92% to 1% on Conflicting-LiveCodeBench (https://arxiv.org/html/2510.20270v1, E134). Worker inference (not in the source): the 92% and 1% values are in that note's claim, not its quote.
+- METR found that instructing the model not to cheat "had a nearly negligible effect on reward hacking" (https://metr.org/blog/2025-06-05-recent-reward-hacking/, E31).
+- Both pages are now opened. The tasks differ: visible-test LiveCodeBench versus RE-Bench scoring exploits. So the evidence does not settle whether prompts help on John's tasks; it is unresolved and in Open questions.
+- The protocol does not depend on the answer, because both sources support structural guards: read-only or hidden tests (E134) and rerun checks.
 
 ### Q5. What git discipline and self-merge policy apply, and what do GitHub's plans allow for a private personal repo?
 
@@ -362,7 +382,11 @@ So R16 needs one of three things: (a) GitHub Pro, (b) a public repo, or (c) loca
   - Add a protected oracle: deny edits to tests, `conftest.py`, CI configuration, hooks and `audit/`, plus a test-diff guard (https://arxiv.org/html/2510.20270v1, E11).
   - Add an acceptance check frozen before the build (https://arxiv.org/abs/2609.09133, E3, E4).
   - Add a run of the real artifact for UI and service tasks (E8, E27).
-  - Change: the reviewer becomes the `auditor`, with a script layer first, a read-only claim-versus-evidence table, one capped round and correctness scope (E13, E32-E34). Its FAIL is enforced by the supervisor.
+  - Change: the reviewer becomes the `auditor`.
+    - A script layer first, including a deterministic claim-versus-transcript check (E138, E152).
+    - Then a fresh same-model, read-only, narrow claim-versus-evidence pass in one capped round, scoped to correctness (E13, E32-E34, E137, E144).
+    - The verdict is bound to the HEAD SHA it audited (E150), and the supervisor enforces its FAIL (E149, E170).
+    - This replaces engineer-context's "a fresh-context reviewer subagent with no Write/Edit compares the diff against the plan" with a script-first design, because the judge-only evidence is weak (E137).
   - Change: the PreToolUse deny on destructive git is defence in depth only, because rewording bypasses it (https://code.claude.com/docs/en/permissions, E77). GitHub branch protection is the real stop (E79).
 - **Step 4 (fresh session per task under a supervisor).**
   - Add a worktree, branch and PR per task (E37, E38), a stored `session_id` with `--resume <id>` (E108, E113), the startup reconcile and the systemd unit (E124, E125).
@@ -384,7 +408,11 @@ So R16 needs one of three things: (a) GitHub Pro, (b) a public repo, or (c) loca
   3. *Plan, size-gated.* Skip the plan if the diff fits one sentence (E24). Otherwise the plan file lists acceptance criteria mapped to checks, and the acceptance check is authored by the plan step or a separate test agent, then frozen (E3, E4, E10).
   4. *Build with a protected oracle.* A PreToolUse deny on tests, `conftest.py`, CI, hooks, `.claude/` and `audit/`, plus PostToolUse lint and typecheck (E11; worker inference).
   5. *Deterministic gate.* A Stop/TaskCompleted hook runs the Q2 deterministic list and exits 2 on failure (E15, E23). For UI or service tasks, run the real artifact (E8, E27).
-  6. *Audit.* The `auditor` runs: script layer, then a fresh read-only claim-versus-evidence pass in one capped round. A FAIL blocks `done` (Q3; E32-E36).
+  6. *Audit.* The `auditor` runs.
+     - First the script layer, including a deterministic claim-versus-transcript check (E138, E152).
+     - Then a fresh same-model, read-only, narrow claim-versus-evidence pass in one capped round (E137, E144). It flags and never rewrites (E146).
+     - The verdict is bound to the audited HEAD SHA (E150). A FAIL blocks `done` (Q3; E32-E36, E149).
+     - A cross-family look applies only to Tier 2 changes, if spike 4 shows gain.
   7. *Commit, push and open a PR* with a Conventional Commit title (E44). Tier 1: `gh pr merge --auto` with squash once required checks pass (E54, E59, E46). Tier 2: NEEDS-JOHN.
   8. *Log.* Append `events.jsonl` and update `RUN_STATUS.json`.
 - **Per phase:** a whole-branch review, the full suite, SAST and dependency scans, a real-app run, docs and diagrams, and mutation testing on changed modules as an indicator.
@@ -395,8 +423,11 @@ So R16 needs one of three things: (a) GitHub Pro, (b) a public repo, or (c) loca
 - The Superpowers full flow, with the TDD iron law and two-stage review per task (E14, E20). It costs more, and the gain from TDD is unproven.
 - A spec-kit or Kiro-style heavier spec ceremony (E21, E22, E26). This is the worker's alternative (b), rejected by the worker for one-user effort; the registry notes its verbosity.
 - A RETRACE-style reconstruction verifier, as a spike only (E5).
-- A second-family look at phase end, only if the auditor spike shows extra catches.
-- For the PR diff: local `/code-review`, the Claude Code GitHub Action, CodeRabbit, Claude Code Review (managed) or self-hosted Qodo PR-Agent. All of these pages are unopened; fetch before choosing.
+- A second-family look on high-risk changes or at phase end, only if the auditor spike shows extra catches (E145, E148).
+- Off-the-shelf claim checkers instead of a home-built script, after a spike under `claude -p`:
+  - backcheck: Apache-2.0, deterministic, transcript-based (E152, E153).
+  - Proof: MIT, a Stop hook with tamper rules (E154).
+- For the PR diff: local `/code-review` or a fresh subagent, both free apart from tokens. CodeRabbit Essentials at $24 per developer per month on annual billing (https://www.coderabbit.ai/pricing, E157), only if a spike on John's repos shows extra catches.
 - A GitHub App instead of a bot PAT (E82).
 - A public repo, or local-only enforcement, instead of GitHub Pro.
 - ntfy instead of Telegram (E102).
@@ -409,8 +440,14 @@ So R16 needs one of three things: (a) GitHub Pro, (b) a public repo, or (c) loca
 - Mandatory agent-written tests. No significant change in outcomes (https://arxiv.org/abs/2602.07900, E1).
 - TDD as a prompt ritual. Regressions rose to 9.94% (https://arxiv.org/abs/2603.17973, E2).
 - Prompt-only anti-cheat. "Nearly negligible effect" (https://metr.org/blog/2025-06-05-recent-reward-hacking/, E31).
-- An LLM-only completion judge, already rejected in engineer-context.md Q7.
-- An auditor that rewrites code, and mutation score as a hard gate. Worker inference; the supporting studies were not opened.
+- An LLM-only completion judge, already rejected in engineer-context.md Q7. Also, "no configuration across 5 judges, 5 prompt strategies, and full task specifications exceeds AUROC 0.65 on tau2-bench" (https://arxiv.org/html/2606.09863, E137), and judges flip on confident rewrites (E139).
+- An auditor that rewrites code. Review without execution regressed Opus 4.7 drafts, and Opus self-review gave no gain (https://arxiv.org/html/2607.21656v1, E146, E147).
+- Mutation score as a hard gate. Worker inference; its supporting studies are still unopened.
+- Forcing subagent delegation as an overclaiming fix. It "increased the proportion of misleading runs" (https://arxiv.org/html/2609.20812v3, E129).
+- Proof-or-Stop's signed-receipt machinery. The gap worker judges it overkill for one user; copy only the staleness rule (E150).
+- Paid review bots as the audit: Greptile at $30 per seat (E158) and Qodo with no permanent free tier (E159). They review only the diff, and neutral recall is low (E164, E165).
+- Claude Code Review (managed). It is limited to Team or Enterprise organisations (E161) and never blocks a PR (E172).
+- OverclaimBench as the test bed. Its "scenario corpora, the planted-defect registry, or the evaluation harness" are not public (E131).
 - Haiku as the claim-versus-evidence auditor (engineer-context.md:47, E35).
 - Superpowers' local merge to main, which bypasses PR checks (E41; worker inference).
 - Claude Code deny rules as the git boundary (E77).
@@ -426,7 +463,7 @@ So R16 needs one of three things: (a) GitHub Pro, (b) a public repo, or (c) loca
 1. A/B test on 10 of John's own tasks: with and without the reviewer, and with and without a plan. Measure first-try gate passes and a maintainer-style rubric, using `claude plugin eval`.
 2. Check whether the protected-path PreToolUse deny blocks Bash writes to tests, `conftest.py` and test configuration. The worker cites a nine-line `conftest.py` hack, but that page is not listed as opened.
 3. Same versus different model tier for the reviewer.
-4. Seeded-fault auditor spike. Plant 20 faults in a throwaway repo: a deleted test, a skipped test, a mocked-away function, a phantom file, a fake package, a stale doc reference, and a claimed test run missing from the log. Measure the script-layer and model-layer catch and false-positive rates for fresh Sonnet versus Opus versus a second family. Also measure cost per task, and check whether Claude Code Review is on John's plan.
+4. Seeded-fault auditor spike. Plant 20 faults in a throwaway repo: a deleted test, a skipped test, a mocked-away function, a phantom file, a fake package, a stale doc reference, and a claimed test run missing from the log. Measure the script-layer and model-layer catch and false-positive rates for fresh Sonnet versus Opus versus a second family; the second family is for Tier 2 only. Run backcheck and Proof read-only against the same seeded transcripts under `claude -p`, and check whether backcheck's pattern matching misses the engineer's phrasing (E153). Measure cost per task against the 2-4x budget (E151). Optionally run a free CodeRabbit pass on a public copy of the repo.
 5. GitHub on John's actual plan, in a throwaway private repo.
    - Set up branch protection, a required check, CODEOWNERS and "Require review from Code Owners".
    - Confirm whether auto-merge works with 0 approvals and whether a CODEOWNERS path blocks it.
