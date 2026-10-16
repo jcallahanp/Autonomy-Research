@@ -196,3 +196,25 @@ packaging.md, architecture.md, engineer-intake.md, engineer-existing-systems.md)
 | Devin Knowledge | https://docs.devin.ai/product-guides/knowledge | Trigger-recalled tips | hosted, paid | 2026-10-16 | Idea only (trigger descriptions) |
 | OpenHands skills (microagents) | https://docs.openhands.dev/openhands/usage/microagents/microagents-overview | Always-on repo context plus keyword-triggered skills | OpenHands | 2026-10-16 | Idea only |
 | OpenReview PDF (ContextRotBench) | https://openreview.net/pdf?id=DiZ67nkfay | ContextRotBench host | web | 2026-10-16 | Blocked (browser check, 429); find an arXiv copy |
+
+## Engineer browser and computer control (engineer-browser/tool-landscape.md)
+
+| Tool | Link | What it does | Where it runs | Verified | Verdict |
+| --- | --- | --- | --- | --- | --- |
+| Playwright CLI (@playwright/cli) | https://github.com/microsoft/playwright-cli | Token-efficient CLI + skills for coding agents; ref snapshots on disk; codegen; Apache-2.0, 14.2k stars; `npm i -g @playwright/cli`, `playwright-cli install --skills` | local | 2026-10-16 | **Use**: primary driver for the engineer; spike on real Attio/Clay tasks |
+| Playwright MCP (engineer use) | https://github.com/microsoft/playwright-mcp | Accessibility-snapshot MCP, `browser_drag`, persistent login; Apache-2.0, 38.2k stars | local stdio MCP | 2026-10-16 | **Use** as alternate; widens the research-tools row (which said last resort); MCP and CLI token gap closed by mid-2026 per a third-party re-benchmark |
+| Playwright Test Agents | https://playwright.dev/docs/test-agents | planner/generator/healer produce .spec.ts; `npx playwright init-agents --loop=claude` | local | 2026-10-16 | **Use**: record once, replay free; spike healer on drag/drop |
+| Puppeteer | https://github.com/puppeteer/puppeteer | Chrome/Firefox JS API, Apache-2.0, 95.7k stars; README points to chrome-devtools-mcp | local | 2026-10-16 | Skip; subsumed by Playwright |
+| Chrome DevTools MCP | https://github.com/ChromeDevTools/chrome-devtools-mcp | Google MCP + CLI over Puppeteer; traces, network, console; Apache-2.0, 53.6k stars | local | 2026-10-16 | Fallback for network/console inspection of app requests |
+| agent-browser (Vercel Labs) | https://github.com/vercel-labs/agent-browser | Rust CLI, accessibility refs; Apache-2.0, 44k stars, created 2026-01 | local npm/brew/cargo | 2026-10-16 | Fallback; spike vs Playwright CLI |
+| Stagehand | https://github.com/browserbase/stagehand | MIT TS SDK, act/extract/observe, selfHeal, local `cacheDir` replay; 25.7k stars | local or Browserbase | 2026-10-16 | Fallback replay layer; needs own LLM key; John-named, adopted only as an option |
+| browser-use | https://github.com/browser-use/browser-use | MIT Python agent + CLI skill, cloud $0.02/browser-hour; 118k stars; page contains agent-addressed install prompts, not followed | local or cloud | 2026-10-16 | Skip as primary (second LLM loop) |
+| browser-harness | https://github.com/browser-use/browser-harness | MIT; Claude Code drives real Chrome over CDP, MCP stdio; agent writes helpers; page contains agent-addressed install prompt, not followed | local | 2026-10-16 | Fallback; unvetted, spike first |
+| workflow-use | https://github.com/browser-use/workflow-use/ | Record-to-JSON workflows with agent fallback | local | 2026-10-16 | Skip; maintainers say not production-ready |
+| Skyvern | https://github.com/Skyvern-AI/skyvern | Vision-LLM agent + Playwright SDK, explore/replay code-gen; AGPL-3.0; cloud Free/$29/$149 | local server or cloud | 2026-10-16 | Skip for now; AGPL, own server and LLM |
+| Magnitude browser agent | https://github.com/magnitudedev/browser-agent | Vision-first TS agent, Apache-2.0, 4.1k stars; magnitudedev/magnitude is now an inference engine | local | 2026-10-16 | Reject: stale, self-reported benchmark only |
+| Anthropic browser use tool | https://platform.claude.com/docs/en/agents-and-tools/tool-use/browser-use-tool | API toolset with accessibility refs + coordinate drag; you write the executor | Claude API | 2026-10-16 | Reference design only |
+| Anthropic computer use tool | https://platform.claude.com/docs/en/agents-and-tools/tool-use/computer-use-tool | Desktop screenshot/mouse toolset `computer_toolset_20260801` | Claude API + your VM | 2026-10-16 | Fallback for desktop (other facet) |
+| Claude in Chrome (engineer use) | https://code.claude.com/docs/en/chrome | Logged-in visible Chrome via extension; off with API key/setup-token | John's machine | 2026-10-16 | Fallback for supervised one-offs (existing row above) |
+| ComponentBench | https://arxiv.org/html/2608.18307 | 2,910 component-level tasks; AX-tree vs pixel vs browser-use; drag/drop findings | dataset (not run) | 2026-10-16 | Evidence; possible harness for the drag-drop spike |
+| Online-Mind2Web leaderboards (Steel, HAL) | https://leaderboard.steel.dev/leaderboards/online-mind2web/ | Live-web benchmark boards; judges differ, many self-reports | web | 2026-10-16 | Evidence only; do not plan from vendor scores |
