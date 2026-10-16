@@ -18,8 +18,8 @@ pip-audit or `npm audit`, gitleaks, Socket's free plan on npm pull requests, Dep
 John's own staging, Checkov for IaC and Lynis for the VM; CodeQL on private repos needs a paid Code Security licence
 (https://docs.github.com/en/code-security/code-scanning/introduction-to-code-scanning/about-code-scanning). SAST is a
 tripwire, not an audit: in one benchmark "55–96 %" of flagged vulnerable files are flagged again after the fix
-(https://www.maxor-global.com/papers/flagged-on-both-sides.en.pdf). Every scanner and action is pinned by version
-and checksum or SHA after the March 2026 Trivy compromise
+(https://www.maxor-global.com/papers/flagged-on-both-sides.en.pdf). The workers advise pinning every scanner and action by
+version and checksum or SHA after the March 2026 Trivy compromise
 (https://github.com/aquasecurity/trivy/security/advisories/GHSA-69fq-xp46-6x23,
 https://www.wiz.io/blog/trivy-compromised-teampcp-supply-chain-attack). LLM review (`/security-review` per change,
 the Claude Security plugin per milestone, https://code.claude.com/docs/en/claude-security) is accepted only with
@@ -32,12 +32,12 @@ https://docs.n8n.io/deploy/host-n8n/configure-n8n/basic-configuration/use-enviro
 becomes a test in the repo. The engineer itself holds the lethal trifecta, so its defences are architectural
 (least privilege, sandbox with egress allowlist, pinned MCP servers, plan-then-execute), not prompt wording
 (https://genai.owasp.org/download/52117/, https://simonwillison.net/2025/Jun/13/prompt-injection-design-patterns/).
-Gates block on new Critical/High deterministic findings, any secret and any failing auth test; LLM-only findings
-warn and ticket; exceptions carry an owner, reason and expiry (pattern from
-https://docs.defectdojo.com/asset_modelling/os_hierarchy/os__sla_configuration/). Reports follow the WSTG reporting
-structure (https://wstg.owasp.org/latest/5-Reporting/01-Reporting_Structure) with a one-page brief for John, three
-states per area (checked and clean, checked with open issues, not checked) and a standing "not a penetration test"
-footer. HIPAA does not bind a non-covered entity
+In the workers' design (inference, not sourced as a rule), gates block on new Critical/High deterministic findings,
+any secret and any failing auth test; LLM-only findings warn and ticket; exceptions carry an owner, reason and expiry
+(pattern from https://docs.defectdojo.com/asset_modelling/os_hierarchy/os__sla_configuration/). Reports follow the
+WSTG reporting structure (https://wstg.owasp.org/latest/5-Reporting/01-Reporting_Structure) with, in the workers'
+design, a one-page brief for John, three states per area (checked and clean, checked with open issues, not checked)
+and a standing "not a penetration test" footer. HIPAA does not bind a non-covered entity
 (https://www.hhs.gov/hipaa/for-professionals/covered-entities/index.html); the FTC rule covers "vendors of personal
 health records and related entities" (https://www.ftc.gov/legal-library/browse/rules/health-breach-notification-rule),
 which the worker judges does not plainly reach John's own single-user data (not legal advice). Pass thresholds,
@@ -61,9 +61,9 @@ Exceptional Conditions" (https://top10.owasp.org/2025). The API Security Top 10 
 (https://owasp.org/www-project-web-security-testing-guide/); Worker inference (not in the source): latest stable
 v4.2 of 3 Dec 2020. LLM Top 10 is the 2025 edition (https://genai.owasp.org/llm-top-10/). The Agentic Top 10 for 2026
 lists ASI01-ASI10 (https://genai.owasp.org/download/52117/,
-https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-for-2026/). MASVS has eight control groups
-and its old levels "have been reworked as "MAS Profiles"" (https://github.com/OWASP/owasp-masvs
-Document/03-Using_the_MASVS.md:28 (commit bbe226f)). CIS lists "Ubuntu Linux 24.04 LTS (2.0.0)" and "Docker (1.9.0)"
+https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-for-2026/). MASVS's old levels "have been reworked as "MAS Profiles""
+(https://github.com/OWASP/owasp-masvs Document/03-Using_the_MASVS.md:28 (commit bbe226f)); Worker inference (not in
+the source): eight control groups, STORAGE to PRIVACY. CIS lists "Ubuntu Linux 24.04 LTS (2.0.0)" and "Docker (1.9.0)"
 (https://www.cisecurity.org/cis-benchmarks); Worker inference (not in the source): Ubuntu 26.04 LTS at 1.0.0. NIST
 SSDF Rev 1 is a draft whose comment period is closed (https://csrc.nist.gov/pubs/sp/800/218/r1/ipd); Worker
 inference (not in the source): v1.1 final Feb 2022, Rev 1 draft dated 17 Dec 2025.
@@ -77,8 +77,9 @@ level, not by hand. CIS applies to the VM and containers only; SSDF is a process
 (https://github.com/semgrep/semgrep-rules javascript/express/security/cors-misconfiguration.yaml:10 (commit
 17e31e1)) and some carry legacy ASVS 4.0 ids (kotlin/lang/security/weak-rsa.yaml:14-16); MASTG ships Semgrep-style
 rules tagged with MASVS controls (https://github.com/OWASP/owasp-mastg rules/mastg-android-backup-manifest.yml:10
-(commit 02ffd85)); ZAP tags cover the 2021 Top 10, WSTG 4.2 and HIPAA
-(https://www.zaproxy.org/docs/desktop/addons/common-library/alerttags/). ASVS itself says "Level 1 is not
+(commit 02ffd85)); ZAP tags cover the 2021 Top 10
+(https://www.zaproxy.org/docs/desktop/addons/common-library/alerttags/); Worker inference (not in the source): also
+the 2017 Top 10, WSTG v4.2 and a HIPAA tag. ASVS itself says "Level 1 is not
 necessarily penetration testable by an external tester without internal access to documentation or code"
 (https://github.com/OWASP/ASVS 5.0/en/0x03-What-is-the-ASVS.md:97). Worker inference (not in the source; counts
 approximate): of the L1 items, about 20 are T (tool pass/fail: injection patterns, cookies, HSTS, CORS, TLS, `.git`

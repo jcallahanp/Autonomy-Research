@@ -461,7 +461,7 @@ packaging.md, architecture.md, engineer-intake.md, engineer-existing-systems.md)
 
 | Tool | Link | What it does | Where it runs | Verified | Verdict |
 | --- | --- | --- | --- | --- | --- |
-| Claude Security plugin (`/claude-security`) | https://code.claude.com/docs/en/claude-security | Multi-agent repo/diff scan, independent finding review, patches; python3 3.9+ | Claude Code session, plan usage | 2026-10-16 | Use for deep scans; spike on a seeded repo |
+| Claude Security plugin (`/claude-security`) | https://code.claude.com/docs/en/claude-security | Multi-agent repo/diff scan, independent finding review, patches; python3 3.9+; one third-party run (https://dev.to/shimo4228/claude-security-beta-cost-output-accuracy-189-agents-2-hours-measured-1eji): 189 subagents, 2 h, 20 findings, nondeterministic | Claude Code session, plan usage | 2026-10-16 | Use per milestone, blind to SAST, behind the evidence contract; spike catches, false positives and token cost on a seeded repo |
 | `/security-review` | https://code.claude.com/docs/en/claude-security | Single-pass branch review | Claude Code | 2026-10-16 | Use per change, behind an evidence contract (file:line, repro, scope) |
 | anthropics/claude-code-security-review | https://github.com/anthropics/claude-code-security-review | GitHub Action diff review, JSON findings, FP filter; README says not hardened against prompt injection | GitHub runners | 2026-10-16 (clone commit 0c6a49f, not run) | Fallback for CI on trusted PRs only |
 | OpenAI Codex Security (ex-Aardvark) | https://github.com/openai/codex-security/ | CLI/SDK/Action, sandbox-validated findings, SARIF; OpenAI API key | local, CI | 2026-10-16 (search page text only) | Fallback second-model opinion; price unverified |
@@ -492,6 +492,7 @@ packaging.md, architecture.md, engineer-intake.md, engineer-existing-systems.md)
 | ZAP by Checkmarx (tooling.md) | https://www.zaproxy.org/blog/2024-09-24-zap-has-joined-forces-with-checkmarx/ | Apache-2.0; baseline passive scan with JSON report; API/full scans active; Automation Framework YAML | Docker, CI | 2026-10-16 | Use baseline on John's own staging only |
 | Nuclei / Checkov / Lynis / Docker Bench (tooling.md) | https://github.com/bridgecrewio/checkov | MIT / Apache-2.0 / GPL / Apache-2.0; Checkov SARIF + baseline; Nuclei JSONL; Docker Bench JSON | local, CI, VM | 2026-10-16 | Checkov and Lynis use; Nuclei fallback; Docker Bench if Docker on VM |
 | gitleaks / TruffleHog (security update, tooling.md) | https://github.com/gitleaks/gitleaks | gitleaks MIT, SARIF/JSON, baseline; TruffleHog AGPL-3.0; SecretBench precision 46% vs 6% | local, CI | 2026-10-16 | gitleaks default; TruffleHog verified-only fallback |
+| FTC HBNR / HIPAA / WA MHMDA (engineer-security.md) | https://www.ftc.gov/legal-library/browse/rules/health-breach-notification-rule | Health-data legal regimes: HIPAA binds only covered entities and business associates; HBNR covers vendors of personal health records; MHMDA bars selling consumer health data without authorization | n/a | 2026-10-16 | Reference, not legal advice; John's own single-user data most plausibly out of scope; build as if breach notice and consent applied |
 
 ## Engineer human in the loop
 
