@@ -70,7 +70,8 @@ def state(events: list) -> dict:
 
     running: task_start or resume without a later task_end or crash. attempts: failed attempts
     (an outcome `audit` event whose detail.status is retry, blocked or needs_john, or a crash). waiting: tasks
-    with a reset_wait not yet followed by a resume. John's `yes` to a task's relogin ask unblocks it.
+    with a reset_wait not yet followed by a resume. John's `yes` to a task's relogin ask unblocks it; his `yes`
+    to a deadend ask resets its attempt count.
     in_review: the audited sha is pushed and its PR open; only a `merge` event with detail.merged (the
     broker mirror's default branch has it, merges.py) makes the task done, so dependents wait for the merge.
     """
@@ -91,6 +92,8 @@ def state(events: list) -> dict:
             st["waiting"][tid] = {"session_id": e.get("session_id"), "reset_at": detail.get("reset_at")}
         elif kind == "approval_answer" and detail.get("kind") == "relogin" and detail.get("answer") == "yes":
             st["blocked"].discard(tid)
+        elif kind == "approval_answer" and detail.get("kind") == "deadend" and detail.get("answer") == "yes":
+            st["attempts"].pop(tid, None)  # John's yes on a deadend ask: the retry gets fresh attempts
         elif kind == "merge" and detail.get("merged") is True:
             for key in OUTCOMES.values():
                 st[key].discard(tid)

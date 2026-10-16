@@ -20,6 +20,13 @@ fi
 
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
+# One byte-compiled copy of engineer/ for the whole run: testlib.make_root copies it (with its __pycache__,
+# mtimes kept so the .pyc stay valid), so Python started from a test root does not recompile every module.
+mkdir -p "$work/template"
+cp -a engineer "$work/template/engineer"
+find "$work/template/engineer" -name __pycache__ -prune -exec rm -rf {} +
+python3 -m compileall -q "$work/template/engineer" >/dev/null
+export ENG_TEMPLATE="$work/template/engineer"
 
 fails=0; ran=0; files=()
 for a in "${areas[@]}"; do

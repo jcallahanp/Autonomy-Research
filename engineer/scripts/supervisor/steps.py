@@ -11,8 +11,8 @@ from datetime import timedelta
 from pathlib import Path
 
 from supervisor import asks, breaker, events, limits, morning, records
-from supervisor.commands import (agent_run, approve_plan, audit, auditor_verdict, automerge, digest,  # noqa: F401
-                                 open_pr, poll_replies, push_branch, run_task)
+from supervisor.commands import (agent_run, audit, auditor_verdict, automerge, open_pr, push_branch,  # noqa: F401
+                                 run_task)
 
 
 class Ctx:
@@ -50,6 +50,8 @@ def attempt(c, task, resume=None) -> dict:
     for d in r.get("permission_denials") or []:
         c.ev("denial", tid, detail={"kind": str(d.get("tool_name", "unknown") if isinstance(d, dict) else d)[:60],
                                     "source": "run"})
+    if asks.stopped(r):
+        return stopped(c, tid, "implementer")
     asks.from_progress(c, tid)
     ch = asks.challenge(r.get("output_tail"))
     if ch:
@@ -75,6 +77,8 @@ def attempt(c, task, resume=None) -> dict:
 def _verify(c, task, r) -> dict:
     tid = task["id"]
     chk = run_task(c.conf, c.name, tid, "check", sha=r.get("head_sha"))
+    if asks.stopped(chk):
+        return stopped(c, tid, "check")
     path = Path(c.conf["STATE_DIR"]) / "checks" / c.name / f"{tid}.json"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(chk, sort_keys=True) + "\n")
@@ -85,6 +89,8 @@ def _verify(c, task, r) -> dict:
     if a["verdict"] != "PASS":
         return outcome(c, task, r, a["verdict"], a["lines"], head=head)
     ar = run_task(c.conf, c.name, tid, "auditor")
+    if asks.stopped(ar):
+        return stopped(c, tid, "auditor")
     v, cost = auditor_verdict(ar), ar.get("cost_usd")
     if v is None:
         return outcome(c, task, r, "FAIL", ["auditor verdict missing or not valid against the schema"], cost, head=head)
@@ -119,6 +125,12 @@ def publish(c, task, r, sha, body, lines, cost) -> dict:
         asks.ask(c, tid, "merge", f"Review PR {pr.get('url') or pr['number']} on GitHub ({why}); it merges once "
                  f"you approve commit {sha[:12]}", ref=pr.get("url"))
     return outcome(c, task, r, "PASS", lines, cost, status="in_review", head=sha)
+
+
+def stopped(c, tid, profile) -> dict:
+    """run-task exited 75 because STOP appeared: no outcome and no attempt counted; the night stops."""
+    c.ev("stopped", tid, exit_code=asks.STOPPED_EXIT, detail={"profile": profile, "reason": "kill switch"})
+    return {"night": "stopped_by_bound", "reason": "kill switch"}
 
 
 def outcome(c, task, r, verdict, lines, auditor_cost=None, status=None, head=None) -> dict:

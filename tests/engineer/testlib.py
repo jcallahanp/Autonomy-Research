@@ -1,7 +1,9 @@
 """Shared helpers for tests/engineer/<area>/test_*.py and, through its CLI, lib.sh.
 
 make_root(tmp) copies engineer/ to <tmp>/opt, rewrites etc/engineer.conf so every path points
-inside <tmp>, sets BROKER_USER to the current effective user and returns the root.
+inside <tmp>, sets BROKER_USER to the current effective user and returns the root. Under run.sh it copies
+ENG_TEMPLATE instead: engineer/ copied and byte-compiled once per suite run, so the many Python processes a
+test starts from its root do not each recompile the modules (nothing is ever written into the repo).
 stub(root, name, body) writes an executable that logs its argv to <tmp>/argv.log.
 CLI: python3 testlib.py mk-root DIR | stub ROOT NAME [BODY]
 """
@@ -41,8 +43,9 @@ def make_root(tmp) -> Path:
     """Copy engineer/ to <tmp>/opt with a test engineer.conf; return the root."""
     tmp = Path(tmp).resolve()
     root = tmp / "opt"
-    shutil.copytree(ENGINEER, root, symlinks=True,
-                    ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
+    template = Path(os.environ.get("ENG_TEMPLATE") or ENGINEER)
+    ignore = None if template != ENGINEER else shutil.ignore_patterns("__pycache__", "*.pyc")
+    shutil.copytree(template, root, symlinks=True, ignore=ignore)
     conf_path = root / "etc" / "engineer.conf"
     out, values = [], {}
     for line in conf_path.read_text().splitlines():

@@ -140,6 +140,15 @@ jq '.tasks[0].check = "echo sneaky"' "$wt/docs/plan/tasks.json" > "$T/tasks.json
 git -C "$wt" commit -qam "chore: edit plan"
 expect 65 "tasks.json differs from the approval" "$RT" demo t1 check
 grep -q "approved" "$T/err" || fail "mismatch message: $(cat "$T/err")"
+# --- test_check_reads_stored_approved_copy: the bytes approve-plan stored (records approvals/<p>/v<N>/) win.
+stored="$RECORDS_DIR/demo/approvals/demo/v1/docs/plan"
+mkdir -p "$stored" && echo '{"tampered": true}' > "$stored/tasks.json"
+expect 65 "stored copy with other bytes is ignored" "$RT" demo t1 check
+git -C "$src" show main:docs/plan/tasks.json > "$stored/tasks.json"
+expect 0 "check from the stored approved copy" "$RT" demo t1 check
+jq -e '(.output_tail | contains("checked-ok")) and (.output_tail | contains("sneaky") | not)' "$T/out" >/dev/null \
+  || fail "test_check_reads_stored_approved_copy: $(cat "$T/out")"
+rm -rf "$RECORDS_DIR/demo/approvals"
 git -C "$wt" reset -q --hard HEAD~1
 approve 0000000000000000000000000000000000000000000000000000000000000000
 expect 65 "approval hash differs" "$RT" demo t1 check

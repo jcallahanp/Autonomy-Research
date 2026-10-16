@@ -112,6 +112,19 @@ class EventsTest(unittest.TestCase):
         st = events.state(events.read(self.path))
         self.assertEqual((st["in_review"], st["done"]), (set(), {"a"}))
 
+    def test_deadend_yes_resets_attempts(self):
+        for status in ("retry", "blocked"):
+            self.add("task_end", "a", exit_code=1)
+            self.add("audit", "a", detail={"verdict": "FAIL", "status": status})
+        self.add("approval_answer", "a", detail={"item": 3, "kind": "deadend", "answer": "no"})
+        self.assertEqual(events.state(events.read(self.path))["attempts"]["a"], 2)
+        self.add("approval_answer", "a", detail={"item": 3, "kind": "deadend", "answer": "yes"})
+        self.add("approval_answer", "b", detail={"item": 4, "kind": "deadend", "answer": "yes"})
+        st = events.state(events.read(self.path))
+        self.assertEqual((st["attempts"].get("a", 0), st["attempts"].get("b", 0)), (0, 0))
+        self.add("audit", "a", detail={"verdict": "FAIL", "status": "retry"})
+        self.assertEqual(events.state(events.read(self.path))["attempts"]["a"], 1)
+
     def test_state_waiting_and_resume(self):
         self.add("task_start", "a")
         self.add("task_end", "a", exit_code=1, session_id="s1")

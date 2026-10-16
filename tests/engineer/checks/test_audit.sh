@@ -56,60 +56,33 @@ audit
 [ "$rc" -eq 1 ] && [ "$(field verdict)" = FAIL ] || fail "stale sha: exit $rc: $out"
 field lines | grep -q head_sha || fail "stale sha: no head_sha line: $out"
 
-# zero tests -> FAIL
-set_result "$head" 'TESTS_RUN=0'
+# zero tests and a failing check -> FAIL (testcount's cases one by one are in test_testcount.py)
+set_result "$head" 'TESTS_RUN=0' 1
 audit
-[ "$rc" -eq 1 ] || fail "zero tests: exit $rc: $out"
+[ "$rc" -eq 1 ] || fail "zero tests, check exit 1: exit $rc: $out"
+grep -q '^check: ' <<< "$(field lines)" || fail "zero tests, check exit 1: no check line: $out"
 
-# failing check -> FAIL
-set_result "$head" 'TESTS_RUN=3' 1
-audit
-[ "$rc" -eq 1 ] || fail "check exit 1: exit $rc: $out"
-
-# added skip marker -> FAIL
+# One commit, one finding per step: each step's FAIL reaches the verdict with its own line.
+#   test-diff-guard: an added skip marker; secret-scan: a token shaped like a GitHub classic token (its value
+#   is never printed); protected: a CI workflow; plan: docs/plan/ changed; integrations-env: integrations.yaml
+#   without .env.example; scanners: the stub gitleaks reports a finding.
 printf 'import pytest\n@pytest.mark.skip\ndef test_b():\n    assert 1\n' > "$p/tests/test_b.py"
-g add -A; g commit -qm skip
-set_result "$(g rev-parse HEAD)" 'TESTS_RUN=3'
-audit
-[ "$rc" -eq 1 ] || fail "skip marker: exit $rc: $out"
-field lines | grep -q skip_marker || fail "skip marker: no line: $out"
-g reset -q --hard HEAD~1
-
-# fake token shaped like a GitHub classic token -> FAIL, value never printed
 tok="gh""p_TESTTOKEN$(printf '0%.0s' {1..27})"
 echo "TOKEN = '$tok'" > "$p/src/conf.py"
-g add -A; g commit -qm token
+mkdir -p "$p/.github/workflows" "$p/docs/plan"; echo 'on: push' > "$p/.github/workflows/ci.yml"
+printf 'services:\n  - id: attio\n    env_vars: [ATTIO_API_KEY]\n' > "$p/docs/plan/integrations.yaml"
+g add -A; g commit -qm findings
+stub "$root" gitleaks 'while [ $# -gt 0 ]; do [ "$1" = --report-path ] && echo "[{\"File\": \"src/a.py\", \"StartLine\": 1, \"RuleID\": \"generic-api-key\"}]" > "$2"; shift; done'
 set_result "$(g rev-parse HEAD)" 'TESTS_RUN=3'
 audit
-[ "$rc" -eq 1 ] || fail "token: exit $rc: $out"
-field lines | grep -q 'src/conf.py:1 github_token' || fail "token: no line: $out"
+[ "$rc" -eq 1 ] || fail "findings: exit $rc: $out"
+lines=$(field lines)
+for want in '^test-diff-guard: .*skip_marker' 'src/conf.py:1 github_token' '^protected: .github/workflows/ci.yml' \
+  '^plan: docs/plan/integrations.yaml' 'missing: ATTIO_API_KEY' '^scanners: '; do
+  grep -q -- "$want" <<< "$lines" || fail "findings: no line matching $want: $out"
+done
 case "$out$(cat "$T/err")" in *TESTTOKEN*) fail "token: value printed" ;; esac
 g reset -q --hard HEAD~1
-
-# protected path -> FAIL
-mkdir -p "$p/.github/workflows"; echo 'on: push' > "$p/.github/workflows/ci.yml"
-g add -A; g commit -qm ci
-set_result "$(g rev-parse HEAD)" 'TESTS_RUN=3'
-audit
-[ "$rc" -eq 1 ] || fail "protected: exit $rc: $out"
-field lines | grep -q '.github/workflows/ci.yml' || fail "protected: no line: $out"
-g reset -q --hard HEAD~1
-
-# integrations.yaml changed without .env.example -> FAIL
-mkdir -p "$p/docs/plan"
-printf 'services:\n  - id: attio\n    env_vars: [ATTIO_API_KEY]\n' > "$p/docs/plan/integrations.yaml"
-g add -A; g commit -qm integ
-set_result "$(g rev-parse HEAD)" 'TESTS_RUN=3'
-audit
-[ "$rc" -eq 1 ] || fail "integrations: exit $rc: $out"
-field lines | grep -q 'missing: ATTIO_API_KEY' || fail "integrations: no line: $out"
-g reset -q --hard HEAD~1
-
-# scanner finding (stub gitleaks reports one) -> FAIL
-stub "$root" gitleaks 'while [ $# -gt 0 ]; do [ "$1" = --report-path ] && echo "[{\"File\": \"src/a.py\", \"StartLine\": 1, \"RuleID\": \"generic-api-key\"}]" > "$2"; shift; done'
-set_result "$head" 'TESTS_RUN=3'
-audit
-[ "$rc" -eq 1 ] || fail "gitleaks finding: exit $rc: $out"
 stub "$root" gitleaks 'while [ $# -gt 0 ]; do [ "$1" = --report-path ] && echo "[]" > "$2"; shift; done'
 
 # bad arguments -> exit 2
@@ -152,18 +125,6 @@ audit
 grep -q '.github/workflows/sneak.yml' <<< "$(field lines)" || fail "test_audit_ignores_local_main_commits: no line: $out"
 g checkout -q main; g reset -q --hard HEAD~1; g checkout -q -B task/t1 main
 echo 'x = 7' > "$p/src/a.py"; g commit -qam again --no-verify
-
-# The task diff may not touch docs/plan/** (plan work goes through the plan PR).
-mkdir -p "$p/docs/plan"; echo '{"version": 1, "tasks": []}' > "$p/docs/plan/tasks.json"
-g add -A; g commit -qm "chore: status" --no-verify
-set_result "$(g rev-parse HEAD)" 'TESTS_RUN=3'
-audit
-[ "$rc" -eq 1 ] || fail "plan path: exit $rc: $out"
-grep -q '^plan: docs/plan/tasks.json' <<< "$(field lines)" || fail "plan path: no line: $out"
-g reset -q --hard HEAD~1
-set_result "$(g rev-parse HEAD)" 'TESTS_RUN=3'
-audit
-[ "$rc" -eq 0 ] || fail "plan path reset: exit $rc: $out $(cat "$T/err")"
 
 # A head that does not contain the mirror's default branch fails.
 git clone -q "$mirror" "$T/up"

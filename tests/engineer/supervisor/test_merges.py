@@ -1,6 +1,7 @@
 """merges.pass_open_prs: an in_review task is done only once the broker mirror's default branch has its merge."""
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -36,6 +37,30 @@ def task(tid, deps=()):
 
 
 class MergesTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        """GitHub's default branch (a bare mirror) and a work repo whose task/t1 holds the audited commit;
+        built once, copied per test."""
+        cls._td = tempfile.TemporaryDirectory()
+        src = Path(cls._td.name)
+        work = src / "work"
+        git(src, "init", "-q", "-b", "main", str(work))
+        (work / "a.txt").write_text("a\n")
+        git(work, "add", "-A")
+        git(work, "commit", "-qm", "base")
+        git(work, "checkout", "-qb", "task/t1")
+        (work / "b.txt").write_text("b\n")
+        git(work, "add", "-A")
+        git(work, "commit", "-qm", "feat: t1")
+        cls.sha = git(work, "rev-parse", "HEAD")
+        git(work, "checkout", "-q", "main")
+        git(src, "clone", "-q", "--bare", str(work), str(src / "mirror.git"))
+        cls.src = src
+
+    @classmethod
+    def tearDownClass(cls):
+        cls._td.cleanup()
+
     def setUp(self):
         td = tempfile.TemporaryDirectory()
         self.addCleanup(td.cleanup)
@@ -45,22 +70,10 @@ class MergesTest(unittest.TestCase):
         (Path(self.conf["ETC_DIR"]) / "projects.txt").write_text("demo o/demo main self_merge=on scratch=yes\n")
         testlib.stub(self.root, "agent-run", AGENT_RUN.replace("__D__", repr(str(self.tmp))))
         self.automerge({"tier": 2, "auto_merge": False, "reasons": ["auth/**"]}, rc=3)
-        # GitHub's default branch, as the broker mirror holds it; and the task's audited commit on its own branch.
-        work = self.tmp / "work"
-        git(self.tmp, "init", "-q", "-b", "main", str(work))
-        (work / "a.txt").write_text("a\n")
-        git(work, "add", "-A")
-        git(work, "commit", "-qm", "base")
-        git(work, "checkout", "-qb", "task/t1")
-        (work / "b.txt").write_text("b\n")
-        git(work, "add", "-A")
-        git(work, "commit", "-qm", "feat: t1")
-        self.sha = git(work, "rev-parse", "HEAD")
-        git(work, "checkout", "-q", "main")
-        self.work = work
+        self.work = self.tmp / "work"
+        shutil.copytree(self.src / "work", self.work, symlinks=True)
         self.mirror = Path(self.conf["MIRROR_DIR"]) / "demo.git"
-        self.mirror.parent.mkdir(parents=True, exist_ok=True)
-        git(self.tmp, "clone", "-q", "--bare", str(work), str(self.mirror))
+        shutil.copytree(self.src / "mirror.git", self.mirror, symlinks=True)
         self.events = Path(self.conf["STATE_DIR"]) / "demo" / "events.jsonl"
         for kind, detail in (("audit", {"verdict": "PASS", "status": "in_review", "audited_sha": self.sha}),
                              ("pr_open", {"number": 7, "url": "https://github.com/o/demo/pull/7"})):

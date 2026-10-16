@@ -109,6 +109,28 @@ class LoopTest(unittest.TestCase):
         self.assertEqual((st["state"], st["reason"]), ("stopped_by_bound", "kill switch"))
         self.assertFalse([a for a in self.rig.argv() if a.startswith("run-task")])
 
+    def test_run_stopped_by_kill_switch_is_not_an_attempt(self):
+        """run-task exit 75 (STOP appeared mid-run): the night stops, a `stopped` event, no outcome, no attempt."""
+        from supervisor import events
+        for profile in ("implementer", "check", "auditor"):
+            with self.subTest(profile=profile):
+                self.fresh_rig()
+                self.rig.reply(profile, "run-task: kill switch is on", rc=75)
+                self.run_ok()
+                st = self.rig.status()
+                self.assertEqual((st["state"], st["reason"]), ("stopped_by_bound", "kill switch"))
+                evs = self.rig.events()
+                self.assertEqual([e["detail"]["profile"] for e in evs if e["event"] == "stopped"], [profile])
+                self.assertFalse([e for e in evs if e["event"] == "audit"])
+                self.assertEqual(events.state(evs)["attempts"].get("t1", 0), 0)
+                self.assertFalse([a for a in self.rig.argv() if a.startswith("agent-run open-pr")])
+
+    def fresh_rig(self):
+        """A fresh rig for each subTest."""
+        self.rig.close()
+        self.rig = Rig()
+        self.addCleanup(self.rig.close)
+
     def test_weekly_limit_stops_night(self):
         self.rig.reply("implementer", result(exit_code=1, is_error=True,
                                              output_tail="Weekly limit reached ∙ resets Oct 20, 9am"), rc=1)

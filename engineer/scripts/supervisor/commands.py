@@ -1,12 +1,13 @@
-"""The commands the supervisor runs (all named in engineer.conf, plus the Task 7 CLIs), and their replies."""
+"""The commands the supervisor runs (all named in engineer.conf), and their replies.
+
+The approvals CLIs (digest.py, apply-replies.py, approve-plan) are run by approvals/telegram.py.
+"""
 import json
 import shlex
 import subprocess
-import sys
 from pathlib import Path
 
 from eng import schema
-from supervisor import events
 
 ROOT = Path(__file__).resolve().parents[2]
 TAIL = 4000
@@ -87,31 +88,3 @@ def push_branch(conf, repo_dir, branch, sha) -> subprocess.CompletedProcess:
 def automerge(conf, project, number, sha) -> dict:
     """automerge P PR SHA: merges only GitHub's head == SHA (the audited commit); its JSON reply or {}."""
     return json_line(agent_run(conf, "automerge", project, number, sha).stdout) or {}
-
-
-def _approvals(c, script, *extra, stdin=None):
-    argv = [sys.executable, c.root / "scripts" / "approvals" / script, "--events", c.events,
-            "--records", c.records_file, "--now", events.now_iso(c.now), *extra]
-    return run(argv, stdin)
-
-
-def digest(c) -> tuple:
-    """(messages, shown T1 item numbers or None) from digest.py --json-object."""
-    doc = json_line(_approvals(c, "digest.py", "--json-object").stdout, (dict, list))
-    if isinstance(doc, dict):
-        msgs, shown = doc.get("messages"), doc.get("shown")
-        shown = [n for n in shown if isinstance(n, int)] if isinstance(shown, list) else None
-    else:
-        msgs, shown = doc, None
-    return [m for m in msgs or [] if isinstance(m, str)], shown
-
-
-def poll_replies(c, polled: str) -> list:
-    """Feed tg-poll lines to apply-replies.py; return its decisions {item, kind, answer, ref}."""
-    out = _approvals(c, "apply-replies.py", stdin=polled).stdout
-    return [d for d in (json_line(line) for line in out.splitlines()) if d]
-
-
-def approve_plan(c, item: int):
-    return run([c.root / "bin" / "approve-plan", c.name, "--record-id", f"item-{item}", "--item", item,
-                "--by", "john", "--source", "telegram"])

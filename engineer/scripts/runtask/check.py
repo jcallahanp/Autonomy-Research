@@ -1,7 +1,7 @@
 """A task's check, as run-task (profile `check`) and the stop gate run it.
 
-The command comes only from the tasks.json John approved: the copy approve-plan keeps in the records clone
-(approvals/<p>/<version>/) when it is there, else docs/plan/tasks.json in the commit itself; either way its
+The command comes only from the tasks.json John approved: the copy stored in the records clone at
+RECORDS_DIR/<p>/approvals/<p>/v<scope_version>/docs/plan/tasks.json (approvals/plansnap.py) when it is there, else docs/plan/tasks.json in the commit itself; either way its
 sha256 must equal the hash in the live approval STATE_DIR/approvals/<p>.json, or nothing runs.
 It runs in a clean detached checkout of that commit (no untracked or uncommitted files), inside bwrap with
 no network and writes only to the checkout and a tmp dir. Without bwrap the caller logs WARNING and runs
@@ -50,14 +50,12 @@ def approved_bytes(conf: dict, project: str, repo, sha: str) -> bytes:
     """tasks.json exactly as approved: the stored copy, else the blob at sha; ValueError on any mismatch."""
     doc = approval(conf, project)
     want, version = doc["files"][REL], doc.get("scope_version")
-    stored = Path(conf["RECORDS_DIR"]) / project / "approvals" / project / str(version)
-    for path in (stored / REL, stored / "tasks.json"):
-        try:
-            data = path.read_bytes()
-        except OSError:
-            continue
-        if _sha256(data) == want:
-            return data
+    try:
+        data = (Path(conf["RECORDS_DIR"]) / project / "approvals" / project / f"v{version}" / REL).read_bytes()
+    except OSError:
+        data = None
+    if data is not None and _sha256(data) == want:
+        return data
     p = subprocess.run(["git", *SAFE, "cat-file", "blob", f"{sha}:{REL}"], cwd=repo, capture_output=True)
     if p.returncode != 0:
         raise ValueError(f"{REL} is missing at {sha[:12]}")
