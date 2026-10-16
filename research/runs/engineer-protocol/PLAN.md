@@ -18,7 +18,7 @@ Rulings: Claude Code is the engine and is not up for debate; everything else att
 
 ## Facets
 - [ ] Protocol evidence and definition of done - notes/protocol-evidence.md - pending
-- [ ] The audit agent and coding-agent hallucination detection - notes/audit-agent.md - pending
+- [x] The audit agent and coding-agent hallucination detection - notes/audit-agent.md - medium - neutral review-bot benchmarks and official vendor pricing not opened; current Opus 5.x system-card numbers not opened; most papers from Exa search text, flagged for the verifier
 - [ ] Git discipline and self-merge without a human reviewer - notes/git-and-merge.md - pending
 - [ ] Observability and crash resumption for unattended runs - notes/observability.md - pending
 
