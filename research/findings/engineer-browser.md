@@ -20,9 +20,9 @@ For that job the notes rank Playwright first, driven from Claude Code through ei
 Act through page structure (references to elements) by default and fall back to screen coordinates for drag
 and drop. On ComponentBench, "GPT-5 mini falls from 83.1% with accessibility-tree observations to 48.9% with
 coordinate-only Pixel control", but "Drag/Drop favors Pixel" and drag-and-drop tasks "remain below 60% mean
-pass rate across all agents tested" (https://arxiv.org/html/2608.18307). Agents also over-report success: "the
-gap between what agents declare finished and what the log confirms reaches 41 points"
-(https://arxiv.org/html/2609.35026). Every write must therefore be checked by a separate read afterwards.
+pass rate across all agents tested" (https://arxiv.org/html/2608.18307). Agents also over-report success: in
+WebPageBench the worst harness pair (gpt-5.6-luna with openmanus) reports 1.00 completion against 0.59 log-verified
+(EMS), a 41-point gap (https://arxiv.org/html/2609.35026) (corrected after hand check, 2026-10-16). Every write must therefore be checked by a separate read afterwards.
 
 Record once and replay: Claude Code explores a flow, Playwright's generator turns the plan "into the Playwright
 Test files", and a healer "Suggests a patch" when a run fails (https://playwright.dev/docs/test-agents). The
@@ -152,9 +152,10 @@ unresolved: always pass an explicit `--user-data-dir` (sessions-note inference) 
   lists stay "below 60% mean pass rate across all agents tested" (https://arxiv.org/html/2608.18307).
 - **Enterprise workflows collapse.** On UI-CUBE, "Simple UI interactions achieve 67-85% success rates ... but
   complex workflows drop precipitously to 9-19%" (https://arxiv.org/html/2511.17131).
-- **Agents over-claim and trust stale structure.** WebPageBench reports DOM harnesses at 0.737–0.763 against
-  0.480 for screenshots, and a 41-point gap between "declared finished" and log-confirmed
-  (https://arxiv.org/html/2609.35026). Models "follow the outdated structure on up to $0.88$ of probes" on
+- **Agents over-claim and trust stale structure.** WebPageBench reports Qwen3.8-27B at 0.737–0.763 through DOM
+  harnesses against 0.480 through screenshots (one model, one run per pair), and a 41-point gap between one
+  harness's completion rate and its log-verified EMS (gpt-5.6-luna with openmanus, 1.00 vs 0.59)
+  (https://arxiv.org/html/2609.35026) (corrected after hand check, 2026-10-16). Models "follow the outdated structure on up to $0.88$ of probes" on
   stale snapshots (https://arxiv.org/html/2607.04334).
 - **Vendor and aggregator boards.** Browser Use's own board reports "claude-fable-5 set a new high score of
   80.0%" (https://browser-use.com/posts/ai-browser-agent-benchmark). WebArena-Verified lists "Claude Opus 4.8 |
@@ -790,7 +791,7 @@ Tool landscape (T):
 - T31 https://arxiv.org/html/2608.18307 — Exa web_fetch — ComponentBench: spatial manipulations stay hard for every agent. Quote: "sliders, drag-and-drop lists, and splitters—remain below 60% mean pass rate across all agents tested."
 - T32 https://arxiv.org/html/2608.18307 — Exa web_fetch — ComponentBench: drag/drop favours pixel, editors favour browser-use. Quote: "Drag/Drop favors Pixel over Browser-Use, while Advanced Editors strongly favor Browser-Use."
 - T33 https://arxiv.org/html/2511.17131 — Exa search page content — UI-CUBE (UiPath, 2025): pixel computer-use agents collapse on complex enterprise workflows. Quote: "Simple UI interactions achieve 67-85% success rates (compared to 97.9% human performance), but complex workflows drop precipitously to 9-19%."
-- T34 https://arxiv.org/html/2609.35026 — Exa search page content — WebPageBench (Sep 2026): DOM harnesses beat screenshot-only on the same tasks; declared-done vs verified gap up to 41 points. Quote: "Qwen3.8-27B scores 0.737–0.763 through DOM harnesses and 0.480 through screenshots."
+- T34 https://arxiv.org/html/2609.35026 — Exa search page content — WebPageBench (Sep 2026): DOM harnesses beat screenshot-only for one model (Qwen3.8-27B, one run per pair); the 41-point gap is one harness's completion rate minus EMS (gpt-5.6-luna with openmanus, 1.00 vs 0.59), not a per-task declared-done count (corrected after hand check, 2026-10-16). Quote: "Qwen3.8-27B scores 0.737–0.763 through DOM harnesses and 0.480 through screenshots."
 - T35 https://arxiv.org/html/2609.35026 — Exa search page content — Same page: agents over-report success. Quote: "the gap between what agents declare finished and what the log confirms reaches 41 points"
 - T36 https://arxiv.org/html/2607.04334 — Exa search page content — Pixels vs structure disagreement: models trust stale structure over pixels. Quote: "on unedited stale snapshots from live pages the same models follow the outdated structure on up to $0.88$ of probes."
 - T37 https://browser-use.com/posts/ai-browser-agent-benchmark — Exa search page content — Browser Use's own BU Bench V1 (100 hard tasks incl. iframes, drag-and-drop): LLM judge, claude-fable-5 80.0% at $580.87 per 100-task run, Claude Opus 4.6 62.0%, Sonnet 4.6 59.0%. Quote: "Anthropic's claude-fable-5 set a new high score of 80.0% running on the open-source library"

@@ -84,8 +84,8 @@ the two. Unresolved, and listed as a spike.
 **Confidence: medium.** Quoted values carry URLs; other values the workers' fetch extracts reported are marked.
 
 - **Cloudflare Workers:** the 100,000-request daily cap resets "at midnight UTC"
-  (https://developers.cloudflare.com/workers/platform/limits/). Worker inference (not in the source): 10 ms CPU,
-  100 Workers per account, 5 cron triggers and 50 subrequests, as reported by the fetch tool. Cron changes "may
+  (https://developers.cloudflare.com/workers/platform/limits/). The plan table gives 10 ms CPU on Free; worker
+  inference (not in the source): 5 cron triggers and 50 subrequests, as reported by the fetch tool (corrected after hand check, 2026-10-16). Cron changes "may
   take several minutes (up to 15 minutes) to propagate"
   (https://developers.cloudflare.com/workers/configuration/cron-triggers/). Free build limits were not found.
 - **Cloudflare Containers:** not free; the Workers Paid allowance is "25 GiB-hours/month included"
@@ -498,7 +498,7 @@ strings that extract put in quotation marks (worker method notes). Local files: 
 but no tool name. Source note in brackets.
 
 **Web hosting (notes/web-hosting.md)**
-- **E1** https://developers.cloudflare.com/workers/platform/limits/ — 2026-10-16, WebFetch — Cloudflare Workers Free: 100,000 requests/day, 10 ms CPU, 100 Workers per account. Quote: "Accounts on the Workers Free plan have a daily request limit of 100,000 requests, resetting at midnight UTC."
+- **E1** https://developers.cloudflare.com/workers/platform/limits/ — 2026-10-16, WebFetch — Cloudflare Workers Free: 100,000 requests/day, 10 ms CPU (corrected after hand check, 2026-10-16). Quote: "Accounts on the Workers Free plan have a daily request limit of 100,000 requests, resetting at midnight UTC."
 - **E2** https://developers.cloudflare.com/d1/platform/pricing/ — 2026-10-16, WebFetch — Cloudflare D1 Free: 5M rows read/day, 100k written/day, 5 GB. Quote: "5 million / day"
 - **E3** https://developers.cloudflare.com/r2/pricing/ — 2026-10-16, WebFetch — Cloudflare R2 Free: 10 GB-month, free egress. Quote: "10 GB-month / month"
 - **E4** https://developers.cloudflare.com/pages/platform/limits/ — 2026-10-16, WebFetch — Cloudflare Pages Free: 500 builds/month, 20,000 files, 25 MiB per file. Quote: "Cloudflare Pages sites can contain up to 20,000 files on the Free plan."

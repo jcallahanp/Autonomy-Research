@@ -12,7 +12,7 @@ Result: 17 supported, 3 distorted, 0 uncited. One more distortion was found outs
 
 Unverified items now labelled in the text:
 - Superpowers is pinned at commit bb92a77; the "7.0.0" version label is unverified (stack.md, repo-composition.md).
-- The browser area's 41-point over-report figure comes from search-page content and is unverified (decisions.md).
+- The browser area's 41-point over-report figure is one harness's completion rate minus log-verified EMS (1.00 vs 0.59), per the hand check, not a per-task declared-done count (decisions.md) (corrected after hand check, 2026-10-16).
 - Withings+ on the free API plan was already flagged unverified (setup.md).
 
 The per-claim table was not saved: the verifier could edit files but not create one.
