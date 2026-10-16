@@ -50,11 +50,43 @@ Costs are as seen in the findings on 2026-10-16 unless a row says otherwise. "Pl
 | Google Cloud Run, Workload Identity | Container APIs from source, short-lived tokens | GCP | Free tier per billing account; quote unverified | deploy | E26, E27, E109 |
 | Neon Free / Supabase Free | Postgres | SaaS | Neon 100 CU-hours/project/month; Supabase 2 projects, 500 MB | deploy | E21, E23 |
 | Docker Compose, systemd timers | Always-on processes, scheduler | VM | Free | deploy | E29, E59 |
-| n8n self-hosted (Community) | John's visual flows; nightly export to git | VM | Free; internal-business licence | deploy | E47, E51 |
+| n8n (John's existing instance) | John's visual flows; nightly export to git | Open until John answers (open-questions 16): his n8n Cloud, or self-hosted Community on a VM if he moves it | Community free with internal-business licence; Cloud Starter 20 EUR/month annual | deploy | E45, E47, E48, E51 |
 | Gradle, Capacitor, adb | Android builds and installs | VM | Free | deploy | E69, E72, E79 |
 | Attio REST + MCP, Clay CLI/plugin, n8n API, Outreach REST, Slack manifest API | GTM reads and writes | SaaS | John's plans; Clay tables Enterprise only | existing-systems, browser | S1-S60; A1-A43 |
 | `openai/codex-plugin-cc` (off) | Cross-family Tier 2 review after a spike | VM | OpenAI key; GPT-6.1 Sol $2/$10 per 1M | models | E67, E68 |
 | Gemini 4 Argon (not in v1) | Video, PDF, long-output jobs after a spike | SaaS | $2/$10 per 1M through 2026-11-30, then $4/$20 | models | E2-E4 |
+
+## VM size
+Untested default, set by SP08 and SP42: 4 vCPU, 8 GB RAM, 80 GB disk, Ubuntu 24.04. The findings give only "A $5/mo VPS is fine" (engineer-runtime S29) and an unverified 4 vCPU/8 GB price (open q 23); headed Chrome, trial containers and parallel `claude -p` workers are why the default is larger. `doctor.sh` fails below it.
+
+## Install list
+Pins: the builder picks the current stable release on build day and records it in `docs/versions.md` (untested default, confirmed by SP22), except where a row states a pin from the findings or this repo.
+| Tool | Installed by | Runs where | Pin or source |
+| --- | --- | --- | --- |
+| Users `engineer`, `secretbroker`, `supervisor`; AppArmor profile; managed settings; sudoers; egress allowlist | `setup-root.sh` | VM | n/a |
+| Docker Engine + Compose plugin, or rootless Podman | `setup-root.sh` | VM | Distribution or vendor apt repo |
+| sops, age | `setup-root.sh` | VM | Release binaries, checksum-verified |
+| Claude Code CLI | `bootstrap.sh` | VM, `engineer` | At least 2.1.234, the version the auto-continue docs name (engineer-protocol E117); exact pin recorded |
+| Node.js | `bootstrap.sh` | VM | 22 LTS or later (mermaid-lint needs Node 22+, engineer-briefing E59) |
+| Playwright, browsers, `@playwright/cli`, Playwright MCP | `bootstrap.sh` | VM | Recorded pin (engineer-browser T4, T1) |
+| Google Chrome, Xvfb, a window manager, x11vnc, noVNC + websockify | `bootstrap.sh` | VM | Distribution packages (install steps are worker inference, engineer-browser setup 1) |
+| Superpowers | `bootstrap.sh` (vendored copy, see repo-composition.md) | VM, plugin | Commit `bb92a77` |
+| mermaid-lint, mermaid-cli | `bootstrap.sh` | VM, CI | mermaid-cli 11.12.0, as in `tests/check-mermaid.sh` |
+| `gh` | `bootstrap.sh` | VM | GitHub apt repo |
+| wrangler | `bootstrap.sh` (npm) | VM | Recorded pin |
+| `gcloud` | `bootstrap.sh` | VM | Google apt repo |
+| `cloudflared` | `bootstrap.sh` | VM | Cloudflare apt repo |
+| Clay CLI | `bootstrap.sh` | VM | Package name not in the findings; builder takes it from Clay's docs (SP65) |
+| pyotp (only without 1Password) | `bootstrap.sh`, in a venv owned by `secretbroker` | VM | Recorded pin |
+| 1Password `op` (only if he has it) | `bootstrap.sh` | VM | 1Password apt repo |
+| Semgrep CE, Bandit or Ruff, OSV-Scanner, pip-audit, gitleaks, Checkov, Lynis | `bootstrap.sh` | VM, CI | Version plus checksum (engineer-security E41, E42) |
+| n8nmermaid, docker-compose-to-mermaid, dependency-cruiser, pydeps | `bootstrap.sh` | VM | Recorded pin |
+| Channels Telegram plugin | `bootstrap.sh` (`claude plugin install` from the Anthropic-maintained marketplace; the preview accepts only allowlisted plugins, engineer-runtime H37) | VM | Recorded pin |
+| n8n | Not installed by default; only if John moves n8n to the VM | VM | Open (open-questions 16) |
+| Android SDK, Gradle, adb | `bootstrap.sh --with-android` | VM | Recorded pin |
+
+## Egress allowlist
+Untested default, set by SP09 and SP13; the builder keeps it in `templates/egress-allowlist.txt` and adds a host only after a logged denial: Anthropic API and claude.ai hosts; github.com and its API, content and package hosts; registry.npmjs.org; pypi.org and its file host; api.telegram.org; the API hosts of Attio, Clay, n8n, Outreach, Slack, Google, WHOOP, Withings, Cloudflare, Vercel, Supabase and Neon actually in use; osv.dev, deps.dev, the Scorecard API and the official MCP Registry. Trial containers get a per-trial list through the host proxy instead (engineer-feasibility C23, C24).
 
 ## Where secrets live and who can read them
 Rule: the model never receives a value through chat or a file it can read (engineer-human-loop §Q3, E81, E82).
@@ -65,6 +97,7 @@ Rule: the model never receives a value through chat or a file it can read (engin
 | Parent tokens: Cloudflare (Account API Tokens Edit), Vercel, Supabase PAT, Slack config token (12 h) | SOPS files | `secretbroker`; children minted per job | engineer-human-loop E1-E11, E28-E34 |
 | GitHub bot fine-grained PAT (Contents, Pull requests, Metadata) | SOPS files | `secretbroker`; pushes and PRs go through an `agent-run` job (blueprint inference) | engineer-protocol E80, E81 |
 | Telegram supervisor bot token | SOPS files | Supervisor through the broker (blueprint inference) | engineer-human-loop E15, E118 |
+| Telegram Channels bot token | The Channels plugin's config under `engineer`, because the daytime session uses it | `engineer` user, so the model can read it; this bot carries no approvals (ruling 3) | engineer-runtime C54, C57 (blueprint inference on location) |
 | Trial test credentials | Host proxy config | Proxy only; injected on the wire, never inside the trial container | engineer-feasibility C17, C23, C24 |
 | Cloud deploy credentials | None stored: GitHub OIDC and Workload Identity mint short-lived tokens | GitHub Actions job | engineer-deploy E109-E114 |
 | Deploy secrets for apps | Vault, piped to `wrangler secret put` and similar setters | Setter process; never `echo VALUE |` | engineer-deploy E102-E108 |

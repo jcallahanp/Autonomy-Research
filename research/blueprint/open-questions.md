@@ -26,7 +26,7 @@ Each row names who or what settles it: John, a spike (spikes.md) or a later rese
 | --- | --- | --- | --- |
 | 14 | Where does the GTM configuration live; does `jcallahanp/Varonis` hold sales tooling? (carried) | First engineer task is the access list and exports | John |
 | 15 | Clay plan: Enterprise or not? Can any client export table contents and enrichment column settings? (carried) | Not Enterprise; tables and columns are browser-only and unread | SP65 |
-| 16 | n8n hosting: cloud or self-hosted; API on his plan? | Treat the API as unavailable until SP66 shows it | SP66 |
+| 16 | n8n hosting: his n8n Cloud or self-hosted; is the API on his plan? | His n8n stays where it is; the engineer installs no n8n and treats the API as unavailable until SP66 shows it | John, SP66 |
 | 17 | Does his employer allow Outreach app creation and UI automation? | No Outreach writes | John, SP67 |
 | 18 | Does Attio issue personal API keys on his plan; does listing webhooks need a `webhook:read` scope? (carried) | Workspace token made by an admin; webhooks not listed | SP60 |
 | 19 | Attio merge route: native merge (unrecoverable deletes, B28) or the Dedupe app (price not checked, B30)? | Report duplicates only; no merges executed | SP60, John |
@@ -45,6 +45,8 @@ Each row names who or what settles it: John, a spike (spikes.md) or a later rese
 | 28 | May a Max session spawn `codex` or `agy` with their own credentials? (engineer-models open q 19) | Not used in v1 | Later research run |
 | 29 | Smithery: usable last rung (engineer-tool-discovery E16) vs "Skip" in `research/tool-registry.md` and `tool-routing` | Last rung; registry rows not rewritten in this pass | Registry update |
 | 30 | Semgrep rules licence if the engineer is later handed to others (G8) | Semgrep CE now; Opengrep if shared | John at hand-over |
-| 31 | All numeric budgets (intake cap of 5, envelope 3 workers/15 calls/10 min, task caps 1-4 files/100 lines, 24 h T1 timeout, about 60-turn trial box) are worker inference | Use them; recalibrate from SP30, SP35, SP36, SP37, SP54 | Spikes |
+| 31 | All numeric budgets (intake cap of 5, envelope 3 workers/15 calls/10 min, task caps 1-4 files/100 lines, 24 h T1 timeout, about 60-turn trial box) are worker inference; so are the Run defaults in flow.md, the VM size and egress allowlist in stack.md, and the schemas in repo-composition.md (builder defaults) | Use them; recalibrate from SP30, SP35, SP36, SP37, SP54 | Spikes |
 | 32 | Stop-hook blocking: exit 2 vs JSON decision | Use exit 2 | SP06 |
 | 33 | Time budget for building the engineer (requirements Gaps) | None stated | John |
+| 34 | Do root-owned managed settings accept hook entries for a non-root user? | Hooks in root-owned `/opt/engineer/hooks/` registered there; fallback a root-owned plugin copy (repo-composition.md, Enforcement) | SP10 |
+| 35 | URLs, auth and package names for the Attio, n8n instance, Outreach and Vercel MCP servers and the Clay CLI | Builder takes them from vendor docs and records them with a `tools/list` hash in `docs/versions.md` | SP55, SP56, SP65 |

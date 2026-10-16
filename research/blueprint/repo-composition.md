@@ -11,7 +11,7 @@ plugin/
                as-is, plan, browser, deploy, security-review, digest                    (new)
   agents/      researcher, synthesizer, verifier, spike-worker                          (existing)
                mapper, merger, planner, implementer, plan-reviewer, auditor, triage-reader (new)
-  hooks/       hooks.json + scripts (table below)
+  hooks/       hooks.json + scripts (table below); source only, installed root-owned (Enforcement)
   scripts/     playwright-mcp.sh (existing)
   .mcp.json    playwright, deepwiki, firecrawl (existing)
 scripts/
@@ -24,8 +24,18 @@ scripts/
   checks/        audit.sh, test-diff guard, pre-merge refusal, parity check, contrast check,
                  vet-card, staleness, integrations-vs-.env.example, n8n export
 templates/
-  managed-settings.json, systemd units, project skeleton (below)
-docs/versions.md   pinned commits (engineer-runtime §Repo composition, inference)
+  managed-settings.json, egress-allowlist.txt, systemd units (supervisor, chrome-xvfb, novnc),
+  superpowers/ (vendored at bb92a77 minus the dropped skills), project skeleton (below)
+tests/
+  check.sh, check-mermaid.sh (existing), test-fm.sh, rules/ (existing)
+  supervisor/, broker/, parser/   unit tests for the builder's own scripts (spikes SP04-SP17)
+  fixtures/seeded-flaw/   unsigned webhook, SSRF fetch, logged token (engineer-security §Implications 4)
+plugin/evals/           claude plugin eval cases for the changed skills (existing folder)
+.github/workflows/ci.yml   claude plugin validate --strict, tests/check.sh, tests/check-mermaid.sh,
+                           gitleaks --redact, pinned scanners; Actions pinned by full SHA (engineer-security E41)
+.claude/                settings.json and symlinks to plugin/skills and plugin/agents, as in this repo;
+                        used only by the builder session, never by unattended runs
+docs/versions.md        every pin the builder chooses (engineer-runtime §Repo composition, inference)
 ```
 
 ## Skills
@@ -81,7 +91,33 @@ docs/versions.md   pinned commits (engineer-runtime §Repo composition, inferenc
 | `audit/AUDIT-<id>.md`, `audit/waivers.md` | Project repo | Auditor; waivers by John | engineer-protocol §Q3 |
 | `trials/<id>/result.json` | VM state dir | Supervisor | engineer-feasibility C19, C53 |
 | `/etc/claude-code/managed-settings.json` | VM, root-owned | `setup-root.sh` | engineer-human-loop E148 |
-| kill-switch file | VM, root-owned | John or supervisor | engineer-human-loop E158 |
+| Kill-switch file `/var/lib/engineer/STOP` (path is a builder default) | VM, directory owned by `supervisor`, not writable by `engineer` | John (`sudo touch`) or supervisor; the PreToolUse hook and the supervisor stop when it exists | engineer-human-loop E158 |
+
+## Enforcement: who owns it
+The engineer must not be able to rewrite its own checks (engineer-protocol E11, E15). Deny rules are "not a security boundary" (engineer-human-loop E142-E145), so the real boundaries are file ownership, the sandbox, the broker and the server.
+- Managed settings: `/etc/claude-code/managed-settings.json`, root-owned, read at the highest precedence; holds deny rules and `disableBypassPermissionsMode`, and no level including CLI flags overrides it (engineer-human-loop E148, §Q9).
+- Hooks: the `plugin/hooks/` folder is source only. `setup-root.sh` copies hook scripts to root-owned `/opt/engineer/hooks/` and registers them in the managed-settings file. Whether managed settings accept hook entries is not in the findings: untested default, confirmed by SP10; if not, the builder installs the plugin from a root-owned `/opt/engineer/plugin/` copy and records the mechanism in `docs/versions.md`. Command hooks run outside the sandbox with full access (engineer-human-loop §Q9), so hook scripts read only.
+- Supervisor, `audit.sh`, reply parser, state dir: run as `supervisor`; `engineer` cannot write them.
+- Secrets: only `secretbroker` reads them; `engineer` calls `sudo agent-run <job>` (engineer-human-loop E58-E60).
+- Git: `engineer` has no push credential; branches go up through an `agent-run` job that never pushes to the default branch, and server-side branch protection refuses it anyway (engineer-protocol E41, E77; SP18).
+
+## MCP server configs
+| Server | Where configured | Transport | Notes |
+| --- | --- | --- | --- |
+| Playwright, DeepWiki, Firecrawl | `plugin/.mcp.json` (existing) | stdio / HTTP | Pinned version plus `tools/list` hash (engineer-security E117, E119) |
+| Attio MCP | User scope on the VM (`claude mcp add --scope user`), never a project `.mcp.json`, because `-p` shows no MCP trust prompt (engineer-security E110) | Hosted (engineer-existing-systems S-table) | Reads only; writes go through REST scripts (engineer-browser A11) |
+| n8n instance MCP | User scope | Served by John's n8n 2.13+ instance (engineer-deploy E51) | Only workflows flagged "Available in MCP" |
+| Outreach MCP | User scope, once the app exists | Not stated in the findings | engineer-browser A43 |
+| Vercel MCP | User scope, only if Vercel is used | OAuth remote (engineer-deploy E38) | Read-only |
+URLs and auth for the four vendor servers are not in the findings: the builder takes them from vendor docs, records them with the `tools/list` hash in `docs/versions.md`, and SP55 and SP56 run first.
+
+## Schemas (builder starting defaults)
+Field lists cited where the findings give them; everything else is "builder decides and records in the schema file under `templates/schemas/`".
+- `tasks.json` item: `id`, `title`, `status` (`todo|ready|running|done|blocked|needs_john`), `depends_on`, `requirement_ids`, `files`, `files_to_read`, `check` (the evidence command), `evidence_result`, `passes`, `attempts`, `blocked_note` (engineer-planning setup 2; engineer-context §Q7.2; `attempts` and `blocked_note` builder-added).
+- `events.jsonl` line: `ts`, `project`, `task_id`, `session_id`, `event` (`task_start|task_end|gate|audit|denial|limit|reset_wait|resume|approval_ask|approval_answer|crash|reconcile`), `exit_code`, `cost_usd`, `head_sha`, `detail` (builder default).
+- `RUN_STATUS.json`: `state` (`done|blocked|stopped_by_bound|crashed|waiting_for_reset`), `reason`, `reset_at`, `last_task`, `counts`, `started`, `ended` (states from engineer-context §Q7.5 and engineer-protocol E115; other fields builder default).
+- `profile.yaml`: `hard_gates` (default the three), `t2_extra`, `promote` (`hold`), `self_merge` (`false`), `data_classes` per path (`public|internal|customer|health`, engineer-models §Q7), `allowed_processors`, `adopted_rules` (quote plus `path:line`, ruling 8), `unattended` (`true|false`).
+- `integrations.yaml` service: `id` (same as `architecture.yaml`), `purpose`, `auth`, `env_vars` (names), `price` with date, `owner_action`, `fallback` (engineer-planning §Q1), plus the 12 checklist fields of engineer-feasibility §Q7: auth type, token lifetime and rotation, scopes and grantor, rate limit and 429, pagination, webhook signature, webhook retries and reconciliation, idempotency, sandbox vs production, API version, plan or role gating, residency and terms; and `edges` (from, to, data, direction) for the generated map.
 
 ## Project skeleton (written into each project repo)
 ```
@@ -122,3 +158,5 @@ Sources: engineer-planning §Q1-Q3; engineer-existing-systems §Repo composition
 | BMAD | correct-course change tiers | The framework | engineer-planning E37, E38 |
 | Spec Guard | sha256 approval binding (idea only) | As a dependency | engineer-planning E29, E61 |
 | frankbria | Breaker thresholds (no diff in 3, same failure in 5) | Code | engineer-context §Q7.4 |
+
+How the dropped Superpowers parts are switched off: the template vendors Superpowers at `bb92a77` as plain files, the way John's GTM repo does (engineer-existing-systems J3), without the `test-driven-development` and `finishing-a-development-branch` skill folders (TDD iron law; finishing menu and local merge). Its task sizing is overridden by a CLAUDE.md line that the `plan` skill's task contract wins; Superpowers' own `using-superpowers` skill says CLAUDE.md instructions take precedence over skills (Superpowers `using-superpowers/SKILL.md`, "User Instructions", as vendored in `/home/user/attio-project/.claude/skills/`, read 2026-10-16). Local merge to main is blocked by the missing push credential and branch protection, not by prose.

@@ -51,3 +51,32 @@ Diagrams: `docs/diagrams/engineer-context.mmd`, `engineer-runtime.mmd`, `enginee
 | 3 | How R16 self-merge is enforced: GitHub Pro (price unverified), a public repo, or local-only enforcement (ruling 2) | Self-merge off; routine PRs reach him as one digest line each |
 | 4 | Hard gates beyond his three, and per-project privacy (ruling 9) | Exactly money, deleting data, app-store submission; production promotes are digest items with default "hold"; health data Claude-only |
 | 5 | VPS or home box for the VM, and whether it is the same VM as the health app (engineer-runtime §Open for John) | A dedicated VM separate from the health VM (blueprint inference: the engineer holds untrusted input, secrets and egress at once, engineer-security E114) |
+
+## Glossary
+| Term | Meaning |
+| --- | --- |
+| Path A / Path B | Auth for the supervisor's `claude -p` runs: John's Max `/login`, or a Console API key (ruling 1) |
+| `setup-token` | `claude setup-token`, which mints a one-year OAuth token from a Max plan for servers; it loses Remote Control and connectors like an API key (engineer-runtime §Authentication, S13) |
+| `--bare` | A `claude -p` mode that ignores OAuth login, hooks and MCP from the directory (engineer-feasibility C20, C21) |
+| Builder session | The interactive Claude Code session under John's `/login` that builds the engineer (setup.md) |
+| Supervisor | The engineer's own outer process under systemd that runs one `claude -p` per task |
+| Broker, `agent-run` | The `secretbroker` user and its allowlisted job runner; the only way the engineer uses a secret |
+| T0, T1, T2 | Approval tiers: automatic; a numbered line in the daily digest; a hard-gate prompt sent at once |
+| Tier 1 / Tier 2 paths | Protocol's merge classes: Tier 1 may self-merge once R16 is on; Tier 2 always needs John (engineer-protocol §Q5) |
+| `NEEDS-JOHN` | An auditor verdict that turns into a T1 line |
+| Shadow mode | Two weeks in which the engineer proposes a merge tier and John merges, to measure agreement |
+| D0, D1, D2 | Discovery depth: D0 lookup with at most 2 content calls; D1 one capability, one worker, at most 15 calls and 3 URLs; D2 a real choice, 2-3 workers (engineer-tool-discovery §Tiers) |
+| Capability card | Input to a discovery pass: operations needed, auth John can complete, writes required (engineer-tool-discovery §Implications) |
+| `ROW:` | The six-column tool-registry row a discovery pass returns (Tool, Link, What it does, Where it runs, Verified, Verdict) (engineer-tool-discovery E74, E75) |
+| Dead-end | A recorded negative result in `dead-ends.md` with the version tested and `retry-when` |
+| `inconclusive` | The verdict when a trial or discovery box ends without a pass |
+| Trial | A feasibility test of one path in a sandboxed container (engineer-feasibility) |
+| Ledger | Superpowers' git-ignored progress file that survives compaction (engineer-context §Superpowers) |
+| pass^3 | All 3 repeated trials of a task pass; used to decide if a cheaper model tier holds (engineer-context §Measuring tier choices) |
+| As-is pack | The map of an existing system: context diagram, system-of-record table, credential names, gaps, risks |
+| `profile.yaml` | Per-project gates, data classes, promote and self-merge settings, and adopted repo rules |
+| EARS | "When X, the engineer shall Y" requirement form |
+| ADR / MADR | Architecture decision record; MADR is its Markdown template, kept in `docs/adr/` |
+| `waiting_for_reset`, `stopped_by_bound` | Run states: paused for a usage-limit reset; ended by a turn, budget, time or weekly-limit bound |
+| Channels, Remote Control, Routines | Claude Code features: chat relay of a live session (research preview); phone view of a session; scheduled cloud runs |
+| SPxx | A spike in spikes.md |

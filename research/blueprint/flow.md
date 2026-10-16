@@ -4,6 +4,21 @@ Purpose: how one project moves through the engineer from John's brief to the mor
 
 Diagram: `docs/diagrams/engineer-project-flow.mmd`. Approval tiers: T0 automatic, T1 digest line, T2 hard gate (decisions.md). Requirements numbered F1-F40 here are blueprint requirements derived from the findings cited; R and Q numbers refer to `research/requirements/autonomous-engineer.md`.
 
+## Run defaults
+Every number below is an untested default unless a citation says otherwise; the named spike sets the real value, and the builder keeps them in `templates/run-defaults.yaml`.
+| Setting | Default | Source or spike |
+| --- | --- | --- |
+| `--max-turns` per task session | 60 | about 60 turns is the findings' unvalidated trial box (engineer-feasibility spike 6); SP05, SP36 |
+| `--max-budget-usd` per task session | 5 | builder default; SP05, SP35 |
+| Wall-clock timeout per task | 45 minutes | upper end of the 15-45 minute task cap (engineer-planning §Tensions, worker inference); SP35 |
+| Attempts per task | 2, then a blocked note | engineer-planning E121 |
+| Breaker | no git diff in 3 attempts, or same failing tests 5 times | engineer-context §Q7.4 (frankbria) |
+| Denials of one kind before the night stops (F29) | 5 | builder default; SP04, SP30 |
+| Trials per decision | 3, configurable | engineer-feasibility §Q3 |
+| T1 default-on-timeout | 24 h, reversible items only; reminder at 12 h; at most 5 open T1 items | worker inference (engineer-human-loop §Tensions); SP30 |
+| `cleanupPeriodDays` | 7 | builder default for "low" (engineer-human-loop E91) |
+| Context ceiling before Explore subagents | about 128K-256K tokens | engineer-models §Q3 (worker inference); SP42 |
+
 ## Stage 0: size gate (interactive)
 A change John can describe in one sentence skips intake and planning and becomes a single task (engineer-intake A1; engineer-protocol E24).
 - F1 When a brief describes a diff in one sentence, the engineer shall skip intake and planning and run it as one task with its own check.
@@ -42,14 +57,14 @@ Plan set under `docs/plan/` (decisions.md area 7), three-page before-brief (area
 
 ## Stage 5: task loop (unattended)
 The supervisor computes `ready` from the `tasks.json` DAG and runs one task at a time (parallel implementers rejected, engineer-context §Q7 Rejected).
-- F22 When a task is ready, the supervisor shall start one fresh `claude -p` in its own worktree and branch with `--max-turns`, `--max-budget-usd` and a wall-clock timeout (engineer-context §Q4; engineer-protocol E37, E38).
+- F22 When a task is ready, the supervisor shall start one fresh `claude -p` in its own worktree and branch with `--max-turns`, `--max-budget-usd` and a wall-clock timeout set from Run defaults (engineer-context §Q4; engineer-protocol E37, E38).
 - F23 While a task runs, the engineer shall not edit tests, CI, hooks, `.claude/` or `audit/` (engineer-protocol E11).
 - F24 When the implementer stops, the Stop/TaskCompleted hook shall run the task's evidence command and the `docs/DEPENDENTS.md` check and block with exit 2 on failure (engineer-protocol E15; engineer-context §Q7.3).
 - F25 When the gate passes, `audit.sh` shall rerun the checks at HEAD with a test count above zero and the auditor shall return `PASS`, `FAIL` or `NEEDS-JOHN` bound to that HEAD SHA (engineer-protocol E138, E150, §Q2).
 - F26 If the same FAIL repeats, then the supervisor shall mark the task `NEEDS-JOHN` and continue with other ready tasks (engineer-protocol §Q3; R14).
 - F27 If a task fails twice, makes no git diff in 3 attempts, or repeats the same failing tests 5 times, then the supervisor shall write a blocked note and stop that task (engineer-context §Q7.4).
 - F28 When a task passes audit, the engineer shall open one PR with a Conventional Commit title; while R16 is off it shall add a T1 "merge PR?" line to the digest; while R16 is on and the paths are Tier 1 it shall run `gh pr merge --auto` (engineer-protocol E44, E54; ruling 2).
-- F29 If N denials of one kind occur in a night, then the supervisor shall stop the night and report them in the digest (engineer-human-loop §Q6).
+- F29 If the denial limit in Run defaults is reached for one kind of denial in a night, then the supervisor shall stop the night and report them in the digest (engineer-human-loop §Q6).
 
 ## Stage 6: change of course
 - F30 When a change of course is needed, the engineer shall write a change record tiered Minor, Moderate or Major, update every dependent document named in `docs/DEPENDENTS.md` in the same change, and block dependent tasks until it is `applied` (R9; engineer-planning E37-E42).
