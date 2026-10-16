@@ -55,7 +55,7 @@ the cross-cutting set.
 - [ ] Whether the engineer's self-merge of routine changes (R16) has limits, for example production deploys.
 
 ## From the existing-systems run (2026-10-16)
-- Does the Attio REST API offer only GET for views (no create or update)? The verifier could not confirm it from the OpenAPI spec (too large to read whole). Spike against an Attio sandbox before relying on UI automation for views.
+- [Settled 2026-10-16 by the browser run: yes, the OpenAPI spec has only GET routes for views and no workflow routes; views and Workflows need the browser. See research/findings/engineer-browser.md.] Does the Attio REST API offer only GET for views (no create or update)? The verifier could not confirm it from the OpenAPI spec (too large to read whole). Spike against an Attio sandbox before relying on UI automation for views.
 - Does listing Attio webhooks need a "webhook:read" scope? The views page names only object_configuration:read.
 - Can any Clay client (official or unofficial) export table contents and enrichment column settings? The unofficial client page says "building and updating", not export.
 - Where does John's GTM system configuration live (Attio-Project repo holds none)? Asked of John; first engineer task is account access and exports.

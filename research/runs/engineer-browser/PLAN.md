@@ -26,5 +26,5 @@ Rulings: Claude Code is the engine and is not up for debate; everything else att
 - [x] Blood-work and patient portals: API, aggregator or browser - notes/gap-patient-portals.md - medium - (gap round: the API-versus-browser facet did not reach portals) several aggregator and ONC claims from search highlights; Quest and Function terms, Epic solo-developer distribution, Blue Button unsettled; John's lab and phone unknown
 
 ## Outputs
-- Findings: research/findings/engineer-browser.md - pending
+- Findings: research/findings/engineer-browser.md - written (34 unsourced claims dropped to Open questions; 7 contradictions recorded, 2 unresolved and listed as spikes)
 - Verification: pending
