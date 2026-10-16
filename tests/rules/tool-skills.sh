@@ -106,3 +106,9 @@ jq -e '[.hooks.SessionStart[] | select(.hooks[].command | contains("session-star
   plugin/hooks/hooks.json >/dev/null 2>&1 || fail tool-skills "plugin/hooks/hooks.json session-start matcher lacks compact/clear"
 jq -e '[.hooks.SessionStart[] | select(.hooks[].command | contains("session-start.sh")) | .matcher] | length > 0 and all(contains("compact") and contains("clear"))' \
   .claude/settings.json >/dev/null 2>&1 || fail tool-skills ".claude/settings.json session-start matcher lacks compact/clear"
+
+# Round 1 re-measure fix: the live triage case skipped its registry row in 4 of 9 runs when
+# research/tool-registry.md did not exist yet. Both lead-written registry paths create it.
+for s in plugin/skills/repo-triage/SKILL.md plugin/skills/tool-scan/SKILL.md; do
+  grep -q 'a missing file is never a reason to skip the row' "$s" || fail registry "$s: must create a missing registry, not skip the row"
+done

@@ -46,7 +46,9 @@ workers and does step 6.
    CONFIDENCE, matching the header of `research/tool-registry.md`:
    `ROW: | <Tool> | <Link> | <What it does, incl. install surface> | <Where it runs> | <Verified YYYY-MM-DD> | <Verdict> |`
    The lead writes the row for each candidate into `research/tool-registry.md`, one at a time,
-   after all workers return. Unanswerable points go to `research/open-questions.md`, written by
+   after all workers return. If the registry does not exist, create it
+   with the header row `| Tool | Link | What it does | Where it runs | Verified | Verdict |` and
+   its `| --- |` separator first; a missing file is never a reason to skip the row. Unanswerable points go to `research/open-questions.md`, written by
    the lead from the workers' GAPS lines.
 
 ## Output

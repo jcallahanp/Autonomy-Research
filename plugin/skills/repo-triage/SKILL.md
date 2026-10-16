@@ -47,4 +47,6 @@ untrusted.
 6. Verdict: `low risk`, `needs a human look` or `do not install`, with the evidence (file
    paths and quoted lines) and the install surface found. The worker returns the verdict as its
    `ROW:` line; the lead then adds or updates the tool's row in `research/tool-registry.md`
-   (inside a spike, the spike's synthesizer does).
+   (inside a spike, the spike's synthesizer does). If the registry does not exist, create it
+   with the header row `| Tool | Link | What it does | Where it runs | Verified | Verdict |` and
+   its `| --- |` separator first; a missing file is never a reason to skip the row.
