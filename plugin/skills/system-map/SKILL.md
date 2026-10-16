@@ -45,7 +45,7 @@ as plain text. Never produce one giant diagram or design document.
 
 ## Optional shareable link
 
-The Mermaid Chart connector (`mcp__Mermaid_Chart__validate_and_render_mermaid_diagram`) can
-render a diagram and return a link a person can open. Use it only when the user wants a
-shareable link, and run it in a worker. It is never required: the `.mmd` file in the repo is
-the deliverable, and tests/check-mermaid.sh is the check.
+The Mermaid Chart connector (`mcp__Mermaid_Chart__validate_and_render_mermaid_diagram`) is
+optional. The lead may call it only to get a shareable render link for a person to open, and
+only when the user asks for one. The `.mmd` file in the repo is the deliverable, and
+tests/check-mermaid.sh is the check. No plugin agent has this tool, so do not delegate it.

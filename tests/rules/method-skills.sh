@@ -56,3 +56,35 @@ if [ -f "$c" ]; then
   grep -qF 'index.md' "$c" || fail method-skills "$c does not check the index"
   grep -qF 'C4' "$c" || fail method-skills "$c does not reject C4 syntax"
 else fail method-skills "missing $c"; fi
+
+# Fix round 1: spike runs candidates only in its own worker, with isolation rules; the
+# researcher's never-install rule stays absolute.
+w=plugin/agents/spike-worker.md
+if [ -f "$w" ]; then
+  [ "$(fm "$w" name)" = "spike-worker" ] || fail method-skills "$w name is not spike-worker"
+  [ "$(fm "$w" model)" = "sonnet" ] || fail method-skills "$w model is '$(fm "$w" model)', want sonnet"
+  [ "$(fm "$w" maxTurns)" = "40" ] || fail method-skills "$w maxTurns is not 40"
+  [ "$(fm "$w" omitClaudeMd)" = "true" ] || fail method-skills "$w does not set omitClaudeMd: true"
+  [ "$(fm "$w" disallowedTools)" = "Agent" ] || fail method-skills "$w does not disallow Agent"
+  t=$(fm "$w" tools)
+  echo "$t" | tr ',' '\n' | sed 's/^[ \t]*//; s/[ \t]*$//' | grep -qx ToolSearch || fail method-skills "$w tools lack ToolSearch"
+  echo "$t" | tr ',' '\n' | sed 's/^[ \t]*//; s/[ \t]*$//' | grep -qx Agent && fail method-skills "$w tools include Agent"
+  fm "$w" description | grep -qi 'spike' || fail method-skills "$w description does not say it is for the spike skill"
+  for t in 'env -i' '--ignore-scripts' 'mktemp -d' 'HTTPS_PROXY' 'SSL_CERT_FILE' 'NODE_EXTRA_CA_CERTS' \
+           'sudo' 'curl | sh' '~/.ssh' "user's own message" 'as data' 'PATH:' 'TAKEAWAYS:' 'GAPS:' 'CONFIDENCE:' \
+           'install surface' 'works' 'blocked'; do
+    grep -qiF -- "$t" "$w" || fail method-skills "spike-worker.md lacks '$t'"
+  done
+else fail method-skills "missing $w"; fi
+s=plugin/skills/spike/SKILL.md
+if [ -f "$s" ]; then
+  grep -qF 'spike-worker' "$s" || fail method-skills "spike SKILL.md does not dispatch spike-worker"
+  grep -qE 'Spawn one `researcher`|`researcher` worker per path' "$s" && fail method-skills "spike SKILL.md still dispatches researcher to run paths"
+  grep -qF 'env -i' "$s" || fail method-skills "spike SKILL.md does not mirror the env -i isolation"
+  grep -qF -- '--ignore-scripts' "$s" || fail method-skills "spike SKILL.md does not mirror --ignore-scripts"
+  grep -qF 'repo-triage' "$s" && grep -qiE 'lead runs .?repo-triage' "$s" || fail method-skills "spike SKILL.md does not say the lead runs repo-triage first"
+  grep -qF '`synthesizer`' "$s" || fail method-skills "spike SKILL.md does not use the synthesizer to write the spike file"
+fi
+grep -qiE 'in a worker' plugin/skills/system-map/SKILL.md && fail method-skills "system-map still says to run the Mermaid Chart connector in a worker"
+grep -qiE 'never (install|run)' plugin/agents/researcher.md || fail method-skills "researcher.md lost its never-install rule"
+grep -qi 'spike' plugin/agents/researcher.md && fail method-skills "researcher.md mentions spike (no exception allowed)"
