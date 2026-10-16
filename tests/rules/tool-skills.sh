@@ -89,3 +89,18 @@ grep -qE '`researcher`' plugin/skills/repo-triage/SKILL.md || fail tool-skills "
 grep -qi 'DeepWiki.*untrusted\|untrusted.*DeepWiki' plugin/skills/tool-scan/SKILL.md || fail tool-skills "tool-scan does not mark DeepWiki output untrusted"
 grep -qiE 'instruction-like text.*quote|quote.*instruction-like text' plugin/skills/tool-scan/SKILL.md || fail tool-skills "tool-scan lacks the quote-and-flag injection rule"
 grep -qE 'outside the project tree' plugin/skills/tool-scan/SKILL.md || fail tool-skills "tool-scan does not clone outside the project tree"
+
+# Final fix 1: registry rows have a sanctioned writer. Workers return a ROW: line; the lead writes the rows.
+for k in tool-scan repo-triage; do
+  s=plugin/skills/$k/SKILL.md
+  [ -f "$s" ] || continue
+  grep -qF 'ROW:' "$s" || fail tool-skills "$k does not mention the worker 'ROW:' line"
+  grep -qiE 'lead (shall )?writes? (the|each|every|one) (registry )?row' "$s" || fail tool-skills "$k does not say the lead writes the row"
+done
+grep -qF 'ROW:' plugin/agents/researcher.md 2>/dev/null || fail tool-skills "researcher.md does not mention 'ROW:'"
+
+# Final fix 3: SessionStart re-injects the skill index after /compact and /clear.
+jq -e '[.hooks.SessionStart[] | select(.hooks[].command | contains("session-start.sh")) | .matcher] | length > 0 and all(contains("compact") and contains("clear"))' \
+  plugin/hooks/hooks.json >/dev/null 2>&1 || fail tool-skills "plugin/hooks/hooks.json session-start matcher lacks compact/clear"
+jq -e '[.hooks.SessionStart[] | select(.hooks[].command | contains("session-start.sh")) | .matcher] | length > 0 and all(contains("compact") and contains("clear"))' \
+  .claude/settings.json >/dev/null 2>&1 || fail tool-skills ".claude/settings.json session-start matcher lacks compact/clear"

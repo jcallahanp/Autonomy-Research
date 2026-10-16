@@ -8,7 +8,12 @@
             "type": "command",
             "command": "bash \"$CLAUDE_PROJECT_DIR\"/scripts/cloud-setup.sh",
             "timeout": 180
-          },
+          }
+        ]
+      },
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
           {
             "type": "command",
             "command": "[ \"$CLAUDE_CODE_REMOTE\" = \"true\" ] && bash \"$CLAUDE_PROJECT_DIR\"/plugin/hooks/session-start.sh || true",

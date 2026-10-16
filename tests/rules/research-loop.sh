@@ -86,3 +86,10 @@ else
 fi
 grep -q '^7\. `## Verification`' plugin/skills/research/findings-format.md 2>/dev/null \
   || fail research-loop "findings-format.md lacks section 7 '## Verification'"
+
+# Final fix 2: findings-format.md says where contradictions go.
+grep -qF '**Contradictions**' plugin/skills/research/findings-format.md 2>/dev/null \
+  || fail research-loop "findings-format.md does not say where **Contradictions** go"
+# Final fix 4: the researcher clones outside the project tree.
+grep -qF 'outside the project tree' plugin/agents/researcher.md 2>/dev/null \
+  || fail research-loop "researcher.md does not say clones go outside the project tree"

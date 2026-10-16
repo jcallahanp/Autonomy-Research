@@ -6,7 +6,9 @@ verifier appends section 7. Use these sections, in this order:
 
 1. `# <Area>` and a one-paragraph summary of the answer.
 2. `## Questions and answers` — one `###` per question. Each answer states a confidence
-   (high / medium / low) and the evidence it rests on.
+   (high / medium / low) and the evidence it rests on. Where sources disagree, a
+   **Contradictions** paragraph inside that answer gives both claims with their URLs and says
+   which the evidence favours, or that it is unresolved.
 3. `## Evidence` — one bullet per source: URL, date opened, the tool used to open it, and
    the specific claim it supports. Search snippets are not sources.
 4. `## Implications for the researcher plugin` — concrete design consequences. For a question

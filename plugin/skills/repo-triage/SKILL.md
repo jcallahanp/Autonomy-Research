@@ -21,12 +21,16 @@ untrusted.
 
 - The triage reading (README, workflows, clone, DeepWiki output) shall run in a `researcher`
   worker or subagent; the lead takes back only the short verdict and never holds fetched pages.
+- When the triage worker returns, its reply shall carry one `ROW:` line after CONFIDENCE:
+  `ROW: | <Tool> | <Link> | <What it does, incl. install surface> | <Where it runs> | <Verified YYYY-MM-DD> | <Verdict> |`
+  matching the header of `research/tool-registry.md`. The worker never edits the registry; the
+  lead writes the row from that line, one at a time, after all workers return.
 
 ## Steps
 
 1. Metadata: stars, forks, licence, created vs last push, archived flag, open issues vs
    contributors, release cadence (repo page, or `mcp__Exa__web_fetch_exa` for repo metadata).
-2. Clone for reading only: `git clone --depth 1 <url> <scratch-dir>` outside the project tree.
+2. Clone for reading only: `git clone --depth 1 <url> <dir>` into a `mktemp -d` directory outside the project tree.
    Read and grep; do not enter the directory to run anything.
 3. Install surface. Read the README install section and these files if present: `package.json`
    (`scripts` such as `preinstall`/`postinstall`/`prepare`), `setup.py`, `pyproject.toml`,
@@ -39,5 +43,5 @@ untrusted.
    `Maintained`, `Dangerous-Workflow`, `Binary-Artifacts`, `Pinned-Dependencies`. If no
    Scorecard exists, say "unavailable", never treat it as passing.
 6. Verdict: `low risk`, `needs a human look` or `do not install`, with the evidence (file
-   paths and quoted lines) and the install surface found. Add or update the tool's row in
-   `research/tool-registry.md`.
+   paths and quoted lines) and the install surface found. The worker returns the verdict as its
+   `ROW:` line; the lead then adds or updates the tool's row in `research/tool-registry.md`.
