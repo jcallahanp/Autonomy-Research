@@ -1,0 +1,11 @@
+{
+  "name": "research-agent",
+  "displayName": "Research Agent",
+  "version": "0.1.0",
+  "description": "Research for project development: discovers tools and GitHub repos, maps how systems connect, tests feasibility and edge cases, and writes cited findings with small Mermaid diagrams.",
+  "author": { "name": "jcallahanp", "url": "https://github.com/jcallahanp" },
+  "homepage": "https://github.com/jcallahanp/Autonomy-Research",
+  "repository": "https://github.com/jcallahanp/Autonomy-Research",
+  "license": "MIT",
+  "keywords": ["research", "tool-discovery", "mcp", "architecture", "mermaid", "citations"]
+}

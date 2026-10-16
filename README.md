@@ -12,6 +12,6 @@ phase designs and builds the **project-development research agent** that will do
 - `CLAUDE.md` — research conventions Claude follows in this repo
 - `.mcp.json` — project MCP servers (DeepWiki, Playwright)
 - `scripts/cloud-setup.sh` — installs Superpowers in cloud sessions
-- `scripts/playwright-mcp.sh` — starts Playwright with the right browser in cloud sessions
+- `plugin/scripts/playwright-mcp.sh` — starts Playwright with the right browser in cloud sessions
 
 Earlier toolkit recommendation doc: https://claude.ai/code/artifact/10e31519-b4f1-42b8-b37a-a4c36510cc41
