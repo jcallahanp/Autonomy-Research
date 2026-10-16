@@ -85,15 +85,16 @@ docs/versions.md        every pin the builder chooses (engineer-runtime §Repo c
 | --- | --- | --- | --- |
 | `events.jsonl` | VM state dir per project, outside worktrees (blueprint inference) | Supervisor only | engineer-protocol §Implications |
 | `RUN_STATUS.json` | Same | Supervisor `trap`: `done`, `blocked`, `stopped_by_bound`, `crashed`, plus `waiting_for_reset` while waiting | engineer-context §Q7.5; engineer-protocol E115 |
-| `MORNING.md` | Same, copied into the project repo `docs/runs/` | Supervisor | engineer-protocol §Q6 |
+| `MORNING.md` | Same; copied to `docs/runs/` on the `engineer-records` branch (Records) | Supervisor | engineer-protocol §Q6 |
 | Per-night counter | VM state dir, outside the container | Supervisor | engineer-context §Q7.4 |
-| `decisions/approvals.jsonl` | Project repo, committed | Supervisor parser | engineer-human-loop §Q6 |
+| `decisions/approvals.jsonl` | `engineer-records` branch of the project repo, committed (Records) | Supervisor parser | engineer-human-loop §Q6 |
 | `docs/plan/approval.json` + tag `plan-approved-N` | Project repo | Written only after John's identified reply or PR approval | engineer-planning E29, E30 |
 | `tasks.json` | `docs/plan/` | Planner; implementer edits only `status` and `passes` | engineer-planning E95; engineer-intake A37 |
 | `PROGRESS.md` | Project root | Each task session | engineer-planning E118 |
 | `dead-ends.md` | Project root and template | Trials, discovery | engineer-tool-discovery E121; engineer-feasibility B29 |
 | `docs/plan/architecture.yaml` | Project repo | The system model; Mermaid views generated with a parity check | engineer-briefing E39 |
-| `audit/AUDIT-<id>.md`, `audit/waivers.md` | Project repo | Supervisor, from the auditor's JSON; waivers by John | engineer-protocol §Q3 |
+| `audit/AUDIT-<id>.md` | `engineer-records` branch (Records); its verdict also goes in the task PR description | Supervisor, from the auditor's JSON | engineer-protocol §Q3 |
+| `audit/waivers.md` | Project main branch | John | engineer-protocol §Q3 |
 | `trials/<id>/result.json` | VM state dir | Supervisor | engineer-feasibility C19, C53 |
 | `/etc/claude-code/managed-settings.json` | VM, root-owned | `setup-root.sh` | engineer-human-loop E148 |
 | Kill-switch file `/var/lib/engineer/STOP` (path is a builder default) | VM, directory owned by `supervisor`, not writable by `engineer` | John (`sudo touch`) or supervisor; the PreToolUse hook and the supervisor stop when it exists | engineer-human-loop E158 |
@@ -109,24 +110,27 @@ The engineer must not be able to rewrite its own checks (engineer-protocol E11, 
 | --- | --- | --- |
 | `engineer` | Interactive and builder sessions; every `claude -p`; holds the Max `/login` | `engineer ALL=(secretbroker) NOPASSWD: /opt/engineer/bin/agent-run` |
 | `supervisor` | `engineer-supervisor.service`; rootless Podman for trial containers (subuid/subgid, engineer-feasibility setup 2) and trial worktrees under `/var/lib/engineer/trials/`; reads project clones through a read-only ACL; talks to Telegram only through broker jobs | `supervisor ALL=(engineer) NOPASSWD: /opt/engineer/bin/run-task` and `supervisor ALL=(secretbroker) NOPASSWD: /opt/engineer/bin/agent-run` |
-| John (his own sudo) | `sudo -u secretbroker /opt/engineer/bin/seed <NAME>` and `.../oauth-capture`, from his SSH terminal; `seed` is not an `agent-run` job, so the model cannot overwrite a secret | his normal admin sudo |
-| `secretbroker` | `agent-run` jobs: `push-branch`, `oauth-capture`, `open-pr`, `mint-child`, `api-call`, `tg-send`, `tg-poll`, `hc-ping` | none |
+| John (his own sudo) | `sudo -u secretbroker /opt/engineer/bin/seed <NAME>` and `.../oauth-capture`, from his SSH terminal; `seed` and `oauth-capture` are root-owned, outside the `agent-run` allowlist, and run only through John's own sudo (which asks for his password); `engineer` and `supervisor` may sudo only to `agent-run`, so the model can neither overwrite a secret nor start a consent capture | his normal admin sudo |
+| `secretbroker` | `agent-run` jobs: `push-branch`, `open-pr`, `mint-child`, `api-call`, `tg-send`, `tg-poll`, `hc-ping` | none |
 
 `run-task <project> <task-id> <profile>` is a root-owned wrapper run as `engineer`. It creates or reuses the task's worktree, then execs `claude -p --plugin-dir /opt/engineer/plugin` with the profile's agent, model, tools, `--max-turns`, `--max-budget-usd` and timeout from `templates/run-defaults.yaml`, so the supervisor cannot pass arbitrary commands. Profiles: `implementer`, `auditor` (started by the supervisor after the implementer exits and the Stop gate passes; `--output-format json --json-schema` for the verdict), `plan-reviewer`, `planner`, `mapper`. How the profile selects the agent definition is a builder default confirmed by SP83. Under Path A it uses `engineer`'s `/login`; under Path B it gets the key from the broker (exposure: open-questions 21).
 - Files on the VM (builder defaults): project clones at `/home/engineer/projects/<name>/`, task worktrees at `/home/engineer/projects/<name>.wt/<task-id>/`, both owned by `engineer`; `supervisor` has read-only ACL access to compute `ready` from `tasks.json`. Nobody is in the `docker` group.
-- Plugin loading (builder default, confirmed by SP83): every session, interactive or `claude -p`, loads the engineer plugin from root-owned `/opt/engineer/plugin/` with `--plugin-dir`; nothing is installed at user scope, so `engineer` cannot change skills, agents or hooks. `--install` copies `plugin/` there from the reviewed checkout, Superpowers subset included.
+- Plugin loading (builder default, confirmed by SP83): every session, interactive or `claude -p`, loads the engineer plugin from root-owned `/opt/engineer/plugin/` with `--plugin-dir`; nothing is installed at user scope, so `engineer` cannot change skills, agents or hooks. `--install` copies `plugin/` there from the reviewed checkout, Superpowers subset included, with `hooks/hooks.json` replaced by an empty stub, so no hook is active before `--lock`; `--lock` installs the real hooks (managed settings or the plugin's `hooks.json`, per SP10). The vendor MCP servers (MCP server configs) are in that plugin's root-owned `.mcp.json`. **One exception:** the Channels Telegram plugin is installed at user scope for `engineer`, because the preview accepts only allowlisted marketplace plugins (engineer-runtime H37); only the daytime Channels session uses it, `run-task` starts sessions with it disabled (builder default, SP83 confirms how), and it carries no approvals (ruling 3).
 - CLIs the broker runs (wrangler, the Clay CLI, `gh`, `gcloud`, `cloudflared`) are root-installed (`/opt/engineer/node_modules/.bin` or `/usr/bin`); `agent-run` uses a fixed `PATH` of `/opt/engineer/bin:/usr/bin:/bin`, so `engineer` cannot swap a binary the broker executes. CLI session stores (Clay, `gh`, `gcloud`) live in `secretbroker`'s home.
 - Secrets: only `secretbroker` reads them; `engineer` calls `sudo agent-run <job>` (engineer-human-loop E58-E60).
 - Git: `engineer` has no push credential; branches go up through an `agent-run` job that never pushes to the default branch, and server-side branch protection refuses it anyway (engineer-protocol E41, E77; SP18).
+
+## Records (builder default)
+The supervisor never writes into `engineer`'s clones, and `engineer` never writes `audit/` (F23). Instead the supervisor owns a records clone per project at `/var/lib/engineer/records/<project>/`, checked out on a branch `engineer-records`. It writes `audit/AUDIT-<id>.md`, `docs/runs/<date>-MORNING.md` and appends `decisions/approvals.jsonl` there, commits with the bot's name and email, and pushes with the `push-branch` broker job (bot PAT). Branch protection on `engineer-records` allows pushes only from the bot and never merges it into main; the auditor verdict is also written into the task PR description through `open-pr`. Trial worktrees come from a supervisor-owned clone under `/var/lib/engineer/trials/`, made from the read-only project clone.
 
 ## MCP server configs
 | Server | Where configured | Transport | Notes |
 | --- | --- | --- | --- |
 | Playwright, DeepWiki, Firecrawl | `plugin/.mcp.json` (existing) | stdio / HTTP | Pinned version plus `tools/list` hash (engineer-security E117, E119) |
-| Attio MCP | User scope on the VM (`claude mcp add --scope user`), never a project `.mcp.json`, because `-p` shows no MCP trust prompt (engineer-security E110) | Hosted (engineer-existing-systems S-table) | Reads only; writes go through REST scripts (engineer-browser A11) |
-| n8n instance MCP | User scope | Served by John's n8n 2.13+ instance (engineer-deploy E51) | Only workflows flagged "Available in MCP" |
-| Outreach MCP | User scope, once the app exists | Not stated in the findings | engineer-browser A43 |
-| Vercel MCP | User scope, only if Vercel is used | OAuth remote (engineer-deploy E38) | Read-only |
+| Attio MCP | `/opt/engineer/plugin/.mcp.json` (root-owned), never a project `.mcp.json`, because `-p` shows no MCP trust prompt (engineer-security E110) | Hosted (engineer-existing-systems S-table) | Reads only; writes go through REST scripts (engineer-browser A11) |
+| n8n instance MCP | `/opt/engineer/plugin/.mcp.json` | Served by John's n8n 2.13+ instance (engineer-deploy E51) | Only workflows flagged "Available in MCP" |
+| Outreach MCP | `/opt/engineer/plugin/.mcp.json`, once the app exists | Not stated in the findings | engineer-browser A43 |
+| Vercel MCP | `/opt/engineer/plugin/.mcp.json`, only if Vercel is used | OAuth remote (engineer-deploy E38) | Read-only |
 URLs and auth for the four vendor servers are not in the findings: the builder takes them from vendor docs, records them with the `tools/list` hash in `docs/versions.md`, and SP55 and SP56 run first.
 
 ## Schemas (builder starting defaults)
@@ -154,12 +158,12 @@ docs/adr/NNNN-*.md      MADR, the one decision-record path (ruling 10)
 docs/map/               as-is pack, notes/<module>.md, snapshots/<tool>.json
 docs/DEPENDENTS.md      doc-change manifest
 docs/setup.md           the project's ordered setup list
-docs/runs/              copied MORNING.md files
+docs/runs/              copied MORNING.md files (engineer-records branch)
 tests/acceptance/       frozen acceptance checks
 flows/<app>/<task>.spec.ts   recorded browser flows with pre- and postconditions
 security/               ASVS checklist, findings.json, allowlist.md, REPORT.md, BRIEF.md
-audit/                  AUDIT-<id>.md, waivers.md
-decisions/approvals.jsonl
+audit/                  AUDIT-<id>.md (engineer-records branch), waivers.md
+decisions/approvals.jsonl   (engineer-records branch)
 dead-ends.md  PROGRESS.md
 model-routing.json, reviews/   only if a second model is enabled
 ```

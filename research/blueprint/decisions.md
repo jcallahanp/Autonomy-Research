@@ -32,7 +32,7 @@ Citations: "(engineer-<area> X12)" is evidence ID X12 in `research/findings/engi
 - One push channel: the supervisor's Telegram bot; Routines' Slack digest (engineer-runtime C49) is not used, so the batch stays on one channel (requirements Constraints). ntfy is the alternative (engineer-protocol E102).
 - Cross-family review scope: both limits apply, Tier 2 changes (protocol) and only `public` or `internal` data (engineer-models §Q8).
 - Path cap for trials: 3 by default, configurable (engineer-feasibility §Q3 Contradictions).
-- Auditor output: the auditor session writes nothing; it returns its verdict as JSON and the supervisor writes `audit/AUDIT-<id>.md` (builder choice between the two options; it keeps the `audit/` write deny absolute, engineer-protocol E11).
+- Auditor output: the auditor session writes nothing; it returns its verdict as JSON and the supervisor writes `audit/AUDIT-<id>.md` in its own records clone and pushes it to an `engineer-records` branch with the bot PAT, as it does for `MORNING.md` copies and `decisions/approvals.jsonl` (repo-composition.md, Records; builder choice between the options; it keeps the `audit/` write deny absolute, engineer-protocol E11).
 - Dead-man route: healthchecks.io Hobbyist, free for 20 jobs (engineer-deploy E131), notifying John's phone by SMS where the tier offers it (ruling 3), else by its Telegram or email integration (untested, SP72); Twilio SMS at $0.0083/segment (engineer-human-loop E121) is the alternative. Reason: the check is external, so it still fires when the VM or supervisor is dead, which a ping sent from the VM cannot do.
 
 ## 1 Intake (engineer-intake)

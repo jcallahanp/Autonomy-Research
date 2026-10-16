@@ -80,7 +80,7 @@ Pins: the builder picks the current stable release on build day and records it i
 | dependency-cruiser, docker-compose-to-mermaid | bootstrap (npm) | VM | Recorded pin |
 | Semgrep CE, Bandit or Ruff, OSV-Scanner, pip-audit, gitleaks, Checkov, n8nmermaid, pydeps | bootstrap (user venv or release binaries) | VM, CI | Version plus checksum (engineer-security E41, E42) |
 | backcheck (after SP20) | bootstrap, via its `install.sh` | VM | https://github.com/VectorInstitute/backcheck, Apache-2.0 (engineer-protocol notes `audit-gap.md`:92) |
-| Channels Telegram plugin | bootstrap (`claude plugin install` from the Anthropic-maintained marketplace; the preview accepts only allowlisted plugins, engineer-runtime H37) | VM | Recorded pin |
+| Channels Telegram plugin (the one user-scope exception, repo-composition.md) | bootstrap (`claude plugin install` from the Anthropic-maintained marketplace; the preview accepts only allowlisted plugins, engineer-runtime H37) | VM | Recorded pin |
 | Android SDK, Gradle, adb | `bootstrap.sh --with-android` | VM | Recorded pin |
 | n8n | Not installed by default; only if John moves n8n to the VM | VM | Open (open-questions 16) |
 
