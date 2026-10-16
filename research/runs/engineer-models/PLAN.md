@@ -17,7 +17,7 @@ Rulings: Claude Code is the engine and is not up for debate; everything else att
 
 ## Facets
 - [ ] Verify Argon 4 and other candidate models - notes/candidate-models.md - pending
-- [ ] Where large-context and second-opinion models help, and long-context reliability - notes/long-context-evidence.md - pending
+- [x] Where large-context and second-opinion models help, and long-context reliability - notes/long-context-evidence.md - medium - no Claude 5.x 1M-token scores or Claude Code whole-repo test; several benchmark per-model scores not obtained; three sources from search text only (not cited)
 - [ ] Integration patterns, routing criteria and risks - notes/integration-and-routing.md - pending
 
 ## Gap round

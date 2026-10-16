@@ -313,3 +313,14 @@ packaging.md, architecture.md, engineer-intake.md, engineer-existing-systems.md)
 | Inngest | https://www.inngest.com/pricing | Durable functions; 50k executions/mo free | cloud | 2026-10-16 | Fallback |
 | Windmill | https://www.windmill.dev/pricing | Scripts/flows; free self-host unlimited executions; licence not stated on page | self-host | 2026-10-16 | Fallback; licence unverified |
 | Temporal | (not opened) | Durable workflow engine | - | not opened | Reject for one user; not researched |
+
+## Engineer multi-model
+
+| Tool | Link | What it does | Where it runs | Verified | Verdict |
+| --- | --- | --- | --- | --- | --- |
+| Chroma Context Rot report | https://www.trychroma.com/research/context-rot | 18-model long-input degradation study (2025) | web | 2026-10-16 | Evidence only; 2025-vintage models (long-context-evidence.md) |
+| OpenAI MRCR v2 (Klu summary) | https://klu.ai/benchmarks/mrcr-v2 | 8-needle retrieval to 1M; Opus 4.6 76% at 1M, Gemini 3 Pro 24.5% | web/dataset | 2026-10-16 | Evidence; harnesses differ, do not rank across |
+| ATLAS | https://ar5iv.labs.arxiv.org/html/2605.28079 | 26 models, 8K-1M length-sliced suite | paper (not run) | 2026-10-16 | Evidence; Opus 4.6 leads at 1M, mean 24.3% decay |
+| Greptile Model Inversion | https://www.greptile.com/blog/model-inversion | Routes PR review to other vendor's model | vendor SaaS (not used) | 2026-10-16 | Reference only; vendor-measured +9 pts cross-model recall |
+| Fresh Eyes Beat a Second Family | https://stephens.page/blog/fresh-eyes-beat-a-second-family/paper/fresh-eyes-beat-a-second-family.pdf | Preregistered replay: fresh same-model review matches cross-family | paper | 2026-10-16 | Evidence: use fresh same-model reviewer by default; single-system, self-published |
+| Scry Design Diff Eval | https://blog.scrymore.com/blog/introducing-scry-design-diff-eval/ | Screenshot-vs-design defect benchmark; best ~40% recall | web | 2026-10-16 | Evidence: screenshot review is triage, not a gate |
