@@ -38,7 +38,7 @@ packaging.md, architecture.md).
 | Claude Code dynamic workflows (`/deep-research`) | https://code.claude.com/docs/en/workflows | Scripted fan-out with schema returns, cross-check and vote | plugin `workflows/` | 2026-10-16 | Phase 2 target for the verifier pipeline |
 | Claude Code agent teams | https://code.claude.com/docs/en/agent-teams | Peer sessions with shared task list and messaging | experimental | 2026-10-16 | Rejected for v1; roughly 7x tokens |
 | `claude plugin validate --strict` | https://code.claude.com/docs/en/plugins-reference | Checks manifest, frontmatter, `.mcp.json` | shell, CI | 2026-10-16 | Use in CI |
-| `claude plugin eval` | https://code.claude.com/docs/en/plugin-evals | Runs cases with/without plugin; regex/tool_used/llm graders | CLI v2.1.269+ | 2026-10-16 | Adopt for `/self-test` |
+| `claude plugin eval` | https://code.claude.com/docs/en/plugin-evals | Runs cases with/without plugin; free regex/tool_used/tool_order/file_exists graders, paid llm/baseline; `--runs` (default 3), `--threshold`, `--judge-model`, `--ablation none`, `--max-cost-usd` | CLI v2.1.269+, session auth | 2026-10-16 | Adopt for `/self-test`; for improvement rounds add dev/holdout/regression tags, a pinned `--judge-model`, 5 runs for accept decisions, `--ablation none` for version-vs-version |
 | `/skill-doctor`, `/doctor prompt-audit` | https://code.claude.com/docs/en/skills | Per-skill context cost; CLAUDE.md conflict audit | interactive terminal | 2026-10-16 | Use to prune skills and CLAUDE.md |
 | GitHub template repository | https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-template-repository | "Use this template" copies the repo | GitHub web | 2026-10-16 | Use for clone-and-go |
 | Cloud network secrets | https://code.claude.com/docs/en/cloud-environments | Proxy attaches API key; key never enters the VM | cloud only | 2026-10-16 | Use for any paid API in cloud |
@@ -52,6 +52,11 @@ packaging.md, architecture.md).
 | assafelovic/gpt-researcher | https://github.com/assafelovic/gpt-researcher | Recursive breadth/depth research with citations | Python | 2026-10-16 | Reference design |
 | stanford-oval/storm | https://github.com/stanford-oval/storm | Perspective-driven conversations to cited article | Python | 2026-10-16 | Reference for perspective decomposition |
 | bytedance/deer-flow | https://github.com/bytedance/deer-flow | Lead with `task()` subagents and citation rules | Python | 2026-10-16 | Reference design |
+| Anthropic skill-creator | https://github.com/anthropics/skills/tree/main/skills/skill-creator | Content loop, grader/comparator/analyzer agents, description optimiser with 60/40 split and 5-iteration cap via `claude -p` | local, session auth, no extra key | 2026-10-16 | Use as template for the self-improvement loop; copy patterns into plugin agents |
+| agentskills.io skill-eval guide | https://agentskills.io/skill-creation/evaluating-skills | Eval-driven iteration loop; previous-version baseline; assertion pruning; stop rule | docs | 2026-10-16 | Use as the loop template; it has no holdout rule |
+| GEPA (DSPy optimizer, optimize_anything) | https://dspy.ai/api/optimizers/GEPA/overview/index.md | Reflective, Pareto-based prompt and text evolution with minibatch-then-validation gating; learned coding-agent skills in a Feb 2026 post | Python; needs a reflection LM | 2026-10-16 | Reference design only; copy the loop, do not install |
+| DeepResearch Bench (RACE/FACT) | https://github.com/Ayanami0730/deep_research_bench | 100-task report-quality (RACE) and citation (FACT) benchmark; judge GPT-5.5 / GPT-5.4-mini since 11 May 2026 | local Python; OpenRouter/OpenAI key plus Jina key | 2026-10-16 | Skip as a per-round gate; reuse the FACT claim-to-URL design as a deterministic grader |
+| DeepResearch Bench II | https://github.com/imlrz/DeepResearch-Bench-II | 132 tasks, about 9,430 binary expert rubrics, public `tasks_and_rubrics.jsonl`; judge GPT-5.5 | local Python (uv); paid judge key | 2026-10-16 | Fallback: borrow a few rubrics as grader text; skip the full run |
 
 ## Evaluated and deferred or skipped
 
@@ -75,3 +80,7 @@ packaging.md, architecture.md).
 | Brave Search MCP | https://brave.com/search/api/ | Search API, card required | not installed | 2026-10-16 | Skip |
 | Glama / Smithery / mcpservers.org | https://glama.ai/mcp/servers | MCP directories; key or bot-blocked | - | 2026-10-16 | Skip as tools; the official registry API covers discovery |
 | OpenClaw | https://openclaw.ai/security | Always-on personal agent platform | not installed | 2026-10-15 | Phase 2, security risk noted |
+| BrowseComp | https://arxiv.org/abs/2504.12516 | 1,266 short-answer questions testing persistent browsing | dataset | 2026-10-16 | Skip; measures answers, not reports or citations |
+| DSPy MIPROv2 | https://dspy.ai/api/optimizers/MIPROv2/ | Bootstrapped demos, proposed instructions, Bayesian search | Python; needs LM key | 2026-10-16 | Skip; many calls, little value for markdown skills |
+| TextGrad | https://github.com/zou-group/textgrad | Textual-gradient critique and rewrite, PyTorch-style API | Python; needs OpenAI/Anthropic key | 2026-10-16 | Skip |
+| promptfoo optimize | https://www.promptfoo.dev/docs/usage/prompt-optimization/ | Baseline eval, LLM-proposed rewrites from failures, optional `--validation-split` | Node CLI; needs provider credential | 2026-10-16 | Fallback; built for prompt/provider pairs, not markdown skills |

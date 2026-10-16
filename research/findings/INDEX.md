@@ -13,3 +13,4 @@ Status is one of: `complete` (Verification section, every sampled claim verified
 - [Research methodology](methodology.md) — Beads waits for Phase 2, Ralph loops only with a script-checked stop and a cap, and only supply-chain checks from security tooling apply. (2026-10-16, unverified)
 - [Packaging as plugin and template](packaging.md) — One repo can be plugin, marketplace and template; cloud sessions load only committed `.claude/` files and never install plugins. (2026-10-16, unverified)
 - [Tool routing](tool-routing.md) — Parallel Search for discovery and reading, Exa as second opinion, DeepWiki for repos confirmed by clone, Playwright last. (2026-10-16, unverified)
+- [Research-agent self-improvement](research-agent-self-improvement.md) — The 0.97 self-test covers mocked workflow rules, not the merge and verification tail, where the verifier cannot reopen Firecrawl or clone pages. (2026-10-16, needs-review)
