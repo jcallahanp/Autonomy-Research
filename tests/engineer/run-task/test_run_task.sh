@@ -1,6 +1,8 @@
 #!/bin/bash
 # run-task PROJECT TASK_ID PROFILE [--resume SID] [--dry-run]: fixed claude argv, worktree, refusals.
 set -euo pipefail
+# This test hands files to another user, as on the droplet, and only root can do that: re-run under sudo when not root.
+[ "$(id -u)" = 0 ] || exec sudo -n -E env "PATH=$PATH" bash "$0" "$@"
 . "$(dirname "$0")/../lib.sh"
 . "$REPO/tests/engineer/broker/helpers.sh"
 

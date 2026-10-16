@@ -1,6 +1,8 @@
 #!/bin/bash
 # push-branch: fetch into a broker-owned mirror, push from there with the PAT only in the environment.
 set -euo pipefail
+# This test hands files to another user, as on the droplet, and only root can do that: re-run under sudo when not root.
+[ "$(id -u)" = 0 ] || exec sudo -n -E env "PATH=$PATH" bash "$0" "$@"
 . "$(dirname "$0")/../lib.sh"
 . "$REPO/tests/engineer/broker/helpers.sh"
 
