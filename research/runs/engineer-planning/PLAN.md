@@ -18,7 +18,7 @@ Rulings: Claude Code is the engine and is not up for debate; everything else att
 ## Facets
 - [ ] Plan formats agents follow best, the plan set and its approval - notes/plan-set.md - pending
 - [ ] Change control, replanning and drift detection - notes/change-control-and-drift.md - pending
-- [ ] Task decomposition: size versus error rate and splitting rules - notes/task-splitting.md - pending
+- [x] Task decomposition: size versus error rate and splitting rules - notes/task-splitting.md - medium - no METR 80% horizon for Claude 5.x; Taskmaster, BMAD sizing, FeatBench, Codex and Cursor guidance not read; numeric caps are inference; over-decomposition preprint weak provenance
 
 ## Gap round
 - pending

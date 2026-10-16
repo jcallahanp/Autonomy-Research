@@ -378,3 +378,24 @@ packaging.md, architecture.md, engineer-intake.md, engineer-existing-systems.md)
 | OpenRouter + Claude Code | https://openrouter.ai/docs/guides/guides/claude-code-integration | Env-var routing; only Anthropic 1P guaranteed | hosted | 2026-10-16 | Reject for non-Claude brains |
 | Agent SDK custom tools (data-class gate) | https://code.claude.com/docs/en/agent-sdk/custom-tools | In-process MCP tool wrapper | local/VM | 2026-10-16 | Use for the routing gate |
 | noelweichbrodt/second-opinion | https://github.com/noelweichbrodt/second-opinion | MCP sending session context to Gemini/GPT | local MCP | 2026-10-16 (search excerpt only) | Reference only |
+
+## Engineer planning and protocol
+
+| Tool | Link | What it does | Where it runs | Verified | Verdict |
+| --- | --- | --- | --- | --- | --- |
+| Superpowers writing-plans task right-sizing (task-splitting.md) | https://github.com/obra/superpowers | Task = smallest unit with its own test cycle; no numeric size cap (commit bb92a77) | plugin | 2026-10-16 | Keep executor; override sizing with an explicit task contract (1 session, 1 commit, 1 check, 1-4 files, ~100 lines) |
+| Ralph one-item-per-loop (how-to-ralph-wiggum) | https://github.com/ghuntley/how-to-ralph-wiggum | One task, fresh context, one commit per iteration; plan file on disk | bash loop | 2026-10-16 | Use the pattern, not the unbounded loop |
+| spec-kit tasks template and complex-features doc | https://github.github.com/spec-kit/concepts/complex-features.html | [P] parallel marker; docs admit mid-run hallucination on large features; scope runs by N tasks or phase | agent slash commands | 2026-10-16 | Copy [P] and phase scoping only |
+| Kiro tasks | https://github.com/kirodotdev/Kiro/issues/2324 | "Session Too Long" on large specs | proprietary IDE | 2026-10-16 | Skip |
+| Taskmaster (claude-task-master) | https://github.com/eyaltoledano/claude-task-master | Task generator with complexity analysis/expand tools (commit c0c98d3); thresholds not read | CLI/MCP, clone read only | 2026-10-16 | Not evaluated beyond tool list; skip until read |
+| METR time-horizon dashboard | https://metr.org/time-horizons/ | 50%/80% horizons per model; frozen 2026-09-08 | web | 2026-10-16 | Evidence source; read raw data in a spike |
+| OpenSpec update/archive (delta specs) | https://github.com/Fission-AI/OpenSpec/blob/main/docs/workflows.md | Change folders, delta merge, verify, archive (change-control.md) | npm CLI + slash commands | 2026-10-16 | Borrow the change-record shape; adopt only if a ready-made tool is wanted |
+| BMAD correct-course | https://github.com/bmad-code-org/BMAD-METHOD | Impact analysis, old-to-new edit proposals, Minor/Moderate/Major scope, explicit approval (skills/bmad-correct-course/SKILL.md, commit cfba3ff) | skill | 2026-10-16 | Borrow the replan protocol; skip the framework |
+| Danger JS / path-mapping docs rule | https://datadef.io/guides/en/docs-checks-in-ci | Warn when watched code path changes without docs path | CI | 2026-10-16 (guide only) | Fallback; a shell diff script does the same; start as warn |
+| lychee | https://lychee.cli.rs/troubleshooting/rate-limits/ | Link checker; 429 rate limits produce false broken links | CLI/CI | 2026-10-16 | Use on changed docs; tune retries and accept |
+| Schemathesis | https://github.com/schemathesis/schemathesis | MIT OpenAPI/GraphQL schema-conformance tests | CLI/CI | 2026-10-16 | Use only if an OpenAPI schema exists |
+| Dredd | https://github.com/apiaryio/dredd | API description vs implementation | CLI | 2026-10-16 | Reject: archived 2024-11-08 |
+| Pact can-i-deploy | https://docs.pact.io/pact_broker/can_i_deploy | Contract deploy gate via Broker | Broker + CI | 2026-10-16 | Skip for a solo repo |
+| Atlas migrate diff/lint | https://atlasgo.io/versioned/diff | Schema diff against dev DB; migration lint | CLI/CI | 2026-10-16 | Use if the repo has a database |
+| DocPrism / Cascade (LLM doc-code consistency) | https://arxiv.org/abs/2511.00215 ; https://arxiv.org/abs/2604.19400 | Plain LLM flags 80-98% of functions; filtered precision 0.63; test-based precision 0.88 at recall 0.21 | research (not run) | 2026-10-16 | Reference: diff-scoped, evidence-citing LLM audit only |
+| Doc-Drift / Verdict / docs-gate | https://newsletter.nerdnoir.com/p/documentation-needs-a-feedback-loop | PR-time LLM doc-drift or intent-vs-diff gates; self-reported noise | GitHub Actions (not run) | 2026-10-16 | Reference only; unvetted, tiny projects |
