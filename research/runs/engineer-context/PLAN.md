@@ -19,10 +19,10 @@ Rulings: Claude Code is the engine and is not up for debate; everything else att
 - [x] Evidence on context rot and its mitigations - notes/context-rot-evidence.md - medium - ContextRotBench blocked by a browser check; some items read from search highlights; no study covers Claude Code on multi-hour coding
 - [x] Subagent architecture and model tiers - notes/subagents-and-model-tiers.md - medium - several verifier papers cited from search text only; no independent per-task Haiku 5.5 measurement; one PDF would not parse
 - [x] Loop protection and token economy - notes/loop-protection-and-tokens.md - medium - three GitHub issues and one post seen only as excerpts; exit codes for limit stops undocumented; no source tests stall detection
-- [ ] Task tracking across sessions and keeping dependent documents updated - notes/task-tracking-and-doc-updates.md - pending
+- [x] Task tracking across sessions and keeping dependent documents updated - notes/task-tracking-and-doc-updates.md - medium - docs-as-code CI tooling and ADR tooling unverified; no controlled evidence that doc-staleness hooks work; two Beads pages 404
 
 ## Gap round
-- not run
+- not run: the remaining gaps weaken evidence strength but leave no key question unanswered; they are carried as open questions and spike items
 
 ## Outputs
 - Findings: research/findings/engineer-context.md - pending
