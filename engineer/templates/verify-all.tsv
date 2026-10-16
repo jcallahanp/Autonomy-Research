@@ -1,0 +1,12 @@
+# Setup-day verification rows for scripts/checks/verify-all.sh, one per secret or session of this sitting.
+# Columns (TAB-separated): name, broker job and args (split on spaces; `manual` = John checks by hand),
+# check text, optional stdin for the job. Values never appear here: the broker reads them from SOPS.
+# The `github`, `attio` and `n8n` services are defined in etc/broker-services.json (Task 5).
+GH_BOT_PAT	api-call github GET /user	HTTP 200 and the bot login
+TG_SUPERVISOR_TOKEN	tg-send	John's phone shows "setup test"	setup test
+HC_PING_URL	hc-ping ok	healthchecks.io shows the ping
+ATTIO_API_KEY	api-call attio GET /self	HTTP 200 with the workspace
+N8N_API_KEY	api-call n8n GET /workflows?limit=1	HTTP 200 with at most one workflow
+UPTIMEROBOT_API_KEY	manual	The API takes the key in the POST body; John checks a monitor in the dashboard
+Clay CLI session	manual	John checks the Clay CLI session as engineer (command confirmed on setup day)
+Browser sessions	manual	John opens Google and Attio in the noVNC Chrome; both signed in, no challenge
