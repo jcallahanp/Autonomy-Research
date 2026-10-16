@@ -137,6 +137,9 @@ live web.
 | `triage-real-repo` (live) | A real repo triage ends in a verdict and a registry row, and installs nothing. |
 | `scorecard-lookup` (live) | A live Scorecard lookup answered inline with a cited Scorecard URL. |
 
+Cases tagged `tail` (`verify-tail`, `quote-carry`) are development cases for the
+`self-improve` loop. They are not part of this exam and this skill does not run them.
+
 ## Live suite (only when the user asks)
 
 The live cases read the real web and start the plugin's real MCP servers, which run as the

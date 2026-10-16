@@ -151,3 +151,8 @@ Implication for *this* plugin: a research question's raw material (fetched pages
 - Whether `maxTurns` counts tool calls one-to-one (needed to map Anthropic's 10-15 call budget onto a turn cap).
 - DeepWiki answers are wiki summaries, not source reads; config defaults quoted from it (e.g. `max_concurrent_research_units` 5) should be confirmed against the repos' `configuration.py` before being cited externally.
 - Cost ceiling: at ~15x chat tokens per research run, how many runs per day fit the user's plan limits (see budget question in `research/open-questions.md`).
+
+## Verification
+Checked 2026-10-16 by the verifier. Sample: 20 cited claims.
+Verified: 20. Unverified: 0.
+- None unverified.

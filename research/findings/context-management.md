@@ -143,3 +143,8 @@ Each rule names where it lives and the evidence behind it.
 - Haiku 5.5 pricing above 100K-token prompts and its fitness as a fetch-and-extract worker for long pages are untested here.
 - https://code.claude.com/docs/llms.txt returned 404 on 2026-10-16 even though every docs page links to it; a current page index must be found another way.
 - Chroma's report (July 2025) predates Claude 4.5+/5.x; the degradation shape for current models in the 200K-1M range is unknown, so the "lead holds little" rule rests on the general finding, not a current-model measurement.
+
+## Verification
+Checked 2026-10-16 by the verifier. Sample: 20 cited claims.
+Verified: 19. Unverified: 1.
+- Unverified: "Read at most 25,000 tokens" (Q3c) — https://code.claude.com/docs/en/tools-reference — page did not state the 25,000 figure; it says only "the token limit" for Read and large files. The 25,000-token default appears on https://code.claude.com/docs/en/env-vars (CLAUDE_CODE_FILE_READ_MAX_OUTPUT_TOKENS), so cite that page for the number.

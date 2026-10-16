@@ -541,3 +541,9 @@ Design consequences:
 6. **Does the claude.ai per-conversation connector toggle apply to Claude Code cloud sessions**, or are
    all connected connectors available by default there? The cloud page says "MCP connectors you enable on
    a session or routine"; the exact in-session control was not located in docs.
+
+## Verification
+Checked 2026-10-16 by the verifier. Sample: 20 cited claims.
+Verified: 18. Unverified: 2.
+- Unverified: Names starting `claude-`, `anthropic-` or `cc-plugin-` are "refused" (Q1) — https://code.claude.com/docs/en/plugins-reference — page says validate reports these as errors, and only `claude plugin init` and `claude plugin tag` refuse them; Claude Code still installs and loads such a plugin.
+- Unverified: "models follow ~150–200 instructions" (Q4) — https://www.humanlayer.dev/blog/writing-a-good-claude-md — page limits the figure to "Frontier thinking LLMs" and says it has not been studied rigorously; the finding drops that scope.

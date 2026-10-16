@@ -531,3 +531,8 @@ All opened 2026-10-16.
   `created:`); confirm exact syntax before encoding it in the discovery skill.
 - JTBD interview mechanics (switch interviews, timelines) were not verified beyond the HBR
   summary because the article is paywalled.
+
+## Verification
+Checked 2026-10-16 by the verifier. Sample: 20 cited claims.
+Verified: 20. Unverified: 0.
+- None unverified.

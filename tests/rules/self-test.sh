@@ -86,7 +86,7 @@ grep -qF '_FORMAT.md' plugin/skills/research/SKILL.md plugin/agents/synthesizer.
 grep -qF 'plugin/skills/research/findings-format.md' research/findings/_FORMAT.md || fail self-test "_FORMAT.md does not point to the plugin copy"
 
 # Fix round 1: the skill index and the hook fallback list every skill.
-for k in interview system-map spike self-test; do
+for k in interview system-map spike self-test self-improve; do
   grep -qF "\`$k\`" plugin/skills/using-research-agent/SKILL.md || fail self-test "using-research-agent table lacks $k"
   grep -F 'ctx="research-agent skills:' plugin/hooks/session-start.sh | grep -qF "$k" || fail self-test "session-start.sh fallback index lacks $k"
 done

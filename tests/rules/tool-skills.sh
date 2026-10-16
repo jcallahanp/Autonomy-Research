@@ -42,8 +42,10 @@ h=plugin/hooks/session-start.sh
 if [ -f "$h" ]; then
   tmp=$(mktemp -d)
   mkdir -p "$tmp/research/findings"
-  printf '%s\n' '# Index' '- [Quote "x"](a.md) — says "hi" \ back (2026-10-16, complete)' > "$tmp/research/findings/INDEX.md"
+  # Round 1: the hook carries the newest 30 INDEX.md lines (the tail), not the first 30.
+  echo '# Index' > "$tmp/research/findings/INDEX.md"
   for i in $(seq 1 40); do echo "- line $i" >> "$tmp/research/findings/INDEX.md"; done
+  echo '- [Quote "x"](a.md) — says "hi" \ back (2026-10-16, complete)' >> "$tmp/research/findings/INDEX.md"
   out=$(CLAUDE_PROJECT_DIR="$tmp" CLAUDE_PLUGIN_ROOT="$PWD/plugin" bash "$h"); rc=$?
   [ "$rc" -eq 0 ] || fail tool-skills "session-start.sh exited $rc"
   echo "$out" | jq -e '.hookSpecificOutput.hookEventName == "SessionStart"' >/dev/null 2>&1 \
@@ -51,8 +53,8 @@ if [ -f "$h" ]; then
   ctx=$(echo "$out" | jq -r '.hookSpecificOutput.additionalContext // empty' 2>/dev/null)
   case "$ctx" in *using-research-agent*) ;; *) fail tool-skills "session-start additionalContext lacks 'using-research-agent'";; esac
   case "$ctx" in *'Quote "x"'*) ;; *) fail tool-skills "session-start did not carry INDEX.md lines (quotes)";; esac
-  case "$ctx" in *'- line 28'*) ;; *) fail tool-skills "session-start dropped INDEX.md line 30";; esac
-  case "$ctx" in *'- line 29'*) fail tool-skills "session-start carried more than 30 INDEX.md lines";; esac
+  case "$ctx" in *'- line 12'*) ;; *) fail tool-skills "session-start dropped one of the newest 30 INDEX.md lines";; esac
+  case "$ctx" in *'- line 11'*) fail tool-skills "session-start carried more than 30 INDEX.md lines";; esac
   rm -rf "$tmp/research"
   out=$(CLAUDE_PROJECT_DIR="$tmp" CLAUDE_PLUGIN_ROOT="$PWD/plugin" bash "$h"); rc=$?
   [ "$rc" -eq 0 ] || fail tool-skills "session-start.sh exited $rc without INDEX.md"
@@ -104,3 +106,9 @@ jq -e '[.hooks.SessionStart[] | select(.hooks[].command | contains("session-star
   plugin/hooks/hooks.json >/dev/null 2>&1 || fail tool-skills "plugin/hooks/hooks.json session-start matcher lacks compact/clear"
 jq -e '[.hooks.SessionStart[] | select(.hooks[].command | contains("session-start.sh")) | .matcher] | length > 0 and all(contains("compact") and contains("clear"))' \
   .claude/settings.json >/dev/null 2>&1 || fail tool-skills ".claude/settings.json session-start matcher lacks compact/clear"
+
+# Round 1 re-measure fix: the live triage case skipped its registry row in 4 of 9 runs when
+# research/tool-registry.md did not exist yet. Both lead-written registry paths create it.
+for s in plugin/skills/repo-triage/SKILL.md plugin/skills/tool-scan/SKILL.md; do
+  grep -q 'a missing file is never a reason to skip the row' "$s" || fail registry "$s: must create a missing registry, not skip the row"
+done

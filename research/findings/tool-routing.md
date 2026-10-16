@@ -294,3 +294,12 @@ Every URL below was opened on 2026-10-16 with the tool named.
   from the session proxy, not GitHub).
 - Playwright snapshot files accumulate in `.playwright-mcp/` (gitignored); who cleans them up
   between research runs?
+
+## Verification
+Checked 2026-10-16 by the verifier. Sample: 20 cited claims.
+Verified: 15. Unverified: 5.
+- Unverified: Context7 free plan "then 20/day" — https://context7.com/plans — the page grants 20 bonus calls a day only while a free user is blocked after 1,000 calls, not a standing allowance.
+- Unverified: GitHub MCP page length "131,536 chars" — https://github.com/github/github-mcp-server — WebFetch reports 131,535 characters; off by one, possibly a counting difference.
+- Unverified: Jina "500 RPM with a free key" — https://jina.ai/reader/ — the rate-limit table says 500 RPM, but the FAQ gives 100 RPM for the free tier; uncertain.
+- Unverified: Semantic Scholar "new key ... 1 RPS on all endpoints" — https://www.semanticscholar.org/product/api — the page says "introductory rate limit for an API key is 1 RPS on all endpoints" and does not say "new".
+- Unverified: Glama "99,471 servers" — https://glama.ai/mcp/servers — the page states 99,591 servers (updated 2026-10-16 04:48).
