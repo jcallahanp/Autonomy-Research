@@ -26,4 +26,4 @@ Rulings: Claude Code is the engine and is not up for debate; everything else att
 
 ## Outputs
 - Findings: research/findings/engineer-tool-discovery.md - written (13 unsourced claims dropped to Open questions; 9 contradictions recorded, 3 unresolved)
-- Verification: pending
+- Verification: 19 of 20 verified, needs-review (Trend Micro MCP sweep gives 3.1-8.6% exploitable, not "about 4%")

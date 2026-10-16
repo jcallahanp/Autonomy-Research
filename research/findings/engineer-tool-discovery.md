@@ -638,3 +638,8 @@ These are recommendations only. Nothing in `plugin/` is changed this pass. Each 
 **Registry hygiene.**
 - Row "Glama / Smithery / mcpservers.org" (tool-registry.md:160) and tool-routing.md:154 still say Smithery is "Skip", with "no search API documented". This run's live test supersedes that for Smithery's search (E16). The older rows were not rewritten.
 - The registry has two deps.dev rows from this run, one per note. They agree.
+
+## Verification
+Checked 2026-10-16 by the verifier. Sample: 20 cited claims.
+Verified: 19. Unverified: 1.
+- Unverified: "Vulnerability rate: about 4% of 19,000 MCP repos estimated exploitable" (Evidence E25) — https://www.trendaisecurity.com/en/resources-insights/deep-research/hunt-them-all-an-ai-powered-vulnerability-sweep-of-19-000-mcp-servers — page says the estimate is "between 600 and 1,650" repositories, "(3.1% – 8.6%)", not "about 4%". The 600 to 1,650 figure in the body (line 41) is verified.
