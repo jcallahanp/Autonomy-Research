@@ -1,0 +1,21 @@
+[Unit]
+Description=Engineer supervisor (night loop, approvals, records)
+After=network-online.target engineer-egress-proxy.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=supervisor
+Environment=TZ=America/New_York
+# nft lets supervisor reach only the egress proxy (PROXY_PORT in engineer.conf); scanners and git use it.
+Environment=HTTPS_PROXY=http://127.0.0.1:3128 HTTP_PROXY=http://127.0.0.1:3128
+Environment=https_proxy=http://127.0.0.1:3128 http_proxy=http://127.0.0.1:3128
+Environment=NO_PROXY=127.0.0.1,localhost no_proxy=127.0.0.1,localhost
+ExecStart=/usr/bin/python3 /opt/engineer/scripts/supervisor/loop.py --projects /etc/engineer/projects.txt
+ExecStopPost=/usr/bin/sudo -n -u secretbroker /opt/engineer/bin/agent-run hc-ping fail
+Restart=on-failure
+RestartSec=30
+# No NoNewPrivileges: the supervisor reaches run-task and agent-run through sudo.
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,32 @@
+# Tier-2 paths for merge-tier.py: a PR touching any of these waits for John's GitHub review.
+# Patterns are anchored at the project root (eng.paths): `**` spans directories, `*` does not.
+# Lockfile and dependency bumps stay Tier 2 (stage-1 plan, Open decision 6).
+**/migrations/**
+migrations/**
+**/auth/**
+auth/**
+.github/**
+infra/**
+**/*.tf
+Dockerfile
+docker-compose*.yml
+wrangler.toml
+vercel.json
+CODEOWNERS
+CLAUDE.md
+.claude/**
+package.json
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+requirements*.txt
+pyproject.toml
+poetry.lock
+uv.lock
+go.mod
+go.sum
+Cargo.toml
+Cargo.lock
+docs/plan/**
+security/**
+.env.example

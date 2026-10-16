@@ -21,8 +21,8 @@ Status: **met** (a decision covers it, pending its spikes), **partial** (covered
 | R12 Create keys and config itself where allowed; say why not | Area 5 parent-to-child minting; human-only rows with reasons | partial | Children only on Cloudflare, Vercel, Supabase, Slack (engineer-human-loop E1-E11); Clay and n8n key endpoints unknown (SP65, SP66) |
 | R13 Browser for API-less config, confirm through API | Area 6 Playwright flows with API read-back; F25 audit | partial | API read-back confirms Attio view ID and title only (engineer-browser A1) |
 | R14 Pause only the gated action, batch, continue | Ruling 3, T1 digest; T2 prompts separate (F26, F31, F38) | partial | T2 hard gates go as separate immediate messages, not in the one batch (deliberate, engineer-human-loop §Tensions) |
-| R15 Run without human input overnight | Supervisor `claude -p` per task with `--permission-prompts none` (F22) | partial | Blocked until John picks Path A or B (ruling 1) |
-| R16 Self-merge routine changes | Ruling 2; area 11 `gh pr merge --auto` (F28) | unmet by default | Off until John picks a GitHub route and shadow mode passes |
+| R15 Run without human input overnight | Supervisor `claude -p` per task with `--permission-prompts none` (F22) under Path A (ruling 1, F42) | met (pending SP04-SP08) (updated 2026-10-16, John's decision) | Built in stage 1; the setup-day spikes SP04-SP08 confirm it on the droplet |
+| R16 Self-merge routine changes | Ruling 2; area 11 `gh pr merge --auto` through the `automerge` broker job for Tier 1 (F28) | met pending SP18 (updated 2026-10-16, John's decision) | On from day one under GitHub Pro; SP18 must pass before `--lock` |
 | R17 Separate audit agent checks claims, tests, docs, secrets, drift | Ruling 4; area 11 `audit.sh` and auditor; area 12 gitleaks (F24, F25) | met | |
 | R18 Stop on no progress, record, notify | Area 9 bounds and breaker; area 11 FAIL handling; denial counter (F27, F29) | met | |
 | R19 Bounded discovery pass, log every candidate | Area 3 ladder and vet card; `ROW:` to the registry | met | Envelope numbers untested (SP54) |
@@ -52,4 +52,4 @@ Status: **met** (a decision covers it, pending its spikes), **partial** (covered
 | Free and self-hosted first | stack.md; paid items optional and priced | met |
 | Web first, Android second, iOS deferred | Area 13 | met |
 | Outreach company limits; Attio App SDK blocked; some Attio config UI-only | Areas 6 and 2; SP60, SP67 | met, pending spikes |
-| John is on Max | Ruling 1 | open (Path A or B) |
+| John is on Max | Ruling 1: Path A, `/login` for every run (F42) | met (updated 2026-10-16, John's decision) |

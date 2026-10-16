@@ -1,14 +1,14 @@
 flowchart TD
   act[Engineer reaches an action]
   classify{Classify against project profile}
-  t0["T0 automatic: reversible, in repo, checks pass; merges only once R16 is on"]
+  t0["T0 automatic: reversible, in repo, checks pass; Tier 1 self-merges, R16 on"]
   t1[T1 digest line: numbered, recommended default]
   t2[T2 hard gate: money, delete data, store submission]
   digest[Supervisor Telegram bot: one daily digest]
   prompt[Supervisor Telegram bot: immediate separate prompt]
   parser[Deterministic reply parser]
   log[(decisions/approvals.jsonl)]
-  relay[Channels bot relay and Remote Control: daytime view, no product decisions]
+  relay[Channels bot relay and Remote Control server mode: live view, no product decisions]
   sms[healthchecks.io dead-man alert to the phone, SMS where offered]
 
   act -- "is checked by" --> classify
@@ -22,3 +22,4 @@ flowchart TD
   parser -- "appends every ask and answer to" --> log
   act -- "is shown live by day on" --> relay
   digest -- "is backed by a dead-man alert on" --> sms
+%% updated 2026-10-16, John's decision

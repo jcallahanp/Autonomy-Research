@@ -1,0 +1,111 @@
+#!/usr/bin/python3 -I
+"""Broker job tg-poll: fetch new Telegram updates for the supervisor bot and keep only John's.
+
+Run as secretbroker through `agent-run tg-poll` (callers: supervisor). GETs
+TELEGRAM_API/bot<TG_SUPERVISOR_TOKEN>/getUpdates?offset=<stored+1>&timeout=0, keeps `message` and
+`edited_message` updates whose from.id equals secret TG_JOHN_USER_ID (edits marked edited: true),
+drops everything else, prints JSON lines {update_id, from_id, date, text, edited}, stores the last
+update_id in BROKER_STATE_DIR/tg-offset and prints "tg-poll: dropped N" to stderr.
+The token never reaches argv, a log line, stdout or stderr.
+"""
+import json
+import os
+import re
+import sys
+import tempfile
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[3]
+sys.path.insert(0, str(ROOT / "scripts"))
+from eng import brokerlib  # noqa: E402
+from eng import conf as _conf  # noqa: E402
+
+_TOKEN = re.compile(r"[A-Za-z0-9:_-]{1,200}")
+_ID = re.compile(r"[0-9]{1,20}")
+
+
+def _int(v) -> bool:
+    return isinstance(v, int) and not isinstance(v, bool)
+
+
+def read_offset(path: Path) -> int:
+    if not path.exists():
+        return -1
+    text = path.read_text().strip()
+    if not re.fullmatch(r"-?[0-9]{1,20}", text):
+        raise ValueError("tg-offset is not a number")
+    return int(text)
+
+
+def write_offset(path: Path, value: int) -> None:
+    fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=".tg-offset.")
+    with os.fdopen(fd, "w") as f:
+        f.write(f"{value}\n")
+        f.flush()
+        os.fsync(f.fileno())
+    os.replace(tmp, path)
+
+
+def keep(update: dict, john: int):
+    """The output line for one of John's messages, or None to drop the update."""
+    if "message" in update:
+        msg, edited = update["message"], False
+    elif "edited_message" in update:
+        msg, edited = update["edited_message"], True
+    else:
+        return None
+    sender = msg.get("from") if isinstance(msg, dict) else None
+    if not isinstance(sender, dict) or not _int(sender.get("id")) or sender["id"] != john:
+        return None
+    text = msg.get("text") if isinstance(msg.get("text"), str) else ""
+    date = msg.get("date") if _int(msg.get("date")) else None
+    return {"update_id": update["update_id"], "from_id": sender["id"], "date": date, "text": text,
+            "edited": edited}
+
+
+def main() -> int:
+    conf = _conf.load(ROOT)
+    state = Path(conf["BROKER_STATE_DIR"])
+    state.mkdir(parents=True, exist_ok=True, mode=0o700)
+    offset_path = state / "tg-offset"
+    stored = read_offset(offset_path)
+    token = brokerlib.secret(conf, "TG_SUPERVISOR_TOKEN").strip()
+    john = brokerlib.secret(conf, "TG_JOHN_USER_ID").strip()
+    if not _TOKEN.fullmatch(token) or not _ID.fullmatch(john):
+        print("tg-poll: TG_SUPERVISOR_TOKEN or TG_JOHN_USER_ID has an unexpected shape", file=sys.stderr)
+        return 1
+    url = f"{conf['TELEGRAM_API'].rstrip('/')}/bot{token}/getUpdates?offset={stored + 1}&timeout=0"
+    status, body = brokerlib.http("GET", url, {}, None)
+    try:
+        data = json.loads(body) if status == 200 else None
+    except ValueError:
+        data = None
+    if not isinstance(data, dict) or data.get("ok") is not True or not isinstance(data.get("result"), list):
+        print(f"tg-poll: getUpdates failed (HTTP {int(status)})", file=sys.stderr)
+        return 1
+    last, dropped, lines = stored, 0, []
+    for update in data["result"]:
+        if not isinstance(update, dict) or not _int(update.get("update_id")):
+            dropped += 1
+            continue
+        last = max(last, update["update_id"])
+        line = keep(update, int(john))
+        if line is None:
+            dropped += 1
+        else:
+            lines.append(line)
+    for line in lines:
+        print(json.dumps(line))
+    sys.stdout.flush()
+    if last > stored:
+        write_offset(offset_path, last)
+    print(f"tg-poll: dropped {dropped}", file=sys.stderr)
+    return 0
+
+
+if __name__ == "__main__":
+    try:
+        sys.exit(main())
+    except Exception as e:  # never print the message: it may hold the URL, and the URL holds the token
+        print(f"tg-poll: failed ({type(e).__name__})", file=sys.stderr)
+        sys.exit(1)

@@ -1,0 +1,29 @@
+flowchart LR
+  john[John's phone or computer]
+  access[Cloudflare Access: one-email policy]
+  cfd[cloudflared tunnel on the droplet]
+  novnc[noVNC on 127.0.0.1:6080]
+  xvfb[Xvfb display :99 with a window manager]
+  chrome[Branded Chrome, persistent non-default profile]
+  login[browser-login: Chrome with no automation flags]
+  pw["Playwright MCP, --browser chrome"]
+  proxy[Egress proxy on 127.0.0.1:3128, host allowlist]
+  sites[Attio, Clay, n8n, Google sign-in]
+  chk{challenge-check.py after each navigation}
+  stop[Stop the task and notify John: T1 re-login line]
+
+  john -- "opens novnc.domain through" --> access
+  access -- "admits John to" --> cfd
+  cfd -- "forwards to" --> novnc
+  john -. "SSH tunnel, fallback only" .-> novnc
+  novnc -- "shows the screen of" --> xvfb
+  xvfb -- "displays" --> chrome
+  login -- "starts for John's hand sign-in" --> chrome
+  pw -- "drives" --> chrome
+  chrome -- "sends all traffic through" --> proxy
+  proxy -- "reaches only" --> sites
+  pw -- "passes each page snapshot to" --> chk
+  chk -- "clean: continue" --> pw
+  chk -- "login page, CAPTCHA or bot challenge" --> stop
+  stop -- "notifies by Telegram and Remote Control" --> john
+%% updated 2026-10-16, John's decision

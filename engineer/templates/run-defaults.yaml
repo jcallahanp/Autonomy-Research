@@ -1,0 +1,17 @@
+# Run defaults (research/blueprint/flow.md "Run defaults"). Every number is an untested default;
+# the spike named in flow.md sets the real value. John may change any of them here.
+night: {start: "22:00", end: "07:00", tz: America/New_York, digest_at: "07:30"}
+task: {attempts: 2}
+breaker: {no_diff_sessions: 3, same_failure_repeats: 5}
+denials_per_kind_per_night: 5
+t1: {timeout_hours: 24, reminder_hours: 12, max_open: 5}
+heartbeat_minutes: 15
+self_merge_cooldown_seconds: 60
+cleanup_period_days: 7
+profiles:
+  implementer:   {agent: implementer,   model: sonnet, max_turns: 60, max_budget_usd: 5, timeout_minutes: 45}
+  auditor:       {agent: auditor,       model: sonnet, max_turns: 30, max_budget_usd: 2, timeout_minutes: 15, json_schema: audit-verdict}
+  plan-reviewer: {agent: plan-reviewer, model: sonnet, max_turns: 40, max_budget_usd: 3, timeout_minutes: 30}
+  planner:       {agent: planner,       model: opus,   max_turns: 60, max_budget_usd: 8, timeout_minutes: 45}
+  mapper:        {agent: mapper,        model: sonnet, max_turns: 40, max_budget_usd: 3, timeout_minutes: 30}
+  check:         {timeout_minutes: 20}

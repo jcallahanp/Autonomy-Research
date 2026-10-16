@@ -10,6 +10,7 @@ research-agent plugin and also the workspace where that agent does its research.
 - `research/` is the workspace: findings, runs, `tool-registry.md`, `open-questions.md`.
 - `docs/` holds the proposal, the diagrams (`docs/diagrams/index.md`) and the guides.
 - `scripts/` holds template-side scripts such as `cloud-setup.sh`.
+- `engineer/` is the autonomous engineer's stage-1 code (lands in `/opt/engineer/`); tests in `tests/engineer/`.
 
 ## Research rules
 - Use the research-agent skills for research. For multi-source research the lead delegates reading to workers and never holds fetched pages; a one-fact lookup may be answered inline with at most two content calls.

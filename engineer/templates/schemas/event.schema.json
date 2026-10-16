@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "events.jsonl line",
+  "description": "One line of $STATE_DIR/<project>/events.jsonl, written by the supervisor only.",
+  "type": "object",
+  "required": [
+    "ts",
+    "project",
+    "event"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "ts": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?Z$"
+    },
+    "project": {
+      "type": "string",
+      "minLength": 1
+    },
+    "task_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "session_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "event": {
+      "enum": [
+        "task_start",
+        "task_end",
+        "gate",
+        "audit",
+        "denial",
+        "limit",
+        "reset_wait",
+        "resume",
+        "approval_ask",
+        "approval_answer",
+        "crash",
+        "reconcile",
+        "check",
+        "night_start",
+        "night_end",
+        "pr_open",
+        "merge",
+        "challenge",
+        "heartbeat",
+        "digest",
+        "notify",
+        "stopped"
+      ]
+    },
+    "exit_code": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "cost_usd": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "head_sha": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "detail": {
+      "type": "object"
+    }
+  }
+}

@@ -18,6 +18,9 @@ jobs:
         with:
           node-version: "22.11.0"
 
+      - name: Install PyYAML
+        run: sudo apt-get update -q && sudo apt-get install -y python3-yaml
+
       - name: Structure checks
         run: bash tests/check.sh
 
@@ -32,6 +35,9 @@ jobs:
 
       - name: Validate plugin
         run: claude plugin validate plugin --strict
+
+      - name: Validate engineer plugin
+        run: claude plugin validate engineer/plugin --strict
 
       - name: Validate marketplace
         run: claude plugin validate . --strict

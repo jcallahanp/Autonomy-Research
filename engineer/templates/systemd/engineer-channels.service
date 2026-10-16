@@ -1,0 +1,17 @@
+[Unit]
+Description=Claude Code channels session (Telegram) in tmux
+After=network-online.target engineer-egress-proxy.service
+Wants=network-online.target
+
+[Service]
+Type=forking
+User=engineer
+# bootstrap.sh installs claude in ~/.local/bin, which is not on systemd's default PATH.
+Environment=PATH=/home/engineer/.local/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=/usr/bin/tmux new-session -d -s channels /opt/engineer/bin/channels-session
+ExecStop=/usr/bin/tmux kill-session -t channels
+Restart=on-failure
+RestartSec=30
+
+[Install]
+WantedBy=multi-user.target

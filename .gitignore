@@ -3,3 +3,5 @@
 # claude plugin eval output: raw JSON, reports, mock recordings
 plugin/evals/results/
 /evals/results/
+__pycache__/
+*.pyc

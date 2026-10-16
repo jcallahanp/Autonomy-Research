@@ -1,0 +1,14 @@
+[Unit]
+Description=noVNC view of the engineer browser display (behind Cloudflare Access)
+After=chrome-xvfb.service
+Requires=chrome-xvfb.service
+
+[Service]
+Type=simple
+User=engineer
+ExecStart=/opt/engineer/bin/novnc-session
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

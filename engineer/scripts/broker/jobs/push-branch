@@ -1,0 +1,102 @@
+#!/bin/bash
+set -euo pipefail
+# push-branch REPO_DIR BRANCH [--tag plan-approved-N] [--expect SHA]   (agent-run job; callers engineer, supervisor)
+# REPO_DIR: PROJECTS_DIR/<name>, a worktree PROJECTS_DIR/<name>.wt/<id>, or RECORDS_DIR/<name> (supervisor only);
+# <name> must be in ETC_DIR/projects.txt. Refuses the default branch, main, master and bad names; engineer-records
+# and tags (only ^plan-approved-[0-9]+$) are for supervisor only. task/* branches are supervisor only too and need
+# --expect: the supervisor pushes task/<id> after a PASS, and only when the branch head is exactly the audited sha.
+# Fetches into the broker mirror (mirror.sh), then pushes from the mirror without --force; the bot PAT reaches git
+# only as an http.extraheader in the environment.
+# Prints {"branch", "sha", "tag"}. Exit: 64 usage, 65 refused, 77 caller not allowed, else git's failure.
+root=$(cd "$(dirname "$(readlink -f "$0")")/../../.." && pwd)
+# shellcheck disable=SC1091
+. "$root/scripts/broker/common.sh"
+need_caller
+sup() { [ "$AGENT_RUN_CALLER" = supervisor ]; }
+
+usage="usage: push-branch REPO_DIR BRANCH [--tag plan-approved-N] [--expect SHA]"
+[ $# -ge 2 ] || die 64 "$usage"
+dir=${1%/}; branch=$2; tag=; expect=
+shift 2
+while [ $# -gt 0 ]; do
+  [ $# -ge 2 ] || die 64 "$usage"
+  case "$1" in
+    --tag) [ -z "$tag" ] || die 64 "$usage"; tag=$2 ;;
+    --expect) [ -z "$expect" ] || die 64 "$usage"; expect=$2 ;;
+    *) die 64 "$usage" ;;
+  esac
+  shift 2
+done
+if [ -n "$tag" ]; then
+  sup || die 77 "only supervisor may push a tag"
+  [[ "$tag" =~ ^plan-approved-[0-9]+$ ]] || die 65 "tag must match ^plan-approved-[0-9]+$"
+fi
+[ -z "$expect" ] || [[ "$expect" =~ ^[0-9a-f]{40}$ ]] || die 65 "--expect takes a full 40-character sha"
+
+# Where the repo is decides the project name and who may push from it.
+case "$dir" in /*) ;; *) die 65 "REPO_DIR must be absolute" ;; esac
+case "/$dir/" in */../*|*/./*) die 65 "REPO_DIR must not contain . or .. parts" ;; esac
+kind=; name=; rel=
+if [ "${dir#"$PROJECTS_DIR"/}" != "$dir" ]; then
+  rel=${dir#"$PROJECTS_DIR"/}
+  if [[ "$rel" =~ ^([a-z0-9][a-z0-9-]{0,39})$ ]]; then kind=clone; name=${BASH_REMATCH[1]}
+  elif [[ "$rel" =~ ^([a-z0-9][a-z0-9-]{0,39})\.wt/([A-Za-z0-9][A-Za-z0-9_-]{0,63})$ ]]; then kind=worktree; name=${BASH_REMATCH[1]}
+  fi
+elif [ "${dir#"$RECORDS_DIR"/}" != "$dir" ]; then
+  rel=${dir#"$RECORDS_DIR"/}
+  [[ "$rel" =~ ^([a-z0-9][a-z0-9-]{0,39})$ ]] && { kind=records; name=${BASH_REMATCH[1]}; }
+fi
+[ -n "$kind" ] || die 65 "REPO_DIR must be PROJECTS_DIR/<name>, PROJECTS_DIR/<name>.wt/<id> or RECORDS_DIR/<name>"
+[ "$kind" != records ] || sup || die 77 "only supervisor may push from the records clone"
+project_row "$name"
+
+if [ "$branch" = engineer-records ]; then
+  sup || die 77 "only supervisor may push engineer-records"
+else
+  branch_ok "$branch"
+fi
+case "$branch" in
+  task/*)
+    sup || die 77 "task/* branches are pushed by the supervisor after the audit"
+    [ -n "$expect" ] || die 65 "task/* needs --expect <audited sha>" ;;
+esac
+
+# No symlinked path component below the base, and a .git that stays inside this project.
+base=$PROJECTS_DIR; [ "$kind" = records ] && base=$RECORDS_DIR
+[ -d "$dir" ] && [ "$(readlink -f "$dir")" = "$(readlink -f "$base")/$rel" ] || die 65 "REPO_DIR is missing or a symlink"
+if [ "$kind" = worktree ]; then
+  [ -f "$dir/.git" ] && [ ! -L "$dir/.git" ] || die 65 "worktree has no .git file"
+  gd=$(sed -n '1s/^gitdir: //p' "$dir/.git")
+  main=$(readlink -f "$PROJECTS_DIR/$name/.git")
+  case "$(readlink -f "$gd")" in "$main"/worktrees/*) ;; *) die 65 "worktree .git points outside $name" ;; esac
+  if [ -f "$gd/commondir" ]; then
+    cd_=$(cat "$gd/commondir"); case "$cd_" in /*) ;; *) cd_="$gd/$cd_" ;; esac
+    [ "$(readlink -f "$cd_")" = "$main" ] || die 65 "worktree commondir points outside $name"
+  fi
+else
+  [ -d "$dir/.git" ] && [ ! -L "$dir/.git" ] || die 65 "REPO_DIR has no .git directory"
+fi
+
+refs=("+refs/heads/$branch:refs/heads/$branch")
+push=("refs/heads/$branch:refs/heads/$branch")
+if [ -n "$tag" ]; then
+  refs+=("+refs/tags/$tag:refs/tags/$tag")
+  push+=("refs/tags/$tag:refs/tags/$tag")
+fi
+mirror=$("$root/scripts/broker/mirror.sh" "$name" "$dir" "${refs[@]}")
+sha=$(git --git-dir="$mirror" rev-parse --verify "refs/heads/$branch^{commit}")
+if [ -n "$expect" ]; then
+  # Push exactly the audited commit: the mirror's copy of the branch must be it, and the push names the sha.
+  [ "$sha" = "$expect" ] || die 65 "$branch is at ${sha:0:12}, not the expected ${expect:0:12}; refusing"
+  push[0]="$expect:refs/heads/$branch"
+fi
+
+# The PAT stays in shell variables and the environment of the one push; printf is a builtin.
+pat=$(secret GH_BOT_PAT)
+[ -n "$pat" ] || die 1 "GH_BOT_PAT is empty"
+auth=$(printf 'x-access-token:%s' "$pat" | base64 -w0)
+unset pat
+GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0="http.$GITHUB_URL/.extraheader" GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $auth" \
+  git --git-dir="$mirror" push --quiet --no-verify "$GITHUB_URL/$P_REPO.git" "${push[@]}" >&2 || die 1 "git push failed"
+unset auth
+jq -cn --arg b "$branch" --arg s "$sha" --arg t "$tag" '{branch: $b, sha: $s, tag: (if $t == "" then null else $t end)}'

@@ -1,0 +1,25 @@
+# The one required check for {{NAME}}: runs scripts/check.sh when the project has one.
+# Actions are pinned by full commit SHA; the comment names the release
+# (actions/checkout v7.0.1, read with git ls-remote on 2026-10-16).
+name: checks
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  checks:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Run project checks
+        run: |
+          if [ -f scripts/check.sh ]; then
+            bash scripts/check.sh
+          else
+            echo "scripts/check.sh not present yet; nothing to run"
+          fi

@@ -2,13 +2,13 @@
 
 Purpose: every spike named in the 14 digests, de-duplicated, ordered by how much of the build each one blocks.
 
-"Sources" names the digest and its spike number (e.g. "human-loop 23" is spike 23 in `digests/human-loop.md`). Where a digest gave no pass line, the column says what is recorded instead. Nothing here has been run.
+"Sources" names the digest and its spike number (e.g. "human-loop 23" is spike 23 in `digests/human-loop.md`). Where a digest gave no pass line, the column says what is recorded instead. Nothing here has been run. SP85-SP89 come from `research/findings/engineer-host.md` (setup-day spikes 1-5) (updated 2026-10-16, John's decision).
 
 ## A. Blocks the auth decision and every unattended run
 | ID | Spike and probe | Pass criterion | Blocks | Sources |
 | --- | --- | --- | --- | --- |
-| SP01 | Re-read Anthropic's Agent SDK billing article and the legal page; check the Oct 7, 2026 "monthly API credits" note against `claude -p` | Current terms recorded with the quote | Ruling 1 (Path A or B) | human-loop 23; runtime 11, 2 |
-| SP02 | `/login` vs `setup-token` vs API key on the VM: connectors, Remote Control, Chrome, artifact publishing | What each path loses, listed | Ruling 1 | runtime 6; briefing 9 |
+| SP01 | Re-read Anthropic's Agent SDK billing article and the legal page; check the Oct 7, 2026 "monthly API credits" note against `claude -p` | Current terms recorded with the quote in ADR 0001; run on setup day | ADR 0001's recorded risk (Path A is chosen (updated 2026-10-16, John's decision)) | human-loop 23; runtime 11, 2 |
+| SP02 | `/login` vs `setup-token` vs API key on the VM: connectors, Remote Control, Chrome, artifact publishing | `/login` keeps Remote Control, connectors and Chrome; `setup-token` is not used | Setup step 7 under Path A (updated 2026-10-16, John's decision) | runtime 6; briefing 9 |
 | SP03 | Hardened container running `claude -p` under subscription login and under a trial-only key, with and without `--bare` | `--bare` works; exit codes 0 and 143 and budget-stop exits seen | Trial auth, supervisor | feasibility 2 |
 | SP04 | `--permission-mode auto --permission-prompts none` on a task that triggers blocks | Exit code, `permission_denials`, behaviour past 20 blocks recorded | Denial counter, R15 | human-loop 17 |
 | SP05 | `--max-turns`, `--max-budget-usd` exit codes and `result.subtype`; stub supervisor on a real repo; Ralph via `-p` with a cap | Bounds reported reliably; "no git diff in 3 attempts" detected | Supervisor, R18 | context 4 |
@@ -30,11 +30,11 @@ Purpose: every spike named in the 14 digests, de-duplicated, ordered by how much
 ## B. Blocks a core-loop component
 | ID | Spike and probe | Pass criterion | Blocks | Sources |
 | --- | --- | --- | --- | --- |
-| SP18 | Throwaway private repo on John's GitHub plan: protection, required check, CODEOWNERS; bot push to main and force push; `gh pr merge --auto`; PR approval from mobile; code-scanning merge protection; environment reviewers | Auto-merge at 0 approvals; CODEOWNERS path blocks; bot pushes refused; mobile approval possible | Ruling 2 (R16), promote gate | protocol 5; planning S4; security 11; deploy step 7 |
-| SP19 | Two weeks of shadow mode: proposed tier vs John's merge | Agreement measured; no threshold given | Turning R16 on | protocol 7 |
+| SP18 | Throwaway private repo on John's GitHub plan: protection, required check, CODEOWNERS; bot push to main and force push; `gh pr merge --auto`; PR approval from mobile; code-scanning merge protection; environment reviewers | Auto-merge at 0 approvals; CODEOWNERS path blocks; bot pushes refused; mobile approval possible | Ruling 2 (R16, on from day one): a setup-day gate that must pass before `--lock` (setup step 34) (updated 2026-10-16, John's decision); promote gate | protocol 5; planning S4; security 11; deploy step 7 |
+| SP19 | Dropped: no shadow or trial weeks; R16 is on from day one (updated 2026-10-16, John's decision) | n/a | Nothing | protocol 7 |
 | SP20 | 20 planted faults (deleted, skipped test, mock, phantom file, fake package, stale doc, no test run); Sonnet vs Opus vs second family; backcheck and Proof under `-p` | Catch and false-positive rates; cost within 2-4x | Auditor | protocol 4 |
 | SP21 | "Done" claims with failed checks, with and without the Stop-hook verifier; truncation hook; cache hit rate across `-p` | Fewer false "done"; trimming keeps pass rate | Done gate | context 8 |
-| SP22 | Chromium and Playwright install and launch in VM bootstrap and cloud setup; mermaid-cli dark SVG headless | Installs, launches, renders | Bootstrap, briefing | runtime 3; briefing 2 |
+| SP22 | Branded Google Chrome and Playwright MCP (`--browser chrome`) install and launch on Xvfb in VM bootstrap (updated 2026-10-16, John's decision), and in cloud setup; mermaid-cli dark SVG headless | Installs, launches, renders | Bootstrap, briefing | runtime 3; briefing 2 |
 | SP23 | Superpowers, Beads `bd setup claude`, Ralph Stop hook and repo SessionStart together | Collision count; none fatal | Bootstrap | runtime 5 |
 | SP24 | Seeded decisions through `/compact` and auto-compact, with and without Compact Instructions and the hook; Superpowers ledger | Seeded decisions survive | Context design | context 2 |
 | SP25 | Task list formats (Markdown, JSON, YAML, about 5 runs); `CLAUDE_CODE_ENABLE_TASKS`; Beads vs `tasks.json` over 3 compactions | Adherence and task loss compared | `tasks.json` format | intake 7; planning S12; context 7 |
@@ -83,7 +83,7 @@ Purpose: every spike named in the 14 digests, de-duplicated, ordered by how much
 | SP60 | Attio: full OpenAPI spec has no view or workflow writes; view made in UI read back by API; UI-only list; merge undo in sandbox; webhook scope; App SDK at John's org | List confirmed; ID and title read back | Ruling 12; GTM | browser 9, 13; existing-systems 10 |
 | SP61 | Attio Kanban drag by ref vs coordinate; healer on a broken drag | Drag verified; repair rate | GTM views | browser 2 |
 | SP62 | 5-10 Attio and Clay sandbox tasks: Playwright CLI vs MCP vs agent-browser | Success by state check | Driver choice | browser 1 |
-| SP63 | Profile under Xvfb for 2-3 weeks; Google SSO into Attio and Clay; challenge rate VM vs home IP; logged-in check alert; TOTP wrapper; Claude in Chrome unattended | Sessions survive; alert in digest; code without seed | Logins, Q8 | browser 3-7; runtime 7 |
+| SP63 | Reduced to a setup-day sign-in test: Google SSO into Attio and Clay through noVNC, with the logged-in check; covered by SP85 and SP86. Session life is watched afterwards by the daily logged-in line, not gating (updated 2026-10-16, John's decision) | Sign-ins succeed; logged-in check passes | Logins, Q8 | browser 3-7; runtime 7 |
 | SP64 | PreToolUse hooks on Playwright MCP and `mcp__claude-in-chrome__*`; domain allowlist | Fires with usable `tool_input` | Browser guardrails | browser 8 |
 | SP65 | Clay: plan, `clay workflows` JSON dump, API surface, column made without the Enterprise API, key-create endpoint, terms, table export | Known | GTM Clay | existing-systems 8; feasibility 17; browser 10, 14; human-loop 6 |
 | SP66 | n8n: credential list fields, API on his plan, community packages, API and instance MCP create on a throwaway, key endpoint, n8nmermaid | Confirmed | GTM tooling | existing-systems 7; feasibility 18; browser 11; deploy 5; human-loop 6; briefing 8 |
@@ -97,6 +97,15 @@ Purpose: every spike named in the 14 digests, de-duplicated, ordered by how much
 | SP74 | `./gradlew assembleRelease`, Health Connect, `adb`; first `eas submit` vs fastlane | Builds and installs; settled | R21 Android | deploy 8, 9 |
 | SP75 | John's test accounts; minutes per setup step in the sitting | Accounts exist; times fed back | Trials; setup list | feasibility 8, 20 |
 | SP76 | Labcorp and Quest PDFs; Apple Health export; Fasten or 1up accounts | Parser works; options known | Health labs | browser 15 |
+
+## Host spikes on setup day (updated 2026-10-16, John's decision)
+| ID | Spike and probe | Pass criterion | Blocks | Sources |
+| --- | --- | --- | --- | --- |
+| SP85 | Google sign-in, then Attio and Clay, from the DigitalOcean US-East droplet IP through noVNC, by hand; note every challenge | Each sign-in succeeds with no block; challenges recorded | Browser logins (setup step 30); else the fallbacks: Tailscale exit node at home, then a home Mac mini | engineer-host setup-day spike 1; E3, E5 |
+| SP86 | Chrome logins survive a droplet snapshot restore with the persistent non-default `--user-data-dir` profile | Logged-in check passes after restore | Snapshot as recovery; else a re-login runbook | engineer-host setup-day spike 2; E13, E64 |
+| SP87 | Remote Control (server mode) and the Telegram channel on the host at the same time | Both answer from the phone; an approval relay works | `engineer-remote-control` and `engineer-channels` units (setup step 39a); else pick one for live approvals | engineer-host setup-day spike 3; E98, E103 |
+| SP88 | Memory with real Attio, Clay and n8n tabs plus a `claude -p` run on 8 GiB | No OOM or swap storm; headroom recorded | The 4 vCPU / 8 GiB size; else resize in place | engineer-host setup-day spike 4; E84 |
+| SP89 | Read DigitalOcean's acceptable-use policy for a headed browser driven by an agent on John's own accounts | Nothing forbids it, quote recorded | Keeping DigitalOcean as host | engineer-host setup-day spike 5; Open questions |
 
 ## E. Optional, only if the option is wanted
 | ID | Spike and probe | Pass criterion | Blocks | Sources |

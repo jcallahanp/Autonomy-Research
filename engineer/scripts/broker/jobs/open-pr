@@ -1,0 +1,31 @@
+#!/bin/bash
+set -euo pipefail
+# open-pr PROJECT BRANCH TITLE   (agent-run job; callers engineer, supervisor; PR body on stdin)
+# task/* PRs are the supervisor's: it opens them after it pushed the audited sha (push-branch --expect).
+# TITLE must be a Conventional Commit subject. Runs `gh pr create` against the project's repo with the
+# bot PAT as GH_TOKEN in the environment only. Prints {"number": N, "url": "..."}.
+# Exit: 64 usage, 65 refused, 77 not through agent-run, 1 gh failed.
+root=$(cd "$(dirname "$(readlink -f "$0")")/../../.." && pwd)
+# shellcheck disable=SC1091
+. "$root/scripts/broker/common.sh"
+need_caller
+
+[ $# -eq 3 ] || die 64 "usage: open-pr PROJECT BRANCH TITLE (body on stdin)"
+project=$1 branch=$2 title=$3
+project_row "$project"
+branch_ok "$branch"
+case "$branch" in
+  task/*) [ "$AGENT_RUN_CALLER" = supervisor ] || die 77 "task/* PRs are opened by the supervisor after the audit" ;;
+esac
+case "$title" in *[[:cntrl:]]*) die 65 "title has a control character" ;; esac
+re='^(feat|fix|docs|test|chore|style|refactor|perf|build|ci)(\([a-z0-9-]+\))?!?: .{1,72}$'
+[[ "$title" =~ $re ]] || die 65 "title is not a Conventional Commit subject: type(scope)!: text (1-72 chars)"
+
+tok=$(secret GH_BOT_PAT)
+[ -n "$tok" ] || die 1 "GH_BOT_PAT is empty"
+out=$(GH_TOKEN=$tok gh pr create --repo "$P_REPO" --head "$branch" --base "$P_DEFAULT" \
+  --title "$title" --body-file -) || die 1 "gh pr create failed"
+unset tok
+url=$(printf '%s\n' "$out" | grep -Eo 'https://[^[:space:]]+/pull/[0-9]+' | tail -n 1 || true)
+[ -n "$url" ] || die 1 "gh printed no PR URL"
+jq -cn --arg u "$url" '{number: ($u | sub(".*/pull/"; "") | tonumber), url: $u}'

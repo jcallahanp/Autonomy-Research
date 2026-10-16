@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "approvals.jsonl line",
+  "description": "One line of decisions/approvals.jsonl on engineer-records, written by the supervisor's reply parser.",
+  "type": "object",
+  "required": [
+    "ts",
+    "item",
+    "tier",
+    "kind",
+    "ask",
+    "answer",
+    "source"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "ts": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?Z$"
+    },
+    "item": {
+      "type": "string",
+      "minLength": 1
+    },
+    "tier": {
+      "enum": [
+        "T1",
+        "T2"
+      ]
+    },
+    "kind": {
+      "enum": [
+        "merge",
+        "plan",
+        "promote",
+        "relogin",
+        "deadend",
+        "denial",
+        "other"
+      ]
+    },
+    "ask": {
+      "type": "string"
+    },
+    "answer": {
+      "enum": [
+        "yes",
+        "no",
+        "default",
+        "expired"
+      ]
+    },
+    "from_id": {
+      "type": [
+        "integer",
+        "string",
+        "null"
+      ]
+    },
+    "raw": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "source": {
+      "enum": [
+        "telegram",
+        "pr",
+        "timeout"
+      ]
+    }
+  }
+}

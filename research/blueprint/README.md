@@ -21,9 +21,10 @@ Bash sandbox and fail-closed hooks (engineer-human-loop E148, E168, E152). A Sto
 and a script-first auditor decide "done" from evidence, never from the model's claim (engineer-protocol
 E11, E15, E138). Secrets sit in SOPS+age files readable only by a `secretbroker` user that runs
 allowlisted jobs (engineer-human-loop E58-E60). Browser-only work (Attio views, Clay tables, OAuth
-consent) runs in Playwright on a persistent headed Chrome profile (engineer-browser T4, S1). The
-supervisor's own Telegram bot sends one numbered daily digest plus immediate hard-gate prompts
-(engineer-human-loop E118). Every night ends in a known state written to `RUN_STATUS.json` and
+consent) runs in Playwright on a persistent headed branded Chrome profile (engineer-browser T4, S1;
+engineer-host E12) on a DigitalOcean droplet. The supervisor's own Telegram bot sends one numbered daily
+digest plus immediate hard-gate prompts (engineer-human-loop E118); Remote Control in server mode is
+John's phone cockpit (engineer-host E103) (updated 2026-10-16, John's decision). Every night ends in a known state written to `RUN_STATUS.json` and
 `MORNING.md` (engineer-context §Q7.5; engineer-protocol E103).
 
 ## Files in this folder
@@ -41,30 +42,41 @@ supervisor's own Telegram bot sends one numbered daily digest plus immediate har
 | `digests/` | The 14 area digests this blueprint was built from |
 
 Diagrams: `docs/diagrams/engineer-context.mmd`, `engineer-runtime.mmd`, `engineer-project-flow.mmd`,
-`engineer-approvals.mmd` (linked from `docs/diagrams/index.md`).
+`engineer-approvals.mmd`, `engineer-supervisor-loop.mmd`, `engineer-browser-route.mmd` (linked from
+`docs/diagrams/index.md`). John's decisions are recorded as ADRs 0001-0006 in `engineer/docs/adr/`
+(updated 2026-10-16, John's decision).
 
-## Decisions John still owes
+## Decisions John made
+(updated 2026-10-16, John's decision)
+
+| # | Decision | ADR | Where it lands |
+| --- | --- | --- | --- |
+| 1 | Auth Path A: Claude Max via `/login` for every run, unattended runs included; no API key in v1 | 0001 | Ruling 1; wrappers refuse `ANTHROPIC_API_KEY` and `CLAUDE_CODE_OAUTH_TOKEN` |
+| 2 | GitHub Pro bought; R16 self-merge on from day one; no shadow or trial weeks | 0002 | Ruling 2; `self_merge: true`; SP18 gates `--lock`; SP19 dropped |
+| 3 | No 1Password: SOPS+age behind `secretbroker` | 0003 | Ruling 6; `op` rows removed |
+| 4 | DigitalOcean US-East droplet, Ubuntu 24.04, 4 vCPU / 8 GB; branded Chrome via Playwright `channel chrome`, persistent non-default profile, Xvfb, noVNC behind Cloudflare Access; John signs in by hand once; APIs first; stop and notify on any bot challenge; no stealth, proxy rotation or CAPTCHA solvers; Tailscale exit node at home or a home Mac mini only if the setup-day sign-in test fails | 0004 | Areas 6 and 14; stack.md; F41 |
+| 5 | Chat control: Remote Control (server mode) plus a Telegram channel and bot; no NanoClaw or OpenClaw in v1; a Slack bridge on an API key is a later option | 0005 | Ruling 3 |
+| 6 | First project: the GTM framework over Attio, Clay, n8n; the focus is the framework for automating such projects | 0006 | setup.md per-project rows |
+
+The rows John used to owe: 1 (auth) is answered by decision 1, 2 (secrets) by decision 3, 3 (R16) by decision 2,
+and 5 (host) by decision 4, a dedicated droplet separate from the health VM. One row stays open:
+
 | # | Decision | Default until he answers |
 | --- | --- | --- |
-| 1 | Auth for the supervisor's `claude -p` runs: Path A, Max `/login`, or Path B, a Console API key (decisions.md, ruling 1) | None. Unattended runs are not built until he chooses; everything else is built to work under either path |
-| 2 | Secrets store: does he already have 1Password? (ruling 6) | SOPS+age behind the `secretbroker` user (free) |
-| 3 | How R16 self-merge is enforced: GitHub Pro (price unverified), a public repo, or local-only enforcement (ruling 2) | Self-merge off; routine PRs reach him as one digest line each |
 | 4 | Hard gates beyond his three, and per-project privacy (ruling 9) | Exactly money, deleting data, app-store submission; production promotes are digest items with default "hold"; health data Claude-only |
-| 5 | VPS or home box for the VM, and whether it is the same VM as the health app (engineer-runtime §Open for John) | A dedicated VM separate from the health VM (blueprint inference: the engineer holds untrusted input, secrets and egress at once, engineer-security E114) |
 
 ## Glossary
 | Term | Meaning |
 | --- | --- |
-| Path A / Path B | Auth for the supervisor's `claude -p` runs: John's Max `/login`, or a Console API key (ruling 1) |
+| Path A / Path B | Auth for the supervisor's `claude -p` runs: John's Max `/login`, or a Console API key (ruling 1). Path A is chosen (updated 2026-10-16, John's decision) |
 | `setup-token` | `claude setup-token`, which mints a one-year OAuth token from a Max plan for servers; it loses Remote Control and connectors like an API key (engineer-runtime §Authentication, S13) |
 | `--bare` | A `claude -p` mode that ignores OAuth login, hooks and MCP from the directory (engineer-feasibility C20, C21) |
 | Builder session | The interactive Claude Code session under John's `/login` that builds the engineer (setup.md) |
 | Supervisor | The engineer's own outer process under systemd that runs one `claude -p` per task |
 | Broker, `agent-run` | The `secretbroker` user and its allowlisted job runner; the only way the engineer uses a secret |
 | T0, T1, T2 | Approval tiers: automatic; a numbered line in the daily digest; a hard-gate prompt sent at once |
-| Tier 1 / Tier 2 paths | Protocol's merge classes: Tier 1 may self-merge once R16 is on; Tier 2 always needs John (engineer-protocol §Q5) |
+| Tier 1 / Tier 2 paths | Protocol's merge classes: Tier 1 self-merges (R16 is on); Tier 2 always needs John's own approving review (engineer-protocol §Q5) (updated 2026-10-16, John's decision) |
 | `NEEDS-JOHN` | An auditor verdict that turns into a T1 line |
-| Shadow mode | Two weeks in which the engineer proposes a merge tier and John merges, to measure agreement |
 | D0, D1, D2 | Discovery depth: D0 lookup with at most 2 content calls; D1 one capability, one worker, at most 15 calls and 3 URLs; D2 a real choice, 2-3 workers (engineer-tool-discovery §Tiers) |
 | Capability card | Input to a discovery pass: operations needed, auth John can complete, writes required (engineer-tool-discovery §Implications) |
 | `ROW:` | The six-column tool-registry row a discovery pass returns (Tool, Link, What it does, Where it runs, Verified, Verdict) (engineer-tool-discovery E74, E75) |
@@ -79,4 +91,5 @@ Diagrams: `docs/diagrams/engineer-context.mmd`, `engineer-runtime.mmd`, `enginee
 | ADR / MADR | Architecture decision record; MADR is its Markdown template, kept in `docs/adr/` |
 | `waiting_for_reset`, `stopped_by_bound` | Run states: paused for a usage-limit reset; ended by a turn, budget, time or weekly-limit bound |
 | Channels, Remote Control, Routines | Claude Code features: chat relay of a live session (research preview); phone view of a session; scheduled cloud runs |
+| Server mode (Remote Control) | Remote Control run as a long-lived server process on the headless droplet, so John can open sessions from his phone; kept alive by a restart unit because it exits after about 10 minutes offline (engineer-host E103, E104) (updated 2026-10-16, John's decision) |
 | SPxx | A spike in spikes.md |

@@ -7,13 +7,13 @@ Each row names who or what settles it: John, a spike (spikes.md) or a later rese
 ## Decisions for John
 | # | Open question | Default meanwhile | Settled by |
 | --- | --- | --- | --- |
-| 1 | Path A (Max `/login`) or Path B (Console API key) for the supervisor's `claude -p`? Does a supervisor running the `claude -p` CLI under his own login fall under "Developers building products or services ... should use API key authentication" (engineer-human-loop E42)? (carried) | No unattended runs; everything else built path-independent | John, after SP01, SP02 |
-| 2 | Does he already have 1Password? | SOPS+age behind `secretbroker` (ruling 6) | John |
-| 3 | R16 route: GitHub Pro (price unverified), a public repo, or local-only enforcement (carried) | Self-merge off; one T1 "merge PR?" line per PR | John, then SP18, SP19 |
+| 1 | Path A (Max `/login`) or Path B (Console API key) for the supervisor's `claude -p`? Does a supervisor running the `claude -p` CLI under his own login fall under "Developers building products or services ... should use API key authentication" (engineer-human-loop E42)? (carried) | **Answered** (updated 2026-10-16, John's decision): Path A for every run, unattended included; no API key in v1; the legal-page risk stays recorded in ADR 0001 and SP01 re-reads it on setup day | John |
+| 2 | Does he already have 1Password? | **Answered** (updated 2026-10-16, John's decision): no 1Password; SOPS+age behind `secretbroker` only (ruling 6, ADR 0003) | John |
+| 3 | R16 route: GitHub Pro (price unverified), a public repo, or local-only enforcement (carried) | **Answered** (updated 2026-10-16, John's decision): GitHub Pro bought; self-merge on from day one, no shadow weeks; SP18 must pass before `--lock`; SP19 dropped (ADR 0002) | John, then SP18 |
 | 4 | Gates beyond money, deleting data, store submission; is external mail or secrets handling a T2 anywhere? | T1 digest lines; per-project `profile.yaml` may raise them | John at intake |
 | 5 | Should production promotes ever be automatic after the pre-promote checklist? (engineer-deploy §Open for John) | T1 line with default "hold" | John |
 | 6 | May any non-Anthropic endpoint ever see health data? (engineer-models Q7) | No; health is Claude-only | John |
-| 7 | VPS or home box, and may the engineer share the health app's VM? | Dedicated VM (blueprint inference from engineer-security E114) | John |
+| 7 | VPS or home box, and may the engineer share the health app's VM? | **Answered** (updated 2026-10-16, John's decision): a dedicated DigitalOcean US-East droplet, Ubuntu 24.04, 4 vCPU / 8 GB, separate from the health VM; Tailscale exit node at home or a home Mac mini only if SP85 fails (ADR 0004) | John |
 | 8 | Which Moderate changes need his approval? (engineer-planning open q 32) | Moderate is FYI; Major waits for him | John |
 | 9 | May lockfile bumps self-merge once R16 is on? (engineer-protocol §Q5) | John-gated | John |
 | 10 | Threat model, health-data retention and deletion, and which n8n workflows may act unattended (engineer-security A20, B15) | Nothing that sends externally runs unattended | John |
@@ -35,7 +35,7 @@ Each row names who or what settles it: John, a spike (spikes.md) or a later rese
 ## Design points the findings left open
 | # | Open question | Default meanwhile | Settled by |
 | --- | --- | --- | --- |
-| 21 | Under Path B the key sits in the environment of the process the model controls; can the model's shell read it? | Treat the key as exposed; cap every run with `--max-budget-usd` | SP11 run under Path B |
+| 21 | Under Path B the key sits in the environment of the process the model controls; can the model's shell read it? | **Answered** (updated 2026-10-16, John's decision): moot, there is no API key in v1; the wrappers refuse to start if `ANTHROPIC_API_KEY` or `CLAUDE_CODE_OAUTH_TOKEN` is set | John (Path A) |
 | 22 | Where Claude Code keeps the `/login` credentials and whether the model can read them (not in the findings) | Treat as readable by the `engineer` user | SP11 |
 | 23 | Which OS user runs the supervisor? The findings name only `engineer` and `secretbroker` | A third `supervisor` user with the sudoers lines in repo-composition.md (Enforcement) (builder default) | Build review, SP11 |
 | 24 | How often browser sessions expire per site, so how often John must re-log in | Daily logged-in check; re-login is a T1 digest line | SP63 |

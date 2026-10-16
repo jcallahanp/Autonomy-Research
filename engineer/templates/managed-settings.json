@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "disableBypassPermissionsMode": "disable",
+    "deny": [
+      "Read(//home/engineer/.engineer/chrome-profile/**)",
+      "Read(//home/secretbroker/**)",
+      "Read(//var/lib/engineer/**)",
+      "Read(**/.env)",
+      "Read(**/.env.local)",
+      "Read(**/.env.production)",
+      "Bash(git push:*)",
+      "Bash(git -C * push:*)"
+    ]
+  },
+  "sandbox": {
+    "enabled": true,
+    "allowUnsandboxedCommands": false,
+    "excludedCommands": [
+      "sudo -n -u secretbroker /opt/engineer/bin/agent-run *"
+    ],
+    "network": {
+      "httpProxyPort": 3128
+    }
+  },
+  "cleanupPeriodDays": 7,
+  "autoContinueAtUsageLimit": true,
+  "env": {
+    "HTTPS_PROXY": "http://127.0.0.1:3128",
+    "HTTP_PROXY": "http://127.0.0.1:3128",
+    "NO_PROXY": "127.0.0.1,localhost"
+  }
+}

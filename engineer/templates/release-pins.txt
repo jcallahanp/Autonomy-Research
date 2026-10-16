@@ -1,0 +1,15 @@
+# Release downloads, checked by sha256. Columns are TAB-separated: name, url, sha256, scope.
+#   scope root: setup-root.sh --install puts the binary called <name> in /usr/local/bin (a .zip or
+#               .tar.gz is unpacked and must hold exactly one file called <name>).
+#   scope user: bootstrap.sh installs it for the engineer user (it reads only name, url, sha256).
+# A TO-PIN row stops setup-root.sh --install (setup-day item: read the checksum, then run again).
+# sops v3.13.3 is the latest tag on 2026-10-16 (proxy.golang.org/github.com/getsops/sops/v3/@latest);
+#   its checksum could not be read here: take it from sops-v3.13.3.checksums.txt on the release page.
+# bun 1.4.3 (`npm view bun version`, 2026-10-16) is needed by the Claude Code Channels plugins;
+#   take the checksum from SHASUMS256.txt on the bun-v1.4.3 release page.
+# gitleaks and osv-scanner checksums were copied from the vendors' checksum files on 2026-10-16,
+#   not re-verified by download.
+sops	https://github.com/getsops/sops/releases/download/v3.13.3/sops-v3.13.3.linux.amd64	TO-PIN	root
+bun	https://github.com/oven-sh/bun/releases/download/bun-v1.4.3/bun-linux-x64.zip	TO-PIN	root
+gitleaks	https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz	551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb	user
+osv-scanner	https://github.com/google/osv-scanner/releases/download/v2.7.0/osv-scanner_linux_amd64	160c6253e2922e9e0a6a9771c5c4c40a4b3c6090b34a3cdd5e80c96cc2e4218b	user

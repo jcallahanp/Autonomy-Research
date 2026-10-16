@@ -1,0 +1,9 @@
+# Gates and privacy for {{NAME}}. John signs this file. Schema: profile.schema.json.
+hard_gates: [money, delete_data, store_submission]
+t2_extra: []
+promote: hold
+self_merge: true
+data_classes: {}
+allowed_processors: [anthropic]
+adopted_rules: []
+unattended: true

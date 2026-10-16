@@ -1,0 +1,6 @@
+# Production deploy commands the engineer may not run (hooks/guards/deploy.py).
+# One Python regex per line, searched in the whole Bash command. Promotes go through the digest (ruling 9).
+\bvercel\b.*--prod\b
+\bwrangler\b.*\bdeploy\b.*--env[= ]production\b
+\bgcloud\b.*\bupdate-traffic\b
+\bsupabase\b.*\bdb\b.*\bpush\b

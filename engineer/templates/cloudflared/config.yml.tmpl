@@ -1,0 +1,12 @@
+# cloudflared tunnel config for noVNC. Not used from /opt: on setup day (docs/engineer/setup-day.md step 13)
+# John, as root, runs `cloudflared tunnel login`, `tunnel create engineer` and `tunnel route dns engineer
+# novnc.<domain>`, copies /root/.cloudflared/<ID>.json to /etc/cloudflared/ (0600), writes this file with
+# {{TUNNEL_ID}} and {{DOMAIN}} filled to /etc/cloudflared/config.yml, then runs `cloudflared --config
+# /etc/cloudflared/config.yml service install`. A Cloudflare Access app for novnc.<domain> allows only his
+# email. noVNC listens on 127.0.0.1 only; this tunnel is the one way in. Every other hostname gets a 404.
+tunnel: {{TUNNEL_ID}}
+credentials-file: /etc/cloudflared/{{TUNNEL_ID}}.json
+ingress:
+  - hostname: novnc.{{DOMAIN}}
+    service: http://127.0.0.1:6080
+  - service: http_status:404

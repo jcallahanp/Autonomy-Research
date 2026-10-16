@@ -1,0 +1,17 @@
+[Unit]
+Description=Claude Code Remote Control (server mode) for the engineer
+After=network-online.target engineer-egress-proxy.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=engineer
+# bootstrap.sh installs claude in ~/.local/bin, which is not on systemd's default PATH.
+Environment=PATH=/home/engineer/.local/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=/opt/engineer/bin/remote-control-session
+# It exits after about 10 minutes offline (engineer-host E104); come back.
+Restart=always
+RestartSec=30
+
+[Install]
+WantedBy=multi-user.target

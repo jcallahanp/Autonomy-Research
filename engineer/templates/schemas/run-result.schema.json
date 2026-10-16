@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "run-task result",
+  "description": "One JSON line printed by run-task for a profile run.",
+  "type": "object",
+  "required": [
+    "exit_code",
+    "is_error"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "profile": {
+      "type": "string"
+    },
+    "exit_code": {
+      "type": "integer"
+    },
+    "timed_out": {
+      "type": "boolean"
+    },
+    "session_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "cost_usd": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "num_turns": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "subtype": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "is_error": {
+      "type": "boolean"
+    },
+    "head_sha": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "output_tail": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "permission_denials": {
+      "type": "array",
+      "items": {
+        "type": [
+          "object",
+          "string"
+        ]
+      }
+    },
+    "base_sha": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[0-9a-f]{40}$",
+      "description": "The commit the task branch was created from (merge-base with the default branch)."
+    },
+    "structured_output": {
+      "type": "object",
+      "description": "The parsed --json-schema result of the claude run, when the profile names a schema."
+    }
+  }
+}

@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "profile.yaml",
+  "description": "docs/plan/profile.yaml: gates and privacy, signed by John.",
+  "type": "object",
+  "required": [
+    "hard_gates",
+    "self_merge"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "hard_gates": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "money",
+          "delete_data",
+          "store_submission"
+        ]
+      },
+      "default": [
+        "money",
+        "delete_data",
+        "store_submission"
+      ]
+    },
+    "t2_extra": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Extra Tier 2 globs or kinds."
+    },
+    "promote": {
+      "enum": [
+        "hold",
+        "t2"
+      ],
+      "default": "hold",
+      "description": "How a production promote reaches John: hold (a T1 line, default hold, promote only after he says go) or t2 (a T2 hard-gate prompt instead)."
+    },
+    "self_merge": {
+      "type": "boolean",
+      "default": true,
+      "description": "Tier 1 PRs self-merge (default true, John's decision 2026-10-16); Tier 2 waits for John's review."
+    },
+    "data_classes": {
+      "type": "object",
+      "description": "path glob -> class",
+      "additionalProperties": {
+        "enum": [
+          "public",
+          "internal",
+          "customer",
+          "health"
+        ]
+      }
+    },
+    "allowed_processors": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "adopted_rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "quote",
+          "source"
+        ],
+        "properties": {
+          "quote": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source": {
+            "type": "string",
+            "pattern": "^.+:\\d+$",
+            "description": "path:line"
+          }
+        }
+      }
+    },
+    "unattended": {
+      "type": "boolean"
+    }
+  }
+}

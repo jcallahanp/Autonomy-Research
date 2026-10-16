@@ -1,0 +1,47 @@
+#!/usr/bin/python3 -I
+"""hc-ping [start|fail|ok]   (agent-run job; caller supervisor)
+
+GETs the healthchecks.io ping URL (secret HC_PING_URL) plus `/start` or `/fail` (`ok` or no argument: the
+bare URL). The URL is itself the credential, so it is read with eng.brokerlib.secret and never printed or put
+on a command line (which is why this job is Python and not curl).
+Exit: 0 ping accepted (2xx); 1 failure; 64 usage; 77 not through agent-run.
+"""
+import os
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[3]
+sys.path.insert(0, str(ROOT / "scripts"))
+
+from eng import brokerlib, conf  # noqa: E402
+
+SUFFIX = {"ok": "", "start": "/start", "fail": "/fail"}
+
+
+def main(argv) -> int:
+    if not os.environ.get("AGENT_RUN_CALLER"):
+        print("hc-ping: run through agent-run", file=sys.stderr)
+        return 77
+    if len(argv) > 1 or (argv and argv[0] not in SUFFIX):
+        print("hc-ping: usage: hc-ping [start|fail|ok]", file=sys.stderr)
+        return 64
+    mode = argv[0] if argv else "ok"
+    try:
+        url = brokerlib.secret(conf.load(ROOT), "HC_PING_URL").strip().rstrip("/")
+    except (RuntimeError, ValueError) as e:
+        print(f"hc-ping: {e}", file=sys.stderr)
+        return 1
+    try:
+        status, _ = brokerlib.http("GET", url + SUFFIX[mode], {"User-Agent": "engineer-broker/0.1"}, None,
+                                   timeout=15)
+    except Exception as e:  # never echo the URL: it is the credential
+        print(f"hc-ping: {mode} ping failed ({type(e).__name__})", file=sys.stderr)
+        return 1
+    if not 200 <= status < 300:
+        print(f"hc-ping: {mode} ping got HTTP {status}", file=sys.stderr)
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

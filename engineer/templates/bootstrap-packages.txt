@@ -1,0 +1,10 @@
+# User-level tools installed by bootstrap.sh as the engineer user: name<TAB>method<TAB>pin.
+# Pins taken 2026-10-16 (see engineer/docs/versions.md). Never "latest".
+@anthropic-ai/claude-code	npm	2.1.301
+@playwright/mcp	npm	0.0.83
+@playwright/cli	npm	0.1.22
+@mermaid-js/mermaid-cli	npm	11.12.0
+@mermaid-lint/cli	npm	0.53.1
+gitleaks	github-release	8.30.1
+osv-scanner	github-release	2.7.0
+semgrep	pipx	1.181.0

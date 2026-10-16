@@ -1,0 +1,34 @@
+# Engineer egress: runtime list, active from `setup-root.sh --lock` (copied with egress-added.txt
+# to /etc/engineer/egress.txt). One eng.hosts pattern per line: an exact host or `*.suffix`.
+# Provisional: the builder rewrites this list from the hosts logged during the setup sitting
+# (research/blueprint/stack.md, Egress). n8n hosts are added on setup day with `setup-root.sh --allow`
+# (guide step 15; Open decision 8). Never add a bare `*`.
+
+# Claude (Max via /login, Remote Control)
+claude.ai
+*.claude.ai
+api.anthropic.com
+
+# GitHub
+github.com
+api.github.com
+
+# Chat control and monitoring
+hc-ping.com
+api.uptimerobot.com
+api.telegram.org
+
+# GTM vendors (API and browser)
+*.attio.com
+api.attio.com
+app.attio.com
+*.clay.com
+app.clay.com
+accounts.google.com
+
+# Dependency, scanner and MCP vetting (the audit's osv-scanner and semgrep)
+api.deps.dev
+api.osv.dev
+api.securityscorecards.dev
+semgrep.dev
+registry.modelcontextprotocol.io

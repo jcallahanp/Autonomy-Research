@@ -1,8 +1,8 @@
 flowchart LR
   john[John: designs and approves]
   phone[John's phone: Telegram and Remote Control]
-  eng[Autonomous engineer on John's VM: Claude Code plus supervisor]
-  anth[Anthropic: Claude Code, Max plan or API key]
+  eng[Autonomous engineer on John's DigitalOcean droplet: Claude Code plus supervisor]
+  anth[Anthropic: Claude Code, Max plan via /login]
   gh[GitHub: repos, PRs, branch protection]
   gtm[GTM SaaS: Attio, Clay, n8n, Outreach, Slack]
   health[Health services: WHOOP, Withings]
@@ -18,3 +18,4 @@ flowchart LR
   eng -- "pulls data by OAuth" --> health
   eng -- "deploys by CLI with scoped tokens" --> deploy
   eng -- "vets candidate tools against" --> reg
+%% updated 2026-10-16, John's decision

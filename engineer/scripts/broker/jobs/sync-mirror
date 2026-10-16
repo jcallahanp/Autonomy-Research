@@ -1,0 +1,67 @@
+#!/bin/bash
+set -euo pipefail
+# sync-mirror PROJECT [--pr N]   (agent-run job; caller supervisor only)
+# Fetches the project's default branch from GitHub into the broker-owned bare mirror MIRROR_DIR/<p>.git
+# (default STATE_DIR/mirrors), which `engineer` may read but not write: run-task then fetches it over
+# file:// in its own clone before branching, so a task starts from GitHub's head without the engineer
+# holding a credential and without a privileged user running git inside an engineer-writable repo.
+# The default branch is mirrored, and `engineer-records` once it exists on GitHub (dropped again if it is
+# deleted there), so the supervisor can clone its records history (records.ensure) instead of starting a new one.
+# The bot PAT reaches git only as an http.extraheader in the environment.
+# With --pr N it also fetches GitHub's refs/pull/N/head into the mirror's refs/pull/N/head, so the supervisor
+# can read the exact commit of a plan PR (approvals/plansnap.py) without the engineer's working tree.
+# Prints {"project", "branch", "sha", "records", "pr"} (records: the engineer-records sha or null;
+# pr: {"number", "sha"} with --pr, else null).
+# Exit: 64 usage, 65 refused, 77 caller not allowed, else git's failure.
+root=$(cd "$(dirname "$(readlink -f "$0")")/../../.." && pwd)
+# shellcheck disable=SC1091
+. "$root/scripts/broker/common.sh"
+need_caller
+[ "$AGENT_RUN_CALLER" = supervisor ] || die 77 "only supervisor may sync a mirror"
+pr=
+case $# in
+  1) ;;
+  3) [ "$2" = --pr ] || die 64 "usage: sync-mirror PROJECT [--pr N]"
+     [[ "$3" =~ ^[1-9][0-9]{0,8}$ ]] || die 65 "PR must be a number"
+     pr=$3 ;;
+  *) die 64 "usage: sync-mirror PROJECT [--pr N]" ;;
+esac
+project_row "$1"
+name=$1
+
+# Owner rwx, group (engineer, from the setgid MIRROR_DIR) read-only, others nothing.
+umask 027
+mdir=${MIRROR_DIR:-$STATE_DIR/mirrors}
+m="$mdir/$name.git"
+[ ! -L "$mdir" ] && [ ! -L "$m" ] || die 65 "mirror path is a symlink"
+if [ ! -d "$m" ]; then
+  mkdir -p "$mdir"
+  git init -q --bare --template= --shared=0640 "$m"
+  git --git-dir="$m" config core.hooksPath /dev/null
+fi
+
+url="$GITHUB_URL/$P_REPO.git"
+ref="refs/heads/$P_DEFAULT"
+rec="refs/heads/engineer-records"
+refspecs=("+$ref:$ref")
+heads=$(git_with_pat --git-dir="$m" ls-remote --heads "$url" "$rec") || die 1 "git ls-remote on GitHub failed"
+if grep -q "[[:space:]]$rec\$" <<< "$heads"; then refspecs+=("+$rec:$rec"); fi
+git_with_pat --git-dir="$m" fetch --quiet --no-tags --prune --no-write-fetch-head \
+  "$url" "${refspecs[@]}" >&2 || die 1 "git fetch from GitHub failed"
+sha=$(git --git-dir="$m" rev-parse --verify "$ref^{commit}")
+rsha=""
+if [ ${#refspecs[@]} -eq 2 ]; then
+  rsha=$(git --git-dir="$m" rev-parse --verify "$rec^{commit}")
+elif git --git-dir="$m" rev-parse -q --verify "$rec" >/dev/null; then
+  git --git-dir="$m" update-ref -d "$rec"
+fi
+psha=""
+if [ -n "$pr" ]; then
+  pref="refs/pull/$pr/head"
+  git_with_pat --git-dir="$m" fetch --quiet --no-tags --no-write-fetch-head "$url" "+$pref:$pref" >&2 \
+    || die 1 "git fetch of PR $pr from GitHub failed"
+  psha=$(git --git-dir="$m" rev-parse --verify "$pref^{commit}")
+fi
+jq -cn --arg p "$name" --arg b "$P_DEFAULT" --arg s "$sha" --arg r "$rsha" --arg n "$pr" --arg ps "$psha" \
+  '{project: $p, branch: $b, sha: $s, records: (if $r == "" then null else $r end),
+    pr: (if $n == "" then null else {number: ($n | tonumber), sha: $ps} end)}'

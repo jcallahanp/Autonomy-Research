@@ -1,0 +1,16 @@
+#!/bin/bash
+set -euo pipefail
+# novnc-session: lets John see and drive the Xvfb display from a browser (run by the novnc unit as engineer).
+# x11vnc serves the display on 127.0.0.1:5900 only; websockify serves noVNC on 127.0.0.1:NOVNC_PORT only.
+# Nothing listens on a public interface: cloudflared carries novnc.<domain> to NOVNC_PORT, behind a Cloudflare
+# Access app that admits John's email alone. That is why x11vnc runs without a VNC password (-nopw).
+
+root=$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)
+export PATH="$root/bin:/usr/local/bin:/usr/bin:/bin"
+# shellcheck disable=SC1091
+. "$root/etc/engineer.conf"
+
+[[ "$NOVNC_PORT" =~ ^[0-9]+$ ]] || { echo "novnc-session: NOVNC_PORT is not a number" >&2; exit 2; }
+
+x11vnc -display "$DISPLAY" -localhost -rfbport 5900 -forever -shared -nopw &
+exec websockify --web /usr/share/novnc "127.0.0.1:$NOVNC_PORT" 127.0.0.1:5900

@@ -1,0 +1,102 @@
+#!/usr/bin/python3 -I
+"""api-call SERVICE METHOD PATH   (agent-run job; callers engineer, supervisor; body on stdin)
+
+SERVICE is a key of <root>/etc/broker-services.json; METHOD must be in its `methods`; PATH must start with
+`/` and holds no `..`, `//`, scheme, backslash, `#`, whitespace or encoded dot. The secret goes only into the
+request header. Prints `HTTP <status>` to stderr and the body to stdout, with every secret value (and the
+secret base URL, for a `base_secret` service) replaced by [REDACTED].
+Exit: 0 status 2xx; 1 other status or request failure; 64 usage; 65 refused; 77 not through agent-run.
+"""
+import json
+import os
+import re
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[3]
+sys.path.insert(0, str(ROOT / "scripts"))
+
+from eng import conf  # noqa: E402  (brokerlib, which loads urllib, is imported after the checks)
+
+SERVICE_RE = re.compile(r"^[a-z][a-z0-9-]*$")
+PATH_RE = re.compile(r"^/[A-Za-z0-9._~!$&'()*+,;=:@%/?-]*$")
+BODY_METHODS = {"POST", "PUT", "PATCH"}
+MAX_BODY = 1 << 20
+
+
+def refuse(msg: str, code: int = 65):
+    print(f"api-call: {msg}", file=sys.stderr)
+    sys.exit(code)
+
+
+def check_path(path: str) -> None:
+    low = path.lower()
+    if not PATH_RE.fullmatch(path) or "//" in path or ".." in path or "://" in path \
+            or "%2e" in low or "%2f" in low or "%5c" in low:
+        refuse("PATH must start with / and hold no .., //, scheme, encoded dot or slash, or odd characters")
+
+
+def load_service(name: str) -> dict:
+    if not SERVICE_RE.fullmatch(name):
+        refuse("unknown service")
+    services = json.loads((ROOT / "etc" / "broker-services.json").read_text())
+    svc = services.get(name)
+    if not isinstance(svc, dict):
+        refuse(f"unknown service: {name}")
+    return svc
+
+
+def redact(data: bytes, values) -> bytes:
+    for v in sorted({v for v in values if v}, key=len, reverse=True):
+        data = data.replace(v.encode(), b"[REDACTED]")
+    return data
+
+
+def main(argv) -> int:
+    if not os.environ.get("AGENT_RUN_CALLER"):
+        refuse("run through agent-run", 77)
+    if len(argv) != 3:
+        refuse("usage: api-call SERVICE METHOD PATH (body on stdin)", 64)
+    name, method, path = argv
+    svc = load_service(name)
+    if method not in svc.get("methods", []):
+        refuse(f"method {method!r} not allowed for {name}")
+    check_path(path)
+
+    from eng import brokerlib
+    c = conf.load(ROOT)
+    hidden = []
+    try:
+        if "base_secret" in svc:
+            base = brokerlib.secret(c, svc["base_secret"]).rstrip("/")
+            hidden.append(base)
+            base += svc.get("suffix", "")
+        else:
+            base = svc["base"].rstrip("/")
+        token = brokerlib.secret(c, svc["secret"])
+    except (RuntimeError, ValueError) as e:
+        print(f"api-call: {e}", file=sys.stderr)
+        return 1
+    hidden.append(token)
+    headers = {svc["header"]: svc["format"].format(token), "Accept": "application/json",
+               "User-Agent": "engineer-broker/0.1"}
+    body = None
+    if method in BODY_METHODS:
+        body = sys.stdin.buffer.read(MAX_BODY + 1)
+        if len(body) > MAX_BODY:
+            refuse("body over 1 MiB")
+        headers["Content-Type"] = "application/json"
+    try:
+        status, data = brokerlib.http(method, base + path, headers, body)
+    except Exception as e:  # message may hold a host name, never a header
+        print(redact(f"api-call: request failed: {type(e).__name__}: {e}".encode(), hidden).decode(),
+              file=sys.stderr)
+        return 1
+    print(f"HTTP {status}", file=sys.stderr)
+    sys.stdout.buffer.write(redact(data, hidden))
+    sys.stdout.flush()
+    return 0 if 200 <= status < 300 else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

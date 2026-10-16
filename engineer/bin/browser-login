@@ -1,0 +1,45 @@
+#!/bin/bash
+set -euo pipefail
+# browser-login URL: open plain branded Chrome on the engineer's profile, on the Xvfb display, so John can
+# sign in by hand through noVNC. Runs as the engineer user, never as root.
+# This Chrome is NOT automated: no --headless, no remote debugging, no --enable-automation, so sign-in pages
+# see an ordinary browser (engineer-host Q1). The Playwright MCP Chrome reuses the same profile afterwards.
+# Exit: 0 Chrome ran; 2 bad profile setting; 64 bad URL; 75 the profile is in use; 77 run as root.
+
+root=$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)
+export PATH="$root/bin:/usr/local/bin:/usr/bin:/bin"
+# shellcheck disable=SC1091
+. "$root/etc/engineer.conf"
+
+die() { echo "browser-login: $2" >&2; exit "$1"; }
+
+[ "$(id -u)" != 0 ] || die 77 "run as the engineer user, not root"
+[ $# -eq 1 ] || die 64 "usage: browser-login URL"
+url=$1
+# A URL, never a switch: http(s) only, no whitespace.
+[[ "$url" =~ ^https?://[^[:space:]]+$ ]] || die 64 "not an http(s) URL: $url"
+
+profile=${CHROME_PROFILE:-}
+while [ "${profile%/}" != "$profile" ]; do profile=${profile%/}; done
+case "$profile" in
+  "") die 2 "CHROME_PROFILE is empty" ;;
+  */.config/google-chrome|.config/google-chrome) die 2 "CHROME_PROFILE is Chrome's default profile: $profile" ;;
+esac
+
+# Chrome's SingletonLock is a symlink to "<hostname>-<pid>". A live pid means the profile is open
+# (Playwright MCP or an earlier browser-login); two Chromes on one profile corrupt it.
+lock="$profile/SingletonLock"
+if [ -L "$lock" ]; then
+  pid=$(readlink "$lock"); pid=${pid##*-}
+  if [[ "$pid" =~ ^[0-9]+$ ]] && [ -d "/proc/$pid" ]; then
+    die 75 "profile in use by pid $pid; close that browser (or stop the Playwright MCP session) first"
+  fi
+fi
+
+umask 077
+mkdir -p "$profile"
+chmod 700 "$profile"
+
+export DISPLAY
+exec google-chrome-stable --user-data-dir="$profile" --no-first-run \
+  --proxy-server="http://127.0.0.1:$PROXY_PORT" "$url"

@@ -1,0 +1,53 @@
+#!/bin/bash
+set -euo pipefail
+# agent-run JOB [ARGS...]: the secret broker's job runner (sudo target: engineer and supervisor -> BROKER_USER).
+# Runs <root>/scripts/broker/jobs/JOB when JOB is listed in <root>/etc/broker-jobs.txt for the calling user.
+# The job gets a clean environment (fixed PATH, AGENT_RUN_CALLER), stdin passed through, cwd BROKER_STATE_DIR.
+# Logs `ts caller job exit` (never arguments) to BROKER_STATE_DIR/agent-run.log.
+# Exit: the job's code; 64 job not allowed or usage; 77 wrong effective user or caller not allowed.
+root=$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)
+export PATH="$root/bin:/usr/bin:/bin"
+umask 077
+
+die() { echo "agent-run: $2" >&2; exit "$1"; }
+
+# shellcheck disable=SC1091
+. "$root/etc/engineer.conf"
+[ "$(id -un)" = "$BROKER_USER" ] || die 77 "must run as $BROKER_USER (through sudo)"
+
+log() {  # log CODE: append `ts caller job CODE` with eng.brokerlib.log (it re-derives the caller itself)
+  python3 -I -c '
+import sys
+sys.path.insert(0, sys.argv[1] + "/scripts")
+from eng import brokerlib, conf
+brokerlib.log(conf.load(sys.argv[1]), sys.argv[2], int(sys.argv[3]))
+' "$root" "$job" "$1" </dev/null
+}
+
+job=${1:-}
+# Same rule as eng.brokerlib.caller(): the effective user is BROKER_USER (checked above), so the caller is
+# SUDO_USER, or BROKER_USER itself without sudo. Done in bash to save a Python start per call.
+caller=${SUDO_USER:-$BROKER_USER}
+logged() { log "$1" || true; die "$1" "$2"; }  # logged CODE MESSAGE: log a refusal, exit
+
+[ $# -ge 1 ] || logged 64 "usage: agent-run JOB [ARGS...]"
+shift
+[[ "$caller" =~ ^[a-z_][a-z0-9_-]*$ ]] || logged 77 "bad caller name"
+[[ "$job" =~ ^[a-z][a-z0-9-]*$ ]] || logged 64 "job not allowed"
+callers=$(awk -F'\t' -v j="$job" '$1 == j && NF == 2 { print $2; exit }' "$root/etc/broker-jobs.txt")
+[ -n "$callers" ] || logged 64 "job not allowed: $job"
+case ",$callers," in
+  *",$caller,"*) ;;
+  *) logged 77 "caller $caller may not run $job" ;;
+esac
+file="$root/scripts/broker/jobs/$job"
+{ [ -f "$file" ] && [ -x "$file" ]; } || logged 64 "job not allowed: $job (no job file)"
+
+home=$(getent passwd "$BROKER_USER" | cut -d: -f6)
+mkdir -p "$BROKER_STATE_DIR"
+cd "$BROKER_STATE_DIR"
+rc=0
+env -i PATH="$PATH" HOME="${home:-/}" USER="$BROKER_USER" LOGNAME="$BROKER_USER" LANG=C.UTF-8 \
+  AGENT_RUN_CALLER="$caller" "$file" "$@" || rc=$?
+log "$rc" || echo "agent-run: could not write the log" >&2
+exit "$rc"

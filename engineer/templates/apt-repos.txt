@@ -1,0 +1,11 @@
+# Third-party apt repos. Columns are TAB-separated: name, key-url, fingerprints (comma-separated,
+# every primary key in the key file, uppercase), deb-line. setup-root.sh refuses a TO-PIN row, a key
+# file whose primary keys differ from the list, and a deb-line not signed-by /etc/apt/keyrings/<name>.gpg.
+# Read 2026-10-16: google-chrome fingerprint matches https://www.google.com/linuxrepositories/;
+# github-cli fingerprints match https://github.com/cli/cli/blob/trunk/docs/install_linux.md;
+# nodesource and cloudflare fingerprints were read from the key files at these URLs
+# (deb lines: nodesource setup_22.x script, https://pkg.cloudflare.com/index.html). Re-check on setup day.
+google-chrome	https://dl.google.com/linux/linux_signing_key.pub	EB4C1BFD4F042F6DDDCCEC917721F63BD38B4796	deb [arch=amd64 signed-by=/etc/apt/keyrings/google-chrome.gpg] https://dl.google.com/linux/chrome/deb/ stable main
+nodesource	https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key	6F71F525282841EEDAF851B42F59B5F99B1BE0B4	deb [arch=amd64 signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_22.x nodistro main
+github-cli	https://cli.github.com/packages/githubcli-archive-keyring.gpg	2C6106201985B60E6C7AC87323F3D4EA75716059,7F38BBB59D064DBCB3D84D725612B36462313325	deb [arch=amd64 signed-by=/etc/apt/keyrings/github-cli.gpg] https://cli.github.com/packages stable main
+cloudflare	https://pkg.cloudflare.com/cloudflare-main.gpg	CC94B39C77AE7342A68B89628A682D308D4E5E73	deb [signed-by=/etc/apt/keyrings/cloudflare.gpg] https://pkg.cloudflare.com/cloudflared any main

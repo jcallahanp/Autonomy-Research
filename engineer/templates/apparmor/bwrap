@@ -1,0 +1,10 @@
+# /etc/apparmor.d/bwrap: lets bubblewrap (the Claude Code sandbox) create user namespaces on
+# Ubuntu 24.04, which restricts unprivileged userns by default (SP09). Installed by setup-root.sh.
+abi <abi/4.0>,
+include <tunables/global>
+
+profile bwrap /usr/bin/bwrap flags=(unconfined) {
+  userns,
+
+  include if exists <local/bwrap>
+}
