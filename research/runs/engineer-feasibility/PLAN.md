@@ -18,7 +18,7 @@ Rulings: Claude Code is the engine and is not up for debate; everything else att
 
 ## Facets
 - [x] Integration mapping artifacts and comparing paths on evidence - notes/mapping-and-rubric.md - medium - no study of diagrams staying current across design changes; Devin, Factory, Cursor not researched beyond registry; criteria list unvalidated
-- [ ] Spikes, tracer bullets, set-based design, bounding rules and negative results - notes/spike-practice.md - pending
+- [x] Spikes, tracer bullets, set-based design, bounding rules and negative results - notes/spike-practice.md - medium - set-based design full text, SAFe and XP pages not opened; agent-vendor practice and coding best-of-N gains not researched; desk-vs-trial rule is the worker's own proposal
 - [x] Sandboxes for parallel trials and growing the spike skill - notes/trial-sandboxes.md - medium - Fly Machines, Northflank, Runloop not opened; hosted startup times and retention terms unseen; KVM on John's VM unknown
 - [ ] Integration edge cases for John's services and the setup list - notes/edge-cases-and-setup-list.md - pending
 
