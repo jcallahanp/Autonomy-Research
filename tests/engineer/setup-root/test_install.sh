@@ -37,7 +37,21 @@ for d in records approvals checks audit-clones; do [ -d "$P/var/lib/engineer/$d"
 # Mirrors: the broker's sync-mirror job writes them; run-task as engineer reads them.
 [ "$(stat -c %a "$P/var/lib/engineer/mirrors" 2>/dev/null)" = 2750 ] || fail "mirrors not 2750"
 echo "$out" | grep -qx "RUN: chown secretbroker:engineer $P/var/lib/engineer/mirrors" || fail "mirrors not secretbroker:engineer"
+# supervisor reads the mirrors too (records.ensure clones engineer-records from them), never writes.
+echo "$out" | grep -qx "RUN: setfacl -m u:supervisor:rX $P/var/lib/engineer/mirrors" || fail "no supervisor ACL on mirrors"
+echo "$out" | grep -qx "RUN: setfacl -R -d -m u:supervisor:rX $P/var/lib/engineer/mirrors" || fail "no default supervisor ACL on mirrors"
 grep -qx 'MIRROR_DIR=/var/lib/engineer/mirrors' "$REPO/engineer/etc/engineer.conf" || fail "engineer.conf has no MIRROR_DIR"
+# The secret store's age key: made with age-keygen (a privileged step), never printed; dirs 0700.
+K=/home/secretbroker/.config/sops/age
+grep -qx "AGE_KEY_FILE=$K/keys.txt" "$REPO/engineer/etc/engineer.conf" || fail "AGE_KEY_FILE differs from setup-root's"
+grep -qx "AGE_RECIPIENT_FILE=$K/recipient.txt" "$REPO/engineer/etc/engineer.conf" || fail "AGE_RECIPIENT_FILE differs"
+echo "$out" | grep -qx "RUN: age-keygen -o $P$K/keys.txt" || fail "no age-keygen in dry run"
+echo "$out" | grep -qx "RUN: age-keygen -y $P$K/keys.txt > $P$K/recipient.txt" || fail "no recipient written in dry run"
+echo "$out" | grep -qx "RUN: chown secretbroker:secretbroker $P$K/keys.txt" || fail "age key not owned by secretbroker"
+for d in .config .config/sops .config/sops/age; do
+  [ "$(stat -c %a "$P/home/secretbroker/$d" 2>/dev/null)" = 700 ] || fail "$d not 0700"
+done
+[ ! -e "$P$K/keys.txt" ] || fail "dry run wrote an age key"
 grep -qx "MIRROR_DIR=\"$T/src/var/lib/engineer/mirrors\"" "$SRC/etc/engineer.conf" || fail "mk_root does not rewrite MIRROR_DIR"
 [ -d "$P/var/log/engineer" ] || fail "no /var/log/engineer"
 cmp -s "$P/etc/engineer/egress.txt" "$SRC/templates/egress-install.txt" || fail "egress.txt is not the install list"

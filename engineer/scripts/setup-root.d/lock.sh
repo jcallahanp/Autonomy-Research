@@ -10,6 +10,7 @@ do_install() {
   install_packages
   install_releases
   install_tree
+  install_age_key
   install_dirs
   install_managed
   install_sudoers

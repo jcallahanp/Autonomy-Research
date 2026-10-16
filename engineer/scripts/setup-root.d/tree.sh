@@ -57,8 +57,11 @@ install_dirs() {
     make_dir "$P/var/lib/engineer/$d" 0755 supervisor:supervisor
   done
   make_dir "$P/var/lib/engineer/spool" 1770 supervisor:engineer
-  # Bare mirrors: the broker's sync-mirror job writes them; run-task (engineer) reads them. setgid keeps group engineer.
+  # Bare mirrors: the broker's sync-mirror job writes them; run-task (engineer) reads them; setgid keeps group engineer.
   make_dir "$P/var/lib/engineer/mirrors" 2750 secretbroker:engineer
+  # supervisor reads them too (records.ensure clones engineer-records from a mirror); never writes.
+  run setfacl -m u:supervisor:rX "$P/var/lib/engineer/mirrors"
+  run setfacl -R -d -m u:supervisor:rX "$P/var/lib/engineer/mirrors"
   make_dir "$ETC" 0755
   make_dir "$P/home/engineer/.engineer" 0700 engineer:engineer
   make_dir "$P/home/engineer/.engineer/chrome-profile" 0700 engineer:engineer

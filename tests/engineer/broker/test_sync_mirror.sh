@@ -30,10 +30,27 @@ git -C "$T/seed" push -q "$remote" main
 expect 0 "second sync" as supervisor sync-mirror demo
 [ "$(git --git-dir="$m" rev-parse main)" = "$(git -C "$T/seed" rev-parse main)" ] || fail "mirror not updated"
 
+# --- test_sync_mirror_records_branch: engineer-records is mirrored once it exists on GitHub, never before.
+jq -e '.records == null' "$T/out" >/dev/null || fail "records sha without the branch: $(cat "$T/out")"
+git --git-dir="$m" rev-parse -q --verify refs/heads/engineer-records >/dev/null && fail "records branch before it exists"
+git -C "$T/seed" checkout -q -b engineer-records
+echo rec > "$T/seed/rec.txt" && git -C "$T/seed" add rec.txt && git -C "$T/seed" commit -qm "docs: records"
+git -C "$T/seed" push -q "$remote" engineer-records
+git -C "$T/seed" checkout -q main
+expect 0 "sync with records" as supervisor sync-mirror demo
+rsha=$(git --git-dir="$remote" rev-parse engineer-records)
+[ "$(git --git-dir="$m" rev-parse engineer-records 2>/dev/null)" = "$rsha" ] || fail "records branch not mirrored"
+jq -e --arg s "$rsha" '.records == $s and .branch == "main"' "$T/out" >/dev/null || fail "records sha: $(cat "$T/out")"
+[ -z "$(find "$m" -type f ! -perm -g=r -print -quit)" ] || fail "records objects not group-readable"
+git --git-dir="$remote" branch -q -D engineer-records
+expect 0 "sync after records deleted" as supervisor sync-mirror demo
+git --git-dir="$m" rev-parse -q --verify refs/heads/engineer-records >/dev/null && fail "deleted records branch kept"
+git --git-dir="$remote" branch -q engineer-records "$rsha"
+
 # --- test_sync_mirror_token_not_in_argv
 [ "$(base64 -d < <(sed 's/^AUTHORIZATION: basic //' "$T/hdr.seen"))" = "x-access-token:TEST-TOKEN-PAT" ] \
   || fail "fetch did not carry the bot PAT header"
-grep -v ' fetch ' "$T/hdr.calls" && fail "header env reached a non-fetch git call"
+grep -v -e ' fetch ' -e ' ls-remote ' "$T/hdr.calls" && fail "header env reached a git call other than fetch or ls-remote"
 b64=$(printf 'x-access-token:TEST-TOKEN-PAT' | base64 -w0)
 for f in "$T/argv.log" "$T/out" "$T/err" "$BROKER_STATE_DIR/agent-run.log"; do
   grep -qe TEST-TOKEN-PAT -e "$b64" "$f" && fail "test_sync_mirror_token_not_in_argv: token in $f"

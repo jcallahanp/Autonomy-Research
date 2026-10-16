@@ -5,8 +5,11 @@ set -euo pipefail
 # (default STATE_DIR/mirrors), which `engineer` may read but not write: run-task then fetches it over
 # file:// in its own clone before branching, so a task starts from GitHub's head without the engineer
 # holding a credential and without a privileged user running git inside an engineer-writable repo.
-# Only the default branch is mirrored. The bot PAT reaches git only as an http.extraheader in the environment.
-# Prints {"project", "branch", "sha"}. Exit: 64 usage, 65 refused, 77 caller not allowed, else git's failure.
+# The default branch is mirrored, and `engineer-records` once it exists on GitHub (dropped again if it is
+# deleted there), so the supervisor can clone its records history (records.ensure) instead of starting a new one.
+# The bot PAT reaches git only as an http.extraheader in the environment.
+# Prints {"project", "branch", "sha", "records"} (records: the engineer-records sha or null).
+# Exit: 64 usage, 65 refused, 77 caller not allowed, else git's failure.
 root=$(cd "$(dirname "$(readlink -f "$0")")/../../.." && pwd)
 # shellcheck disable=SC1091
 . "$root/scripts/broker/common.sh"
@@ -27,8 +30,20 @@ if [ ! -d "$m" ]; then
   git --git-dir="$m" config core.hooksPath /dev/null
 fi
 
+url="$GITHUB_URL/$P_REPO.git"
 ref="refs/heads/$P_DEFAULT"
+rec="refs/heads/engineer-records"
+refspecs=("+$ref:$ref")
+heads=$(git_with_pat --git-dir="$m" ls-remote --heads "$url" "$rec") || die 1 "git ls-remote on GitHub failed"
+if grep -q "[[:space:]]$rec\$" <<< "$heads"; then refspecs+=("+$rec:$rec"); fi
 git_with_pat --git-dir="$m" fetch --quiet --no-tags --prune --no-write-fetch-head \
-  "$GITHUB_URL/$P_REPO.git" "+$ref:$ref" >&2 || die 1 "git fetch from GitHub failed"
+  "$url" "${refspecs[@]}" >&2 || die 1 "git fetch from GitHub failed"
 sha=$(git --git-dir="$m" rev-parse --verify "$ref^{commit}")
-jq -cn --arg p "$name" --arg b "$P_DEFAULT" --arg s "$sha" '{project: $p, branch: $b, sha: $s}'
+rsha=""
+if [ ${#refspecs[@]} -eq 2 ]; then
+  rsha=$(git --git-dir="$m" rev-parse --verify "$rec^{commit}")
+elif git --git-dir="$m" rev-parse -q --verify "$rec" >/dev/null; then
+  git --git-dir="$m" update-ref -d "$rec"
+fi
+jq -cn --arg p "$name" --arg b "$P_DEFAULT" --arg s "$sha" --arg r "$rsha" \
+  '{project: $p, branch: $b, sha: $s, records: (if $r == "" then null else $r end)}'
