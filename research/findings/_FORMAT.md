@@ -12,3 +12,7 @@ Use these sections, in this order:
 5. `## Tools evaluated` — a table with the same columns as `research/tool-registry.md`:
    `| Tool | Link | What it does | Where it runs | Verified | Verdict |`
 6. `## Open questions` — things the evidence could not settle.
+7. `## Verification` — written by the verifier after the synthesizer. It states the sample size
+   (up to 20 statement-URL pairs), the count verified and unverified, and one line per
+   unverified claim: the claim, its URL, and why it failed (page says otherwise, page did not
+   open, claim not found).
