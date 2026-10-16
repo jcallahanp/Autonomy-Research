@@ -1,0 +1,48 @@
+# Engineer egress: install-mode list, active from `setup-root.sh --install` until `--lock`
+# (copied to /etc/engineer/egress.txt). It is the runtime list (egress-allowlist.txt) plus the
+# package, release and sign-in hosts the install and the setup sitting need.
+# Provisional: the builder rewrites this list from the hosts logged during the setup sitting
+# (research/blueprint/stack.md, Egress). n8n hosts are added on setup day once John says where
+# n8n runs (Open decision 8). Never add a bare `*`.
+
+# ---- runtime list (keep in step with egress-allowlist.txt) ----
+# Claude (Max via /login, Remote Control)
+api.anthropic.com
+claude.ai
+*.claude.ai
+
+# GitHub
+github.com
+api.github.com
+
+# Chat control and monitoring
+api.telegram.org
+hc-ping.com
+api.uptimerobot.com
+
+# GTM vendors (API and browser)
+api.attio.com
+app.attio.com
+*.attio.com
+app.clay.com
+*.clay.com
+accounts.google.com
+
+# Dependency and MCP vetting
+api.osv.dev
+api.deps.dev
+api.securityscorecards.dev
+registry.modelcontextprotocol.io
+
+# ---- install and sitting only ----
+# Packages (bootstrap.sh: npm, pipx)
+registry.npmjs.org
+pypi.org
+files.pythonhosted.org
+# GitHub sources and releases (github.com and accounts.google.com are listed above).
+# release-assets.githubusercontent.com: release downloads redirect there (curl -I, 2026-10-16).
+objects.githubusercontent.com
+codeload.github.com
+release-assets.githubusercontent.com
+# Setup sitting
+dash.cloudflare.com
