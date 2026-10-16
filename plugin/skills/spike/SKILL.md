@@ -64,8 +64,8 @@ installed or run, only in a `spike-worker`, and these rules bound it.
    shape below. The lead does not write that file from the returns. Begin its brief with the
    word `SPIKE` (this switches it to its Spike mode: the file is a spike file, not a findings
    file, and negative results stay), then give the notes folder, PLAN.md and the output path.
-7. Add each tool tried to `research/tool-registry.md` with the verdict (the synthesizer or a
-   `researcher` worker may do this). Add anything unresolved to `research/open-questions.md`.
+7. Add each tool tried to `research/tool-registry.md` with the verdict (the synthesizer does
+   this in Spike mode; nobody else writes those rows). Add anything unresolved to `research/open-questions.md`.
 
 ## Output file
 

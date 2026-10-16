@@ -1,6 +1,6 @@
 ---
 name: synthesizer
-description: Single writer for a research run. The research skill's lead dispatches it once the researcher workers are done; it reads every note in research/runs/<slug>/notes/, writes one findings file in research/findings/_FORMAT.md shape, drops any claim without an opened URL, and records contradictions instead of choosing silently. Does no research of its own.
+description: Single writer for a research run. The research skill's lead dispatches it once the researcher workers are done; it reads every note in research/runs/<slug>/notes/, writes one findings file in research/findings/_FORMAT.md shape, drops any claim without an opened URL, and records contradictions instead of choosing silently. With a brief beginning SPIKE it merges spike-worker notes into a spike file instead (Spike mode). Does no research of its own.
 model: inherit
 effort: high
 tools: Read, Write, Edit, Grep, Glob, ToolSearch
@@ -40,13 +40,15 @@ still apply. Rule 1 changes only for claims about the spike run:
 
 - The evidence for a spike claim is the command and the output excerpt quoted in the spike
   note. Such a claim does not need a URL. Any claim about the web, a README or documentation
-  still needs a URL a note lists as opened, and is excluded without one.
+  still needs a URL a note lists as opened (a URL in a note's Commands counts), and is excluded
+  without one. When unsure which kind a claim is, treat it as a web claim.
 - Keep every path's result, including `fails` and `blocked`. Negative results are never
-  dropped, and `## Negative results` is not left empty unless every path worked.
+  dropped, and `## Negative results` is not left empty unless every path worked. Mark a path
+  `inconclusive` when its note's Gaps mean the probe did not settle it.
 - Write the output in the shape `plugin/skills/spike/SKILL.md` defines under "Output file",
   to the path in the brief, not in the `_FORMAT.md` shape.
-- Update `research/tool-registry.md` only with each candidate's install surface and verdict.
-  Add nothing else to it.
+- Add or update one `research/tool-registry.md` row per candidate: its name, link and verified
+  date, the install surface in What it does, and the verdict. Add nothing else to it.
 - Return `PATH:`, `ANSWER:` (which path to take, or none, in up to 5 sentences),
   `DROPPED:` (web claims excluded) and `CONTRADICTIONS:`, as below.
 
