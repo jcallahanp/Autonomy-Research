@@ -27,4 +27,4 @@ Rulings: Claude Code is the engine and is not up for debate; everything else att
 
 ## Outputs
 - Findings: research/findings/engineer-protocol.md - written and revised after the gap round (47 audit claims added; 45 search-text-only claims still dropped to Open questions; 4 contradictions unresolved)
-- Verification: pending
+- Verification: 17 of 20 verified, needs-review (autoContinueAtUsageLimit does work with -p, only the interactive menu row does not; AppWorld AUROC column reading uncertain; "matched or exceeded", not "matched or beat")

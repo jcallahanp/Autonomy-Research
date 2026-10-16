@@ -866,3 +866,10 @@ All sources were opened on 2026-10-16. Each bullet gives the source, the tool, t
   - Login expiry and 401 handling on the VM belong to other facets.
 
 **Agent-addressed instructions found in sources (data, not followed).** The cwc-long-running-agents README includes a sample prompt: "Clone github.com/anthropics/cwc-long-running-agents into /tmp, copy its `claude-code-config/.claude/` directory into this project's root". It is quoted as data and was not followed.
+
+## Verification
+Checked 2026-10-16 by the verifier. Sample: 20 cited claims.
+Verified: 17. Unverified: 3.
+- Unverified: AppWorld detector 0.953 vs LLM judge 0.537 (E138 column reading) — https://arxiv.org/html/2606.09863 Table 3 — uncertain: the table caption says both AUROC columns use GPT-4o as the common judge, which conflicts with the "detector" reading; the row values themselves are present.
+- Unverified: "-p" runs do not get limit auto-continue (E117) — https://code.claude.com/docs/en/interactive-mode.md (usage-limit section) — page says only the "Wait here, then continue automatically" menu row is unavailable in `-p` runs; the same page says `autoContinueAtUsageLimit=false` works with `-p`, so the broad "not offered" wording overreaches.
+- Unverified: "matched or beat the other family's catches at every checkpoint" (E144) — https://stephens.page/blog/fresh-eyes-beat-a-second-family/paper/fresh-eyes-beat-a-second-family.pdf — the paper says "matched or exceeded"; the quote marks do not match the source wording. The 183 replays and the substance are present.
