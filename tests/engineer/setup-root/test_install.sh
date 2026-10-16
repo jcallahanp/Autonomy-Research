@@ -34,6 +34,11 @@ done
 [ "$(stat -c %a "$P/var/lib/engineer/spool" 2>/dev/null)" = 1770 ] || fail "spool not 1770"
 for d in records approvals checks audit-clones; do [ -d "$P/var/lib/engineer/$d" ] || fail "no $d"; done
 [ "$(stat -c %a "$P/home/engineer/.engineer/chrome-profile" 2>/dev/null)" = 700 ] || fail "chrome profile not 0700"
+# Mirrors: the broker's sync-mirror job writes them; run-task as engineer reads them.
+[ "$(stat -c %a "$P/var/lib/engineer/mirrors" 2>/dev/null)" = 2750 ] || fail "mirrors not 2750"
+echo "$out" | grep -qx "RUN: chown secretbroker:engineer $P/var/lib/engineer/mirrors" || fail "mirrors not secretbroker:engineer"
+grep -qx 'MIRROR_DIR=/var/lib/engineer/mirrors' "$REPO/engineer/etc/engineer.conf" || fail "engineer.conf has no MIRROR_DIR"
+grep -qx "MIRROR_DIR=\"$T/src/var/lib/engineer/mirrors\"" "$SRC/etc/engineer.conf" || fail "mk_root does not rewrite MIRROR_DIR"
 [ -d "$P/var/log/engineer" ] || fail "no /var/log/engineer"
 cmp -s "$P/etc/engineer/egress.txt" "$SRC/templates/egress-install.txt" || fail "egress.txt is not the install list"
 [ -f "$P/etc/apparmor.d/bwrap" ] || fail "apparmor profile not written"

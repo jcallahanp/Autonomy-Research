@@ -87,6 +87,42 @@ class SpoolTest(unittest.TestCase):
         self.assertEqual([e["detail"]["hook_event_name"] for e in got[2:]], ["Stop", "TaskCompleted"])
         self.assertEqual(got[3]["detail"]["kind"], "gate_gave_up")
 
+    def test_spool_append_during_ingest_not_lost(self):
+        """A hook appending while ingest runs writes a fresh file, picked up on the next pass."""
+        from unittest import mock
+        path = self.spool / "s1.jsonl"
+        path.write_text(tap("StopFailure", error="rate_limit") + "\n")
+        real, hits = events.append, []
+
+        def append_and_race(events_path, ev):
+            if not hits:
+                with open(path, "a") as f:
+                    f.write(tap("Notification", notification_type="late") + "\n")
+            hits.append(ev)
+            return real(events_path, ev)
+
+        with mock.patch.object(spool.events, "append", side_effect=append_and_race):
+            self.assertEqual(spool.ingest(self.spool, self.events, "demo"), 1)
+        self.assertEqual(spool.ingest(self.spool, self.events, "demo"), 1)
+        self.assertEqual([e["event"] for e in events.read(self.events)], ["limit", "denial"])
+        self.assertEqual(list(self.spool.iterdir()), [])
+
+    def test_leftover_ingesting_file_ingested(self):
+        """A `.ingesting.<pid>` file left by a crashed pass is ingested; another project's is left."""
+        (self.spool / "s6.jsonl.ingesting.999999999").write_text(tap("Notification") + "\n")
+        other = self.spool / "s7.jsonl.ingesting.999999998"
+        other.write_text(tap("Notification", project="other") + "\n")
+        self.assertEqual(spool.ingest(self.spool, self.events, "demo"), 1)
+        self.assertEqual(sorted(p.name for p in self.spool.iterdir()), [other.name])
+
+    def test_symlink_left_alone(self):
+        target = self.spool.parent / "secret.jsonl"
+        target.write_text(tap("Notification") + "\n")
+        (self.spool / "s8.jsonl").symlink_to(target)
+        self.assertEqual(spool.ingest(self.spool, self.events, "demo"), 0)
+        self.assertTrue((self.spool / "s8.jsonl").is_symlink())
+        self.assertTrue(target.exists())
+
     def test_unknown_hook_event_dropped(self):
         (self.spool / "s4.jsonl").write_text(tap("SessionStart") + "\n" + tap("Stop", kind="other") + "\n")
         counts = {}
