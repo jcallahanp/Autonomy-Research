@@ -74,3 +74,7 @@ jq -e '[.hooks.SessionStart[].hooks[].command] | any(contains("plugin/hooks/sess
 
 # CLAUDE.md one-fact rule matches the research skill.
 grep -q 'one-fact lookup.*at most two content calls' CLAUDE.md || fail tool-skills "CLAUDE.md one-fact rule does not say 'at most two content calls'"
+
+# The cloud session-start command is guarded so a local plugin install is not injected twice.
+jq -e '[.hooks.SessionStart[].hooks[].command | select(contains("plugin/hooks/session-start.sh"))] | length > 0 and all(contains("CLAUDE_CODE_REMOTE"))' \
+  .claude/settings.json >/dev/null 2>&1 || fail tool-skills ".claude/settings.json session-start.sh command is not guarded by CLAUDE_CODE_REMOTE"
