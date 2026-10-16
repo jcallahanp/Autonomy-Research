@@ -26,4 +26,4 @@ Rulings: Claude Code is the engine and is not up for debate; everything else att
 
 ## Outputs
 - Findings: research/findings/engineer-existing-systems.md - written (13 unsourced claims dropped to Open questions; 9 contradictions recorded; many SaaS claims rest on search highlights and are flagged for the verifier)
-- Verification: pending
+- Verification: 16 of 20 verified, needs-review (Attio views GET-only, Attio webhook listing and its scope, and an unofficial Clay client exporting tables could not be confirmed)

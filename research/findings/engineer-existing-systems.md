@@ -416,3 +416,13 @@ Unresolved contradictions carried from the answers: grep/glob just-in-time versu
 
 Design questions for later runs: how to reconcile John's "no standing pre-approvals" (J40) with autonomous operation (worker proposes per-task scoped approval); whether the keep/replace/remove table format improves re-engineering decisions (no outcome data found); and whether any of the search-highlight-backed SaaS claims (S29, S30, S37-S50, S55-S76) change on a full page read.
 
+## Verification
+Checked 2026-10-16 by the verifier. Sample: 20 cited claims.
+Verified: 16. Unverified: 4.
+- Unverified: Attio object-view scopes include "webhook:read: View, and optionally manage, webhooks." (S15) — https://docs.attio.com/rest-api/endpoint-reference/objects/list-views-for-object — page says otherwise: it lists only "Required scopes: `object_configuration:read`"; the webhook:read sentence is not on that page.
+- Unverified: Attio view paths contain only GET, with no POST view path (S4) — https://api.attio.com/openapi/api — uncertain: the spec is about 1.1M characters and only the first 100k were read; the quoted "GET /v2/lists/{list}/views" line is the worker's parse, not page text, and the rest of the path list was not seen.
+- Unverified: Attio webhooks are listable via "GET /v2/webhooks - List webhooks" (S5) — https://api.attio.com/openapi/api — claim not found in the first 100k characters of the spec; uncertain.
+- Unverified: the unofficial Clay client "reads and exports tables" (S26) — https://github.com/TenSpy-ai/claycast/blob/main/references/clay-api-reference.md — the quoted sentence is accurate but describes "building and updating Clay tables"; the read portion shows read methods (for example list_fields) and no export; "exports" is not stated.
+- Note: the n8n OpenAPI bullets (S31, S34) cite https://github.com/n8n-io/n8n-docs/blob/main/docs/api/v1/openapi.yml; WebFetch got HTTP 404 on that URL and on the raw.githubusercontent.com URL, while Exa opened it and both quotes matched. Verified via Exa.
+- Note: the Open questions line cites "S55-S76", but the Evidence list ends at S55; S56-S76 bullets do not exist in this file.
+
