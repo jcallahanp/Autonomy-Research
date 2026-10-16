@@ -20,10 +20,10 @@ Rulings: Claude Code is the engine and is not up for debate; everything else att
 - [x] Full-machine and desktop control (computer use, OpenClaw direction, sandboxed desktops) - notes/computer-control.md - medium - several sources seen only in search results; latency and E2B and Cua pricing not retrieved; Withings and WHOOP pairing on an emulator not researched
 - [x] Logged-in sessions, two-factor, bot detection, terms, and where the browser runs - notes/sessions-and-hosting.md - medium - real per-site session lifetimes and 2FA types unknown; hosted-browser prices from comparisons only; Clay terms read partly; Outreach terms via a summarising fetch
 - [x] Reliability engineering and safety guardrails for UI automation - notes/reliability-and-guardrails.md - medium - no published act-in-UI-verify-via-API example for Attio or Clay; Claude in Chrome high-risk list and hook firing on its tools untested; several sources from search highlights only (not cited)
-- [ ] API versus browser per task for Attio, Clay, n8n and portals - notes/api-vs-browser.md - pending
+- [x] API versus browser per task for Attio, Clay, n8n and portals - notes/api-vs-browser.md - medium - patient portals and FHIR aggregators not researched; Attio App SDK block, Outreach step routes and scopes, n8n Cloud community-package route unverified; Withings plan terms unreadable
 
 ## Gap round
-- pending
+- [ ] Blood-work and patient portals: API, aggregator or browser - notes/gap-patient-portals.md - pending (the API-versus-browser facet did not reach portals, which the health scenario needs)
 
 ## Outputs
 - Findings: research/findings/engineer-browser.md - pending
