@@ -12,15 +12,19 @@ flowchart TB
   phone[John's phone and computer]
   gh[GitHub: bot account, protected branches]
   targets[Deploy targets: Cloudflare, Cloud Run, Postgres]
+  hc[healthchecks.io: dead-man check]
 
   root -- "constrains every tool call of" --> run
-  sup -- "starts and bounds" --> run
+  sup -- "starts via the run-task sudo wrapper" --> run
   run -- "requests allowlisted jobs from" --> broker
   sup -- "launches and tears down" --> trial
   run -- "drives logged-in sessions in" --> browser
   broker -- "pushes branches, never the default, to" --> gh
   broker -- "deploys with minted child tokens to" --> targets
-  sup -- "posts digest and hard gates through" --> tg
+  sup -- "sends digest, gates and pings as jobs to" --> broker
+  broker -- "holds the bot token and posts to" --> tg
+  broker -- "pings, or stops pinging when the supervisor dies," --> hc
+  hc -- "alerts" --> phone
   chan -- "relays live prompts by day through" --> tg
   tg -- "delivers to and returns replies from" --> phone
   phone -- "reaches noVNC over an SSH tunnel to" --> browser

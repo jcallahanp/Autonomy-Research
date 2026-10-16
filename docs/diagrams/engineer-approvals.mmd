@@ -9,7 +9,7 @@ flowchart TD
   parser[Deterministic reply parser]
   log[(decisions/approvals.jsonl)]
   relay[Channels bot relay and Remote Control: daytime view, no product decisions]
-  sms[SMS: dead-man alert only]
+  sms[healthchecks.io dead-man alert to the phone, SMS where offered]
 
   act -- "is checked by" --> classify
   classify -- "routes routine work to" --> t0

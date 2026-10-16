@@ -5,6 +5,7 @@ Purpose: how the engineer's template repo, its plugin, the VM and each project r
 The engineer ships as one template-plus-plugin repo with a pinned bootstrap, the same shape as this research repo (engineer-runtime P1, P5). Plugin changes below are recommendations; nothing in `plugin/` was changed by this research (engineer-tool-discovery §Implications).
 
 ## Template repo
+Hosted as a private GitHub repo `engineer-template` under John's account (name is a builder default; setup.md step 1). The VM reads it with a read-only deploy key into `/srv/engineer-template` (root) and the builder's checkout `~engineer/engineer-template`; builder commits reach GitHub only as branches pushed by the `push-branch` broker job with the bot PAT, merged by John (setup.md steps 5, 19-21).
 ```
 plugin/
   skills/      interview, research, tool-scan, repo-triage, spike, system-map, setup   (existing, changed)
@@ -21,11 +22,13 @@ scripts/
   trial/         launch, proxy config, teardown, startup sweep
   broker/        agent-run job allowlist and jobs (push and PR, mint child token, API calls)
   snapshot/      attio, clay, n8n, outreach, slack config exports to JSON
-  checks/        audit.sh, test-diff guard, pre-merge refusal, parity check, contrast check,
+  checks/        verify-all.sh, audit.sh, test-diff guard, pre-merge refusal, parity check, contrast check,
                  vet-card, staleness, integrations-vs-.env.example, n8n export
 templates/
-  managed-settings.json, egress-allowlist.txt, systemd units (supervisor, chrome-xvfb, novnc),
-  superpowers/ (vendored at bb92a77 minus the dropped skills), project skeleton (below)
+  managed-settings.json, egress-install.txt, egress-allowlist.txt, run-defaults.yaml (flow.md),
+  schemas/ (tasks, events, run-status, profile, integrations), verify-all checks,
+  systemd units (engineer-supervisor, chrome-xvfb, novnc), superpowers/ (vendored at bb92a77
+  minus the dropped skills), project skeleton (below)
 tests/
   check.sh, check-mermaid.sh (existing), test-fm.sh, rules/ (existing)
   supervisor/, broker/, parser/   unit tests for the builder's own scripts (spikes SP04-SP17)
@@ -96,8 +99,17 @@ docs/versions.md        every pin the builder chooses (engineer-runtime §Repo c
 ## Enforcement: who owns it
 The engineer must not be able to rewrite its own checks (engineer-protocol E11, E15). Deny rules are "not a security boundary" (engineer-human-loop E142-E145), so the real boundaries are file ownership, the sandbox, the broker and the server.
 - Managed settings: `/etc/claude-code/managed-settings.json`, root-owned, read at the highest precedence; holds deny rules and `disableBypassPermissionsMode`, and no level including CLI flags overrides it (engineer-human-loop E148, §Q9).
-- Hooks: the `plugin/hooks/` folder is source only. `setup-root.sh` copies hook scripts to root-owned `/opt/engineer/hooks/` and registers them in the managed-settings file. Whether managed settings accept hook entries is not in the findings: untested default, confirmed by SP10; if not, the builder installs the plugin from a root-owned `/opt/engineer/plugin/` copy and records the mechanism in `docs/versions.md`. Command hooks run outside the sandbox with full access (engineer-human-loop §Q9), so hook scripts read only.
-- Supervisor, `audit.sh`, reply parser, state dir: run as `supervisor`; `engineer` cannot write them.
+- Hooks: `plugin/hooks/` in the template is the only source. `setup-root.sh --install` copies the scripts to root-owned `/opt/engineer/hooks/`; `--lock` registers them in the managed-settings file, so the guards are installed last (setup.md, Root vs builder). Whether managed settings accept hook entries is not in the findings: untested default, confirmed by SP10; if not, `--lock` installs the plugin from the root-owned `/opt/engineer/plugin/` copy and records the mechanism in `docs/versions.md`. Command hooks run outside the sandbox with full access (engineer-human-loop §Q9), so hook scripts only read.
+- Supervisor, `audit.sh`, reply parser, state dir `/var/lib/engineer/`: owned by and run as `supervisor`; `engineer` cannot write them.
+- Unix users and sudoers (builder defaults, installed by `setup-root.sh`; findings name only `engineer` and `secretbroker`, engineer-human-loop setup 1):
+
+| User | Runs | Sudoers line |
+| --- | --- | --- |
+| `engineer` | Interactive and builder sessions; every `claude -p`; holds the Max `/login` | `engineer ALL=(secretbroker) NOPASSWD: /opt/engineer/bin/agent-run` |
+| `supervisor` | `engineer-supervisor.service`; launches tasks and talks to Telegram only through broker jobs | `supervisor ALL=(engineer) NOPASSWD: /opt/engineer/bin/run-task` and `supervisor ALL=(secretbroker) NOPASSWD: /opt/engineer/bin/agent-run` |
+| `secretbroker` | `agent-run` jobs: `seed`, `push-branch`, `open-pr`, `mint-child`, `api-call`, `tg-send`, `tg-poll`, `hc-ping` | none |
+
+`run-task` is a root-owned wrapper that takes a task id, `cd`s into that task's worktree and execs `claude -p` with the flags from `templates/run-defaults.yaml`, so the supervisor cannot pass arbitrary commands; under Path A it uses `engineer`'s `/login`, under Path B it asks the broker for the key (exposure: open-questions 21).
 - Secrets: only `secretbroker` reads them; `engineer` calls `sudo agent-run <job>` (engineer-human-loop E58-E60).
 - Git: `engineer` has no push credential; branches go up through an `agent-run` job that never pushes to the default branch, and server-side branch protection refuses it anyway (engineer-protocol E41, E77; SP18).
 
@@ -159,4 +171,4 @@ Sources: engineer-planning §Q1-Q3; engineer-existing-systems §Repo composition
 | Spec Guard | sha256 approval binding (idea only) | As a dependency | engineer-planning E29, E61 |
 | frankbria | Breaker thresholds (no diff in 3, same failure in 5) | Code | engineer-context §Q7.4 |
 
-How the dropped Superpowers parts are switched off: the template vendors Superpowers at `bb92a77` as plain files, the way John's GTM repo does (engineer-existing-systems J3), without the `test-driven-development` and `finishing-a-development-branch` skill folders (TDD iron law; finishing menu and local merge). Its task sizing is overridden by a CLAUDE.md line that the `plan` skill's task contract wins; Superpowers' own `using-superpowers` skill says CLAUDE.md instructions take precedence over skills (Superpowers `using-superpowers/SKILL.md`, "User Instructions", as vendored in `/home/user/attio-project/.claude/skills/`, read 2026-10-16). Local merge to main is blocked by the missing push credential and branch protection, not by prose.
+How the dropped Superpowers parts are switched off: the template vendors Superpowers from https://github.com/obra/superpowers at commit `bb92a77` (the pin John's GTM repo records, /home/user/attio-project/CLAUDE.md; MIT) as plain files, the way John's GTM repo does (engineer-existing-systems J3), without the `test-driven-development` and `finishing-a-development-branch` skill folders (TDD iron law; finishing menu and local merge). Its task sizing is overridden by a CLAUDE.md line that the `plan` skill's task contract wins; Superpowers' own `using-superpowers` skill says CLAUDE.md instructions take precedence over skills (Superpowers `using-superpowers/SKILL.md`, "User Instructions", as vendored in `/home/user/attio-project/.claude/skills/`, read 2026-10-16). Local merge to main is blocked by the missing push credential and branch protection, not by prose.

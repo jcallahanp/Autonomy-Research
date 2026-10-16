@@ -19,13 +19,14 @@ Costs are as seen in the findings on 2026-10-16 unless a row says otherwise. "Pl
 | Telegram Bot API (supervisor bot) | Digest, hard-gate prompts, long-poll replies, `from.id` allowlist | SaaS + VM | Free | human-loop, protocol | E16, E118, E103 |
 | Channels (Telegram plugin) | Daytime live tool prompts; research preview | VM + phone | Free | human-loop | E111-E114 |
 | Remote Control | Phone view of sessions; subscription login only | VM + John's phone | In plan | runtime | C43-C53 |
-| Twilio SMS (optional) | Dead-man alert only | SaaS | $0.0083/segment; long code $1.15/month is inference | human-loop | E121 |
+| Twilio SMS (alternative dead-man route) | SMS to John if the chosen route cannot send SMS | SaaS | $0.0083/segment; long code $1.15/month is inference | human-loop | E121 |
 | ntfy (alternative) | Push alerts by `curl`; the topic is the password | SaaS | Free | protocol, deploy | E102, E133 |
-| UptimeRobot Free / healthchecks.io Hobbyist | Uptime and cron checks paging John | SaaS | Free: 50 monitors / 20 jobs | deploy | E129, E131 |
-| Superpowers pinned at commit bb92a77 (version label 7.0.0 unverified) | Brainstorm gate, writing-plans, fresh subagent per task, verification, worktrees | Plugin | Free (MIT) | planning, context, protocol | E25, E82; E19, E40 |
+| healthchecks.io Hobbyist (chosen dead-man route) | The supervisor pings a check at every loop and at least every 15 minutes (untested default); `ExecStopPost` sends a fail ping; when pings stop, healthchecks.io notifies John's phone by SMS if Hobbyist offers it, else by its Telegram or email integration (untested, SP72) | SaaS | Free: 20 jobs | deploy | E131 |
+| UptimeRobot Free | Uptime checks of deployed apps and VM web services | SaaS | Free: 50 monitors | deploy | E129 |
+| Superpowers, https://github.com/obra/superpowers at commit `bb92a77` (pin recorded in /home/user/attio-project/CLAUDE.md; version label 7.0.0 unverified) | Brainstorm gate, writing-plans, fresh subagent per task, verification, worktrees | Plugin | Free (MIT) | planning, context, protocol | E25, E82; E19, E40 |
 | Hooks (SessionStart, PreToolUse, PostToolUse, Stop/TaskCompleted) | Re-inject state, guards, lint, done gate | VM | Free | context, protocol | §Q7.1-7.3; E11, E15 |
 | `auditor` agent + `audit.sh` | Script layer then narrow claim judge | VM | Tokens, about 2-4x per gated task (inference from E151) | protocol | E137-E151 |
-| backcheck (spike first) | Claim vs transcript check, no LLM | VM | Free (Apache-2.0) | protocol | E152, E153 |
+| backcheck, https://github.com/VectorInstitute/backcheck (spike first) | Claim vs transcript check, no LLM | VM | Free (Apache-2.0) | protocol | E152, E153 |
 | `gh`, `claude --worktree`, GitHub branch protection, CODEOWNERS | PR per task, server-side merge stop | VM + GitHub | Private-repo protection under Pro; Pro price unverified | protocol | E50-E59 |
 | GitHub bot account + fine-grained PAT | Repo-scoped agent credential | GitHub | Free | protocol, human-loop | E80, E81; E13, E40 |
 | Playwright CLI skill (`@playwright/cli`) | Primary browser driver | VM | Free, Apache-2.0 | browser | T4, T41 |
@@ -60,33 +61,34 @@ Costs are as seen in the findings on 2026-10-16 unless a row says otherwise. "Pl
 Untested default, set by SP08 and SP42: 4 vCPU, 8 GB RAM, 80 GB disk, Ubuntu 24.04. The findings give only "A $5/mo VPS is fine" (engineer-runtime S29) and an unverified 4 vCPU/8 GB price (open q 23); headed Chrome, trial containers and parallel `claude -p` workers are why the default is larger. `doctor.sh` fails below it.
 
 ## Install list
-Pins: the builder picks the current stable release on build day and records it in `docs/versions.md` (untested default, confirmed by SP22), except where a row states a pin from the findings or this repo.
+Pins: the builder picks the current stable release on build day and records it in `docs/versions.md` (untested default, confirmed by SP22), except where a row states a pin from the findings or this repo. "root" means `setup-root.sh --install`, run by John (setup.md step 6); "bootstrap" means `bootstrap.sh`, run unprivileged by the builder (step 8).
 | Tool | Installed by | Runs where | Pin or source |
 | --- | --- | --- | --- |
-| Users `engineer`, `secretbroker`, `supervisor`; AppArmor profile; managed settings; sudoers; egress allowlist | `setup-root.sh` | VM | n/a |
-| Docker Engine + Compose plugin, or rootless Podman | `setup-root.sh` | VM | Distribution or vendor apt repo |
-| sops, age | `setup-root.sh` | VM | Release binaries, checksum-verified |
-| Claude Code CLI | `bootstrap.sh` | VM, `engineer` | At least 2.1.234, the version the auto-continue docs name (engineer-protocol E117); exact pin recorded |
-| Node.js | `bootstrap.sh` | VM | 22 LTS or later (mermaid-lint needs Node 22+, engineer-briefing E59) |
-| Playwright, browsers, `@playwright/cli`, Playwright MCP | `bootstrap.sh` | VM | Recorded pin (engineer-browser T4, T1) |
-| Google Chrome, Xvfb, a window manager, x11vnc, noVNC + websockify | `bootstrap.sh` | VM | Distribution packages (install steps are worker inference, engineer-browser setup 1) |
-| Superpowers | `bootstrap.sh` (vendored copy, see repo-composition.md) | VM, plugin | Commit `bb92a77` |
-| mermaid-lint, mermaid-cli | `bootstrap.sh` | VM, CI | mermaid-cli 11.12.0, as in `tests/check-mermaid.sh` |
-| `gh` | `bootstrap.sh` | VM | GitHub apt repo |
-| wrangler | `bootstrap.sh` (npm) | VM | Recorded pin |
-| `gcloud` | `bootstrap.sh` | VM | Google apt repo |
-| `cloudflared` | `bootstrap.sh` | VM | Cloudflare apt repo |
-| Clay CLI | `bootstrap.sh` | VM | Package name not in the findings; builder takes it from Clay's docs (SP65) |
-| pyotp (only without 1Password) | `bootstrap.sh`, in a venv owned by `secretbroker` | VM | Recorded pin |
-| 1Password `op` (only if he has it) | `bootstrap.sh` | VM | 1Password apt repo |
-| Semgrep CE, Bandit or Ruff, OSV-Scanner, pip-audit, gitleaks, Checkov, Lynis | `bootstrap.sh` | VM, CI | Version plus checksum (engineer-security E41, E42) |
-| n8nmermaid, docker-compose-to-mermaid, dependency-cruiser, pydeps | `bootstrap.sh` | VM | Recorded pin |
-| Channels Telegram plugin | `bootstrap.sh` (`claude plugin install` from the Anthropic-maintained marketplace; the preview accepts only allowlisted plugins, engineer-runtime H37) | VM | Recorded pin |
-| n8n | Not installed by default; only if John moves n8n to the VM | VM | Open (open-questions 16) |
+| Users `engineer`, `secretbroker`, `supervisor`; AppArmor profile; managed settings; sudoers; nftables egress rules; systemd units | root | VM | n/a |
+| Docker Engine + Compose plugin, or rootless Podman | root | VM | Distribution or Docker apt repo |
+| sops, age; age key and SOPS file skeleton for `secretbroker` | root | VM | Release binaries, checksum-verified |
+| Node.js | root | VM | 22 LTS or later from the NodeSource apt repo (mermaid-lint needs Node 22+, engineer-briefing E59) |
+| Google Chrome, Xvfb, a window manager, x11vnc, noVNC + websockify, Playwright system deps | root | VM | Distribution and Google apt repos (install steps are worker inference, engineer-browser setup 1) |
+| `gh`, `gcloud`, `cloudflared`, 1Password `op` (only if he has it), Lynis | root | VM | GitHub, Google, Cloudflare, 1Password apt repos; Ubuntu archive |
+| mitmproxy (the host proxy) | root | VM | Recorded pin; Envoy or Squid are the alternatives (engineer-feasibility C23) |
+| `/opt/engineer/` (hooks, broker jobs, supervisor, plugin copy with vendored Superpowers) | root, copied from `/srv/engineer-template` | VM | The merged template SHA |
+| pyotp (only without 1Password) | root, in a venv owned by `secretbroker` | VM | Recorded pin |
+| Claude Code CLI | bootstrap | VM, `engineer` | At least 2.1.234, the version the auto-continue docs name (engineer-protocol E117); exact pin recorded |
+| Playwright, its browsers, `@playwright/cli`, Playwright MCP | bootstrap (user npm prefix and browser cache) | VM | Recorded pin (engineer-browser T4, T1) |
+| mermaid-lint, mermaid-cli | bootstrap | VM, CI | mermaid-cli 11.12.0, as in `tests/check-mermaid.sh` |
+| wrangler, dependency-cruiser, docker-compose-to-mermaid | bootstrap (npm) | VM | Recorded pin |
+| Semgrep CE, Bandit or Ruff, OSV-Scanner, pip-audit, gitleaks, Checkov, n8nmermaid, pydeps | bootstrap (user venv or release binaries) | VM, CI | Version plus checksum (engineer-security E41, E42) |
+| backcheck (after SP20) | bootstrap, via its `install.sh` | VM | https://github.com/VectorInstitute/backcheck, Apache-2.0 (engineer-protocol notes `audit-gap.md`:92) |
+| Clay CLI | bootstrap | VM | Package name not in the findings; builder takes it from Clay's docs (SP65) |
+| Channels Telegram plugin | bootstrap (`claude plugin install` from the Anthropic-maintained marketplace; the preview accepts only allowlisted plugins, engineer-runtime H37) | VM | Recorded pin |
 | Android SDK, Gradle, adb | `bootstrap.sh --with-android` | VM | Recorded pin |
+| n8n | Not installed by default; only if John moves n8n to the VM | VM | Open (open-questions 16) |
 
-## Egress allowlist
-Untested default, set by SP09 and SP13; the builder keeps it in `templates/egress-allowlist.txt` and adds a host only after a logged denial: Anthropic API and claude.ai hosts; github.com and its API, content and package hosts; registry.npmjs.org; pypi.org and its file host; api.telegram.org; the API hosts of Attio, Clay, n8n, Outreach, Slack, Google, WHOOP, Withings, Cloudflare, Vercel, Supabase and Neon actually in use; osv.dev, deps.dev, the Scorecard API and the official MCP Registry. Trial containers get a per-trial list through the host proxy instead (engineer-feasibility C23, C24).
+## Egress
+Mechanism (builder default, untested; SP09, SP13, SP26): root-owned nftables rules match the `engineer` and `supervisor` user IDs and allow outbound traffic only to the local mitmproxy, which enforces a domain allowlist; `HTTPS_PROXY` points Claude Code at it, and the Bash sandbox network settings sit inside that. Root's own traffic (apt) is not restricted. Trial containers get a per-trial list through the same proxy (engineer-feasibility C23, C24).
+- Install-mode list (`templates/egress-install.txt`, from `--install` until `--lock`): everything in the runtime list plus registry.npmjs.org, github.com and its release and content hosts, the Playwright browser download host, pypi.org and its file host. Hosts are logged so `--lock` can drop what only installs needed.
+- Runtime list (`templates/egress-allowlist.txt`, from `--lock`): Anthropic API and claude.ai hosts; github.com and its API host; api.telegram.org; the healthchecks.io and UptimeRobot API hosts; the API hosts of Attio, Clay, n8n, Outreach, Slack, Google, WHOOP, Withings, Cloudflare, Vercel, Supabase and Neon actually in use; osv.dev, deps.dev, the Scorecard API and the official MCP Registry.
+- Adding a host: a denied request becomes a T1 digest line; John runs `sudo setup-root.sh --allow <host>`.
 
 ## Where secrets live and who can read them
 Rule: the model never receives a value through chat or a file it can read (engineer-human-loop §Q3, E81, E82).
@@ -96,7 +98,9 @@ Rule: the model never receives a value through chat or a file it can read (engin
 | SaaS keys: Attio, n8n (with expiry), Clay CLI session, Outreach OAuth tokens, WHOOP and Withings refresh tokens | SOPS files | `secretbroker`; used by `agent-run` jobs; rotated refresh tokens written back on every refresh | engineer-human-loop E21-E25; engineer-feasibility spike 19 |
 | Parent tokens: Cloudflare (Account API Tokens Edit), Vercel, Supabase PAT, Slack config token (12 h) | SOPS files | `secretbroker`; children minted per job | engineer-human-loop E1-E11, E28-E34 |
 | GitHub bot fine-grained PAT (Contents, Pull requests, Metadata) | SOPS files | `secretbroker`; pushes and PRs go through an `agent-run` job (blueprint inference) | engineer-protocol E80, E81 |
-| Telegram supervisor bot token | SOPS files | Supervisor through the broker (blueprint inference) | engineer-human-loop E15, E118 |
+| Telegram supervisor bot token | SOPS files | `secretbroker` only: the supervisor never holds it, it calls the `tg-send` and `tg-poll` broker jobs (builder default; repo-composition.md Enforcement) | engineer-human-loop E15, E118 |
+| healthchecks.io ping URL, UptimeRobot API key | SOPS files | `secretbroker`; the supervisor pings through the `hc-ping` broker job | engineer-deploy E129, E131 |
+| Deploy key for `engineer-template` (read-only) | `/root/.ssh/engineer-template` | root, used by John for `git pull` before `--install` | setup.md step 5 (builder default) |
 | Telegram Channels bot token | The Channels plugin's config under `engineer`, because the daytime session uses it | `engineer` user, so the model can read it; this bot carries no approvals (ruling 3) | engineer-runtime C54, C57 (blueprint inference on location) |
 | Trial test credentials | Host proxy config | Proxy only; injected on the wire, never inside the trial container | engineer-feasibility C17, C23, C24 |
 | Cloud deploy credentials | None stored: GitHub OIDC and Workload Identity mint short-lived tokens | GitHub Actions job | engineer-deploy E109-E114 |

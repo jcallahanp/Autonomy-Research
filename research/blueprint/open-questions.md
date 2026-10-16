@@ -37,7 +37,7 @@ Each row names who or what settles it: John, a spike (spikes.md) or a later rese
 | --- | --- | --- | --- |
 | 21 | Under Path B the key sits in the environment of the process the model controls; can the model's shell read it? | Treat the key as exposed; cap every run with `--max-budget-usd` | SP11 run under Path B |
 | 22 | Where Claude Code keeps the `/login` credentials and whether the model can read them (not in the findings) | Treat as readable by the `engineer` user | SP11 |
-| 23 | Which OS user runs the supervisor? The findings name only `engineer` and `secretbroker` | A third `supervisor` user owning the state dir (blueprint inference) | Build review |
+| 23 | Which OS user runs the supervisor? The findings name only `engineer` and `secretbroker` | A third `supervisor` user with the sudoers lines in repo-composition.md (Enforcement) (builder default) | Build review, SP11 |
 | 24 | How often browser sessions expire per site, so how often John must re-log in | Daily logged-in check; re-login is a T1 digest line | SP63 |
 | 25 | How to import an adopted repo's own backlog (status, TODO files) into `tasks.json` | John confirms a hand-converted `tasks.json` at intake | Later research run |
 | 26 | Routines: worth adding for GitHub-only nightly jobs? (engineer-runtime C19) | Off in v1, so the digest stays on one channel | SP77 |
