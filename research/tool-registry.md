@@ -72,7 +72,7 @@ packaging.md, architecture.md, engineer-intake.md).
 
 | Tool | Link | What it does | Where it runs | Verified | Verdict |
 | --- | --- | --- | --- | --- | --- |
-| Beads | https://github.com/steveyegge/beads | Dolt-backed dependency-graph issue tracker for agents (hook, plugin, MCP) | not installed | 2026-10-16 | Phase 2; git files suffice for one researcher |
+| Beads | https://github.com/steveyegge/beads | Dolt-backed dependency-graph issue tracker for agents; CLI installed once (`bd setup claude`); checksum-verified installer now under gastownhall org | not installed | 2026-10-16 | Phase 2; git files suffice for one researcher; install by bootstrap flag only (engineer-runtime.md) |
 | Ralph Loop | https://claude.com/plugins/ralph-loop | Stop hook re-feeds one prompt until `<promise>` text or iteration cap | not installed | 2026-10-16 | Phase 2; only with script-checked completion and max-iterations |
 | Trail of Bits skills | https://github.com/trailofbits/skills | ~40 security plugins | not installed | 2026-10-16 | Only two relevant (below) |
 | supply-chain-risk-auditor (Trail of Bits) | https://github.com/trailofbits/skills/blob/main/plugins/supply-chain-risk-auditor/README.md | OSV advisories, archived upstreams, install scripts, Scorecard for deps | plugin + `uv run` | 2026-10-16 | Later; adopt when a lockfile needs checking |
@@ -89,7 +89,7 @@ packaging.md, architecture.md, engineer-intake.md).
 | Perplexity Sonar | https://docs.perplexity.ai/getting-started/pricing | Paid search-grounded LLM | not installed | 2026-10-16 | Skip, no free tier |
 | Brave Search MCP | https://brave.com/search/api/ | Search API, card required | not installed | 2026-10-16 | Skip |
 | Glama / Smithery / mcpservers.org | https://glama.ai/mcp/servers | MCP directories; key or bot-blocked | - | 2026-10-16 | Skip as tools; the official registry API covers discovery |
-| OpenClaw | https://openclaw.ai/security | Always-on personal agent platform | not installed | 2026-10-15 | Phase 2, security risk noted |
+| OpenClaw | https://github.com/openclaw/openclaw | MIT Node gateway daemon, 20+ chat channels, drives Claude Code via claude-cli backend or ACP; install via curl script/npm/Docker; sandbox off by default; 255+ advisories | not installed (clone read only) | 2026-10-16 | Reject as host; fallback only if channel breadth is needed, in a dedicated VM, sandbox `all`, no ClawHub skills (engineer-runtime.md) |
 | BrowseComp | https://arxiv.org/abs/2504.12516 | 1,266 short-answer questions testing persistent browsing | dataset | 2026-10-16 | Skip; measures answers, not reports or citations |
 | DSPy MIPROv2 | https://dspy.ai/api/optimizers/MIPROv2/ | Bootstrapped demos, proposed instructions, Bayesian search | Python; needs LM key | 2026-10-16 | Skip; many calls, little value for markdown skills |
 | TextGrad | https://github.com/zou-group/textgrad | Textual-gradient critique and rewrite, PyTorch-style API | Python; needs OpenAI/Anthropic key | 2026-10-16 | Skip |
