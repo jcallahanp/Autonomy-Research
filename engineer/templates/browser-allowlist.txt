@@ -1,0 +1,9 @@
+# Hosts the engineer's browser may open (Playwright MCP navigation guard, Task 8 hooks/guards/browser.py).
+# Format of eng.hosts: an exact host, or *.suffix for any deeper subdomain (not the suffix itself).
+# Copied to the droplet on setup day; APIs and MCP servers come first, the browser is the fallback.
+accounts.google.com   # Google sign-in, done by hand once with browser-login
+app.attio.com
+*.attio.com
+app.clay.com
+*.clay.com
+# John's n8n host is added here on setup day (Open decision 8: n8n Cloud or self-hosted, and its host name).

@@ -1,0 +1,33 @@
+#!/bin/bash
+set -euo pipefail
+# xvfb-session: the virtual display the engineer's Chrome draws on (run by the chrome-xvfb unit as engineer).
+# Starts Xvfb on DISPLAY (no TCP listener), waits for its socket, then runs fluxbox in the foreground so the
+# unit lives as long as the window manager. Chrome itself starts on demand (Playwright MCP or browser-login).
+# X11_SOCKET_DIR (default /tmp/.X11-unix) is where Xvfb makes its socket; tests point it at a temp dir.
+
+root=$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)
+export PATH="$root/bin:/usr/local/bin:/usr/bin:/bin"
+# shellcheck disable=SC1091
+. "$root/etc/engineer.conf"
+
+case "$DISPLAY" in
+  :[0-9]|:[0-9][0-9]|:[0-9][0-9][0-9]) ;;
+  *) echo "xvfb-session: DISPLAY must look like :99, got '$DISPLAY'" >&2; exit 2 ;;
+esac
+sock="${X11_SOCKET_DIR:-/tmp/.X11-unix}/X${DISPLAY#:}"
+
+Xvfb "$DISPLAY" -screen 0 1920x1080x24 -nolisten tcp &
+xpid=$!
+
+for _ in $(seq 100); do
+  [ -e "$sock" ] && break
+  if ! kill -0 "$xpid" 2>/dev/null; then
+    [ -e "$sock" ] && break
+    echo "xvfb-session: Xvfb exited before $sock appeared" >&2; exit 1
+  fi
+  sleep 0.1
+done
+[ -e "$sock" ] || { echo "xvfb-session: no $sock after 10 s" >&2; kill "$xpid" 2>/dev/null || true; exit 1; }
+
+export DISPLAY
+exec fluxbox

@@ -1,0 +1,9 @@
+# Challenge patterns for scripts/browser/challenge-check.py: kind<TAB>field<TAB>regex.
+# field is url, title or text; regex is Python, matched case-insensitively. First match wins, so the
+# specific kinds come first and the generic login_required comes last. Any match stops the task (F41).
+google_blocked	text	This browser or app may not be secure|Couldn['’]t sign you in
+google_sorry	url	google\.[a-z.]+/sorry/
+cloudflare	title	^Just a moment
+cloudflare	text	Verify you are human
+captcha	text	recaptcha|hcaptcha|turnstile
+login_required	url	/(login|signin|sign-in)(\b|/|\?)
