@@ -19,7 +19,7 @@ Rulings: Claude Code is the engine and is not up for debate; everything else att
 
 ## Facets
 - [ ] Per-service key and token creation: automatable or UI-only - notes/key-creation.md - pending
-- [ ] Secrets store and keeping secrets out of model context - notes/secrets.md - pending
+- [x] Secrets store and keeping secrets out of model context - notes/secrets.md - medium - whether transcripts store original or redacted tool output unsettled; 1Password Families price, SOPS and age docs, subprocess env scrub variable and per-service rotation APIs unverified
 - [x] Approval batches, fatigue and human-in-the-loop mechanisms - notes/approvals.md - medium - change-advisory practice, Slack interactive messages, OpenClaw messaging, Twilio onboarding fee not opened; fatigue research from abstracts; relay under headless tmux unspiked
 - [ ] Claude Code permission posture for unattended runs - notes/permissions.md - pending
 
