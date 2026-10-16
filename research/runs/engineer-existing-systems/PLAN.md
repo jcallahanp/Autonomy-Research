@@ -25,5 +25,5 @@ Rulings: Claude Code is the engine and is not up for debate; everything else att
 - not run: the GTM system itself is in no repo (John asked where it lives); the remaining gaps weaken evidence strength but leave no key question unanswered
 
 ## Outputs
-- Findings: research/findings/engineer-existing-systems.md - pending
+- Findings: research/findings/engineer-existing-systems.md - written (13 unsourced claims dropped to Open questions; 9 contradictions recorded; many SaaS claims rest on search highlights and are flagged for the verifier)
 - Verification: pending

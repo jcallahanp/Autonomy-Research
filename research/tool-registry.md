@@ -2,7 +2,7 @@
 
 Every tool evaluated for this project. Verdicts as of the verified date; details and the
 evidence behind each verdict are in `research/findings/` (tool-routing.md, methodology.md,
-packaging.md, architecture.md, engineer-intake.md).
+packaging.md, architecture.md, engineer-intake.md, engineer-existing-systems.md).
 
 ## Research tools in use
 
@@ -98,6 +98,44 @@ packaging.md, architecture.md, engineer-intake.md).
 | OpenSpec | https://github.com/Fission-AI/OpenSpec | proposal/specs/design/tasks per change, delta specs, archive | npm CLI + slash commands; licence not checked | 2026-10-16 | Fallback if a ready-made spec framework is wanted; lighter than spec-kit |
 | Gemini Deep Research (Interactions API) | https://ai.google.dev/gemini-api/docs/deep-research | Research agent with optional collaborative plan review, MCP tool support; preview | Google API, paid | 2026-10-16 | Reference design for plan-approval loop only; skip as engine |
 | urlhealth | https://arxiv.org/abs/2604.03173v1 | Open-source URL liveness and stale-vs-hallucinated checker | pip / agent skill (not installed) | 2026-10-16 | Reference: copy the idea as the candidate verify step in intake |
+
+## Brownfield mapping and SaaS configuration reads (engineer-existing-systems.md)
+
+| Tool | Link | What it does | Where it runs | Verified | Verdict |
+| --- | --- | --- | --- | --- | --- |
+| Claude Code Explore/Plan subagents | https://code.claude.com/docs/en/sub-agents | Read-only exploration in separate context; model overridable to Haiku | Claude Code | 2026-10-16 | Use: the mapping workers |
+| Aider repo map | https://aider.chat/docs/repomap.html | Tree-sitter definitions ranked by file-dependency graph, 1k-token default budget | Aider CLI (not installed) | 2026-10-16 | Reference design; do not adopt Aider as engine |
+| SCIP / scip-python / scip-typescript | https://docs.sourcegraph.com/code_intelligence/explanations/precise_code_intelligence | Exact symbol index per language | CLI, CI | 2026-10-16 | Fallback: add if reference lookups prove unreliable |
+| Sourcegraph (hosted) | https://sourcegraph.com/docs/code-navigation | Search-based and precise navigation | hosted / self-hosted | 2026-10-16 | Skip for private repos; the stream API row above covers public search |
+| CodeQL | https://codeql.github.com/docs/codeql-overview/about-codeql/ | AST, data-flow and control-flow database; build-free for Python and JS/TS | CLI, local | 2026-10-16 | Fallback for targeted queries; licence unchecked |
+| Semgrep (pattern syntax) | https://semgrep.dev/docs/writing-rules/pattern-syntax | Structural pattern matching with ellipsis and metavariables | CLI, local | 2026-10-16 | Use for credential and external-call inventory; spike |
+| pydeps | https://pythonhosted.org/pydeps/index.html | Python import graph, external dependency JSON | pip, local | 2026-10-16 | Use for Python module graph (spike on dynamic imports) |
+| dependency-cruiser | https://github.com/sverweij/dependency-cruiser | JS/TS dependency graph and rule checks, MIT | npx, local | 2026-10-16 | Use for TS module graph |
+| madge | https://github.com/pahen/madge | JS/TS module graph, circular dependency finder | npm, local | 2026-10-16 | Alternative to dependency-cruiser |
+| DeepWiki (docs) / CodeWiki benchmark | https://docs.devin.ai/work-with-devin/deepwiki ; https://arxiv.org/abs/2510.24428 | Generated wiki, 30-page cap, public basic tier; benchmarked 64% / 69% | hosted / local | 2026-10-16 | Skip for private code; navigation aid only, not source of truth |
+| universal-ctags | https://docs.ctags.io/en/latest/man/ctags.1.html | Symbol tag index | local | 2026-10-16 (one man-page excerpt only) | Skip; Aider dropped it for tree-sitter |
+| FastContext | https://arxiv.org/html/2606.14066v1 | Trained small explorer subagent (research) | research, not run | 2026-10-16 | Reference only: design of read/glob/grep explorer returning file:line |
+| DocAgent | https://aclanthology.org/2025.acl-demo.44.pdf | Dependency-ordered multi-agent docstring generation | research code (not run) | 2026-10-16 | Reference: topological order, verifier role |
+| SWE-Explore | https://arxiv.org/pdf/2606.07297 | Benchmark of repo exploration | dataset, not run | 2026-10-16 | Evidence source; possible test harness |
+| ArchAgent | https://arxiv.org/html/2601.13007v1 | Static analysis + LLM architecture recovery (paper) | research, not run | 2026-10-16 | Reference design: add dependency graph before LLM |
+| Claude Code OpenTelemetry | https://code.claude.com/docs/en/monitoring-usage | Export traces/metrics of agent runs | Claude Code | 2026-10-16 | Use to measure mapping token cost |
+| Attio REST API + OpenAPI | https://docs.attio.com/rest-api/overview | Reads objects, attributes, lists, entries, view titles, webhooks, read-only SQL | hosted, API key or OAuth | 2026-10-16 | Use for Attio inventory; views and workflows incomplete |
+| Attio MCP (official) | https://docs.attio.com/mcp/overview | OAuth-hosted MCP, 40+ tools, reads auto-approved | hosted remote MCP | 2026-10-16 | Use for interactive reads; no view or workflow tool |
+| Clay developer platform + CLI | https://developers.clay.com/ | Searches, Routines, Workflows (Alpha), Enterprise table query | hosted API, CLI/plugin | 2026-10-16 | Use for Workflows reads; tables Enterprise only |
+| claycast internal Clay API reference | https://github.com/TenSpy-ai/claycast | Reverse-engineered session-cookie API, table get/export | local Python (not run) | 2026-10-16 | Skip except as a spike; unofficial |
+| n8n public API (incl. credentials/audit scopes) | https://docs.n8n.io/connect/n8n-api | Workflows, executions, credential metadata (secrets write-only), security audit | self-hosted or cloud | 2026-10-16 | Use for workflow and credential inventory; availability on free trial unverified (snippet only) |
+| n8n CLI export | https://docs.n8n.io/deploy/host-n8n/configure-n8n/use-the-command-line | Workflow/credential export to JSON | self-hosted server | 2026-10-16 | Use workflow export; never `--decrypted` by default |
+| Outreach REST API | https://developers.outreach.io/api/reference | Sequences, steps, templates, mailboxes via OAuth or S2S | hosted | 2026-10-16 | Use if app creation is permitted; needs company approval |
+| Slack app manifest API | https://docs.slack.dev/reference/methods/apps.manifest.export | Exports scopes, events, features per app | hosted, config token | 2026-10-16 | Use |
+| Claude Code CLI inspectors | https://code.claude.com/docs/en/debug-your-config | `claude mcp list/get`, `claude doctor`, /context, /mcp | local | 2026-10-16 | Use |
+| Claude Compliance API artifacts | https://platform.claude.com/docs/en/api/compliance/code/artifacts | List and download artifact versions org-wide | hosted, compliance key | 2026-10-16 | Fallback; likely org-admin only |
+| C4 model | https://c4model.com/diagrams | Context/container/component/code diagram notation | notation, no install | 2026-10-16 | Use context + container levels for the as-is map |
+| gitleaks | https://github.com/gitleaks/gitleaks | Secret scanner for git/dir/stdin; `--redact`, json/csv/sarif reports | local binary (not installed) | 2026-10-16 | Use, free; spike that report files are redacted |
+| TruffleHog | https://github.com/trufflesecurity/trufflehog | Secret scanner, filesystem mode, live-verification of finds | local binary (not installed) | 2026-10-16 | Fallback; only with `--no-verification` |
+| Claude Code permissions.deny + sandbox | https://code.claude.com/docs/en/settings-example | Blocks reads of secret files; sandbox covers grep -r | Claude Code | 2026-10-16 | Use as hard gate; spike enforcement (issue #24846) |
+| Attio Dedupe app | https://attio.com/apps/dedupe | Weighted match rules, gated merge, audit log, 30-day undo | Attio app, pricing not checked | 2026-10-16 | Fallback; check price first |
+| attio-dedup-audit-skill | https://github.com/gmaramigin/attio-dedup-audit-skill | Claude skill: detect, report, approve, merge | Claude / Attio MCP; not run | 2026-10-16 | Reference for approval-gated flow; unvetted, do not install |
+| Clay Attio integration | https://university.clay.com/docs/attio-integration | Lookup/upsert/update into Attio | Clay (paid plan) | 2026-10-16 | Existing system; follow lookup-first rule |
 
 ## Evaluated and deferred or skipped
 
