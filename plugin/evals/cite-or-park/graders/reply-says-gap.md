@@ -3,5 +3,5 @@
 type: regex
 target: last_message
 flags: i
-pattern: '403|forbidden|could not (?:be )?(?:open|opened|fetch|fetched|read)|couldn''t (?:open|fetch|read)|blocked'
+pattern: '403|forbidden|could not (?:be )?(?:open|opened|fetch|fetched|read)|couldn''t (?:be )?(?:open|opened|fetch|fetched|read)|unable to (?:open|fetch|read)|unreachable|blocked'
 ---
