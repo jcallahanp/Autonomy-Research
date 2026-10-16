@@ -17,7 +17,7 @@ Rulings: Claude Code is the engine and is not up for debate; everything else att
 ## Facets
 - [ ] Security frameworks and which items tooling can check - notes/frameworks.md - pending
 - [ ] Security tooling an agent can run, and its noise - notes/tooling.md - pending
-- [ ] LLM-driven security review and project-specific risks - notes/llm-review-and-risks.md - pending
+- [x] LLM-driven security review and project-specific risks - notes/llm-review-and-risks.md - medium - CASTLE numbers, scan cost, open prompt packs, independent precision of vendor scanners not opened; Attio replay header and Withings webhook authenticity unconfirmed; John's code not inspected
 - [ ] Reports, gates, remediation and cadence - notes/reports-and-gates.md - pending
 
 ## Gap round
