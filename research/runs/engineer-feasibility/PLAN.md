@@ -26,5 +26,5 @@ Rulings: Claude Code is the engine and is not up for debate; everything else att
 - not run: the remaining gaps weaken evidence strength but leave no key question unanswered; they are carried as open questions and spike items
 
 ## Outputs
-- Findings: research/findings/engineer-feasibility.md - pending
+- Findings: research/findings/engineer-feasibility.md - written (18 unsourced claims dropped to Open questions; 8 contradictions recorded, 3 unresolved and listed as spikes)
 - Verification: pending

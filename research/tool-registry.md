@@ -288,6 +288,11 @@ packaging.md, architecture.md, engineer-intake.md, engineer-existing-systems.md)
 | Stripe webhook + idempotency docs | https://docs.stripe.com/webhooks | Reference rules: raw-body signature, 5-minute replay tolerance, dedupe by event ID, no ordering, 24 h idempotency keys | docs | 2026-10-16 | Reference pattern for the integration edge-case checklist |
 | Google AIP-194 | https://google.aip.dev/194 | Retry guidance (UNAVAILABLE retryable; no blind retry of state changes) | docs | 2026-10-16 | Reference; thin on backoff |
 | Cloudflare Terraform provider | https://developers.cloudflare.com/api/terraform/ | IaC for Cloudflare with API token auth | local | not opened (search excerpt only) | Candidate; spike before relying |
+| OpenAPI / AsyncAPI | https://learn.openapis.org/ ; https://www.asyncapi.com/docs/tutorials/getting-started | Machine-readable REST / event API contracts | files | 2026-10-16 | Use as inputs referenced by the integration matrix, not deliverables (engineer-feasibility.md) |
+| EventStorming | https://www.eventstorming.com/ | Human workshop format for domain events | workshop | 2026-10-16 | Skip for the agent; replace with an interview-derived event list |
+| mermaid-mcp-server (andrewginns) | https://github.com/andrewginns/mermaid-mcp-server/ | MCP validating Mermaid via mermaid-cli | local (not installed) | not opened (search excerpt only) | Skip; mermaid-lint is simpler; unverified |
+| Claude in Chrome (setup session) | https://code.claude.com/docs/en/chrome | Pauses on login/CAPTCHA, refuses credential-named files, off under API-key/setup-token auth | John's machine, local `/login` | 2026-10-16 | Use for the one-sitting setup list only; John does consent, 2FA and secrets (engineer-feasibility.md) |
+| Fly Machines, Northflank, Runloop | (no page opened) | Hosted sandboxes | hosted | not opened | Not researched |
 
 ## Engineer deployment
 
