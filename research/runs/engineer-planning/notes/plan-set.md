@@ -116,14 +116,14 @@ Show the owner only brief.md (plus a visual brief from another run) with goals, 
 ## Recommendation, alternatives, rejected, spikes
 
 Recommendation: a custom lean plan set (brief.md, requirements.md in EARS, architecture.md Mermaid, integrations.yaml, contracts/, tasks.yaml, acceptance tests, MADR for real decisions), written by the engineer after a Superpowers-style brainstorm, approved by a hash-bound approval.json plus a git tag. Free; no new tool installed.
-Alternatives: OpenSpec (lighter, delta-based; fallback if a CLI-managed structure is wanted; Thoughtworks Assess Apr 2026); Kiro-style three files by hand; spec-spec-kit only as prompt patterns.
+Alternatives: OpenSpec (lighter, delta-based; fallback if a CLI-managed structure is wanted; Thoughtworks Assess Apr 2026); Kiro-style three files by hand; spec-kit only as prompt patterns.
 Rejected: spec-kit wholesale (verbose per Fowler and Thoughtworks), BMAD (heavy), Kiro IDE (not Claude Code), Tessl (spec-as-source, beta), Spec Guard / drft / Plannotator as dependencies (small or paid third parties; copy the hash-binding idea only). Traycer: not researched.
 Spike before building: (1) write the set for one real project and time John's review; (2) hash-mismatch hook in the cloud runtime; (3) compare agent adherence with 1-page brief vs full set on one task.
 
 ## Tools evaluated
 | Tool | Link | What it does | Where it runs | Verified | Verdict |
 | --- | --- | --- | --- | --- | --- |
-| Spec spec-kit (re-look) | https://github.com/github/spec-kit | Templates spec 131 / plan 113 / tasks 252 lines, NEEDS CLARIFICATION marker, read-only checklist gate | agent commands, Python CLI | 2026-10-16 | Copy marker and gate; reject wholesale (verbose) |
+| GitHub spec-kit (re-look) | https://github.com/github/spec-kit | Templates spec 131 / plan 113 / tasks 252 lines, NEEDS CLARIFICATION marker, read-only checklist gate | agent commands, Python CLI | 2026-10-16 | Copy marker and gate; reject wholesale (verbose) |
 | OpenSpec (re-look) | https://github.com/Fission-AI/OpenSpec | proposal (1-2 pages), per-capability behaviour specs, design, tasks; Thoughtworks Assess Apr 2026 | npm CLI | 2026-10-16 | Fallback framework; behaviour-contract rule worth copying |
 | Superpowers brainstorming + writing-plans (re-look) | https://github.com/obra/superpowers | Hard-gate brainstorm, committed design doc, decisions-only plans | plugin | 2026-10-16 | Use; process layer already in registry |
 | Agent OS (Builder Methods) | https://buildermethods.com/agent-os/v2/workflow | Six phases: plan-product, shape-spec, write-spec, create-tasks, implement, orchestrate | agent commands | 2026-10-16 (workflow page; file names unconfirmed) | Reference only |
