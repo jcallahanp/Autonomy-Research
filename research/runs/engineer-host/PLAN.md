@@ -15,7 +15,7 @@ Rulings: Claude Code is the engine and is not up for debate; everything else att
 
 ## Facets
 - [ ] Bot flagging: what triggers it for a logged-in agent on SaaS sites, and which host avoids it legitimately - notes/bot-flagging.md - pending
-- [ ] Desktop and browser control by operating system (Linux, Windows, macOS) for Claude - notes/desktop-control.md - pending
+- [x] Desktop and browser control by operating system (Linux, Windows, macOS) for Claude - notes/desktop-control.md - medium - locked-Mac behaviour undocumented; RDP/tscon and Power Automate claims search-excerpt only; no Cua-on-Xvfb spike; OSWorld scores from excerpts
 - [ ] Hosting services: VPS, cloud desktop, cloud Mac, home Mac Mini; prices and fit with the blueprint - notes/hosting-services.md - pending
 - [ ] Controlling the engineer from WhatsApp, Slack or Telegram: NanoClaw versus alternatives on a Max plan - notes/chat-control.md - pending
 

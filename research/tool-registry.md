@@ -608,3 +608,14 @@ packaging.md, architecture.md, engineer-intake.md, engineer-existing-systems.md)
 | Qodo | https://www.qodo.ai/pricing/ | PR review, $0.012/credit, no free tier | hosted | 2026-10-16 | Skip unless spike shows gain |
 | Claude Code Review (managed) | https://code.claude.com/docs/en/code-review | Multi-agent PR review, usage billed, Team/Enterprise | Anthropic infra | 2026-10-16 | Skip; use `/code-review` or own subagent |
 | Martian Code Review Bench | https://codereview.withmartian.com/?mode=offline | Third-party leaderboard; Claude Code Reviewer F2 47.7% (Sep 2026) | web | 2026-10-16 | Evidence source |
+
+## Engineer host
+
+| Name | Link | What it does | Where | Verified | Verdict |
+| --- | --- | --- | --- | --- | --- |
+| Windows-MCP (CursorTouch) | https://github.com/CursorTouch/Windows-MCP | MIT MCP server for Windows 7-11 UI control; install via `claude mcp add --transport stdio windows-mcp -- uvx windows-mcp serve`; needs Python 3.13+ | Windows | 2026-10-16 | Spike if a Windows host is chosen; needs a live interactive session |
+| Microsoft UFO / UFO2 / UFO3 Galaxy | https://github.com/microsoft/UFO | MIT Windows UIA/Win32 agent, UFO2 in LTS, Galaxy multi-device; own LLM config and agent loop | Windows | 2026-10-16 | Reject as engine; reference only |
+| sqrew/rmcp-xdotool | https://github.com/sqrew/rmcp-xdotool | Rust MCP server for xdotool mouse and keyboard; X11 only | Linux X11 | 2026-10-16 (README via search excerpt) | Fallback; unvetted |
+| vito1317/linux-control-mcp | https://github.com/vito1317/linux-control-mcp | 35-tool X11 MCP (xdotool, wmctrl, OCR, accessibility); created 2026-04 | Linux X11 | 2026-10-16 (search excerpt) | Fallback; unvetted |
+| Power Automate desktop flows (unattended) | https://learn.microsoft.com/en-us/power-automate/desktop-flows/run-unattended-desktop-flows | Windows RPA; unattended runs lock the screen and need all users signed out | Windows | not opened (search excerpt only) | Skip; not Claude-driven |
+| Anthropic computer-use tool reference container (Xvfb) | https://platform.claude.com/docs/en/agents-and-tools/tool-use/computer-use-tool | Linux Docker with Xvfb, Mutter and Firefox; you write the agent loop; not on Managed Agents | API + Linux VM | 2026-10-16 | Fallback; second agent loop beside Claude Code |
