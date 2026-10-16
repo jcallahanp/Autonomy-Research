@@ -82,7 +82,7 @@ Confidence: medium.
 **Recommendation:** the least-flagged legitimate setup is headed, branded Chrome with a persistent profile that John signs into by hand, run at a human pace, with vendor APIs used wherever they exist. On the network side, a residential (home) IP is probably better than a data-center IP, but no opened source measures that.
 
 **Browser layer (cited):**
-- In a 2026 measurement (Playwright 1.57, the Tranco top 10k sites, one Hetzner data-center IP, no stealth), headless Chromium was the outlier at 15.2% soft blocks, against about 7% for headed Chromium and for both Firefox modes (https://arxiv.org/html/2606.14525v1).
+- In a 2026 measurement (Playwright 1.57, the Tranco top 10k sites, a single Hetzner data-center in Nuremberg with the VM and IP rebuilt from a snapshot between batches of 1,000 sites, no stealth) (corrected after verification, 2026-10-16), headless Chromium was the outlier at 15.2% soft blocks, against about 7% for headed Chromium and for both Firefox modes (https://arxiv.org/html/2606.14525v1).
 - In the same paper, `navigator.webdriver` was probed on 34% of sites (https://arxiv.org/html/2606.14525v1).
 - Cloudflare's JavaScript Detections engine "Catches headless browsers" (https://developers.cloudflare.com/bots/concepts/bot-score/).
 
@@ -143,7 +143,7 @@ Confidence: medium (high for the computer-use limits).
 - In Desktop, Dispatch approvals expire after 30 minutes (https://code.claude.com/docs/en/desktop).
 
 **Anthropic's API computer-use tool (cited):**
-- It is OS-agnostic, with a Linux Xvfb reference build (https://platform.claude.com/docs/en/agents-and-tools/tool-use/computer-use-tool).
+- The page does not state that the tool is OS-agnostic (corrected after verification, 2026-10-16). Its reference environment is "A virtual X11 display server (using Xvfb)" on Linux (https://platform.claude.com/docs/en/agents-and-tools/tool-use/computer-use-tool).
 - The developer writes the agent loop (https://platform.claude.com/docs/en/agents-and-tools/tool-use/computer-use-tool).
 - **Worker inference:** this means a second loop beside Claude Code.
 
@@ -284,7 +284,7 @@ Confidence: medium (high on the facts, medium on fit).
   - Relays permission prompts, and anyone who can reply through the channel can approve (https://code.claude.com/docs/en/channels).
   - Is a research preview (https://code.claude.com/docs/en/channels).
 - **Remote Control:**
-  - Pro/Max only; "API keys are not supported" (https://code.claude.com/docs/en/remote-control).
+  - Pro, Max, Team and Enterprise, where Team and Enterprise need an Owner's toggle (corrected after verification, 2026-10-16); "API keys are not supported" (https://code.claude.com/docs/en/remote-control).
   - Has a server mode for a headless host (https://code.claude.com/docs/en/remote-control).
   - Sends push notifications (https://code.claude.com/docs/en/remote-control).
   - Keeps subagent progress in sync across devices (https://code.claude.com/docs/en/remote-control).
@@ -580,3 +580,11 @@ The registry rows already carry two claims that rest on search excerpts only:
 - `research/tool-registry.md:626` lists "CVE-2026-56402 reported".
 
 The synthesizer did not rewrite those rows.
+
+## Verification
+Checked 2026-10-16 by the verifier. Sample: 20 cited claims (prices, Computer use OS and -p limits, API tool, Remote Control and Channels, legal and Help Center quotes, Max credits, bot-detection numbers and the Google quote).
+Verified: 18. Unverified: 2 (both corrected in place).
+- Unverified: "It is OS-agnostic" for the Anthropic API computer-use tool (Q2, E29) — https://platform.claude.com/docs/en/agents-and-tools/tool-use/computer-use-tool — page says the Xvfb display is the reference desktop and says nothing about OS-agnostic. Corrected in place.
+- Unverified: "one Hetzner data-center IP" for the arXiv measurement (Q1, E6) — https://arxiv.org/html/2606.14525v1 — page says all scans ran from one Hetzner datacenter (Nuremberg), with the VM and IP rebuilt from a snapshot between batches of 1,000 sites. Corrected in place.
+- Extra correction outside the sample: Remote Control "Pro/Max only" (Q6, E102) — https://code.claude.com/docs/en/remote-control — page says Pro, Max, Team and Enterprise, with an Owner's toggle for Team and Enterprise. Corrected in place.
+- Not checked in this pass: the Tranco top-10k scope, the Hetzner "excluding IPv4" qualifier (the fetched rows do not show it), the Chrome 136+ claim, the NanoClaw facts (MIT, 2026.10.0, Baileys, SPEC.md:391), the Mac mini 4 W idle figure, and Linode's shared-CPU "legacy hardware" note.

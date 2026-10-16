@@ -24,4 +24,4 @@ Rulings: Claude Code is the engine and is not up for debate; everything else att
 
 ## Outputs
 - Findings: research/findings/engineer-host.md - done (127 evidence items, 29 excerpt-only claims moved to open questions)
-- Verification: pending
+- Verification: 20 claims re-opened, 18 verified, 2 corrected in place, plus 1 extra correction (Remote Control plans); INDEX line added
