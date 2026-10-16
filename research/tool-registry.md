@@ -19,7 +19,7 @@ packaging.md, architecture.md, engineer-intake.md).
 | Playwright MCP | https://github.com/microsoft/playwright-mcp | Headless Chromium via accessibility snapshots | `.mcp.json` (stdio, `plugin/scripts/playwright-mcp.sh`) | 2026-10-16 | Last resort, subagent only; blocked by Cloudflare/Vercel bot checks; 45-95 KB snapshots |
 | Mermaid Chart MCP | https://mermaid.ai/docs/ai/mcp-server | Validate and render Mermaid (free account) | claude.ai connector | 2026-10-16 | Keep for validation via subagent; 60k-char output per render |
 | GitHub MCP | https://github.com/github/github-mcp-server | Repo/file/PR tools | claude.ai connector | 2026-10-16 | Own-repo reads only; search returns 403 in cloud sessions |
-| Superpowers | https://github.com/obra/superpowers | Engineering methodology skills | plugin, via `scripts/cloud-setup.sh` | 2026-10-15 | In use; brainstorming flow reused for the interview skill |
+| Superpowers | https://github.com/obra/superpowers | Engineering methodology skills; manifest version 7.0.0 at commit bb92a77 | plugin, via `scripts/cloud-setup.sh` | 2026-10-16 | In use; brainstorming flow reused for the interview skill; pin the version in the bootstrap (engineer-runtime.md) |
 
 ## Free additions recommended
 
@@ -43,6 +43,37 @@ packaging.md, architecture.md, engineer-intake.md).
 | GitHub template repository | https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-template-repository | "Use this template" copies the repo | GitHub web | 2026-10-16 | Use for clone-and-go |
 | Cloud network secrets | https://code.claude.com/docs/en/cloud-environments | Proxy attaches API key; key never enters the VM | cloud only | 2026-10-16 | Use for any paid API in cloud |
 | Claude Code plan mode + AskUserQuestion | https://code.claude.com/docs/en/best-practices | Read-only plan, 1-4 questions with 2-4 options, plan file, ExitPlanMode gate; AskUserQuestion not available in subagents | local CLI / SDK | 2026-10-16 | Use as intake engine in the main session; do not rely on ExitPlanMode as sole approval record (issues #50176, #30090) |
+
+## Engineer runtime and packaging (engineer-runtime.md)
+
+| Tool | Link | What it does | Where it runs | Verified | Verdict |
+| --- | --- | --- | --- | --- | --- |
+| Claude Code cloud sessions | https://code.claude.com/docs/en/claude-code-on-the-web | Anthropic-hosted VM sessions, no VM charge, plan usage | cloud | 2026-10-16 | Use as the unattended repo worker; no browser logins |
+| Routines | https://code.claude.com/docs/en/routines | Schedule (>=1 h), API `/fire`, GitHub triggers; no approval prompts; research preview | cloud | 2026-10-16 | Use for overnight GitHub-only runs; spike duration |
+| Cloud environments (setup script, network levels) | https://code.claude.com/docs/en/cloud-environments | Network levels, env vars, cached setup script | cloud | 2026-10-16 | Use; Full network for installs, network secrets for keys |
+| Remote Control | https://code.claude.com/docs/en/remote-control | Drive local sessions from phone/web; push notifications; server mode; outbound-only; subscription login only | John's machine/VM | 2026-10-16 | Use for browser logins, monitoring and live approvals; gives up after about 10 min offline; API keys and setup-token unsupported |
+| Claude in Chrome | https://code.claude.com/docs/en/chrome | Uses logged-in Chrome; visible window; local only; off under API-key/setup-token auth | John's machine | 2026-10-16 | Fallback; not unattended-safe per docs |
+| Channels (Telegram/Discord/iMessage) | https://code.claude.com/docs/en/channels | Push events and permission relay into a running local session; sender allowlist; research preview | John's machine/VM | 2026-10-16 | Use for live approvals; needs always-on local process |
+| /loop and scheduled tasks | https://code.claude.com/docs/en/scheduled-tasks | In-session cron, 7-day expiry; Desktop tasks run on your machine | local session | 2026-10-16 | Skip /loop for overnight; Desktop tasks are an alternative on a spare machine |
+| Claude Code GitHub Actions | https://code.claude.com/docs/en/github-actions | Action with cron, uses subscription via OAuth token | GitHub runners | 2026-10-16 | Alternative to routines for CI-bound jobs |
+| claude -p / Agent SDK CLI | https://code.claude.com/docs/en/headless | Official non-interactive Claude Code | VPS/VM/own machine | 2026-10-16 | Use: core of unattended runs; add `--bare` only with API key |
+| claude setup-token | https://code.claude.com/docs/en/authentication | One-year OAuth token from a Max plan for headless auth | any server | 2026-10-16 | Avoid as the VM's primary auth (breaks Remote Control, connectors, Chrome); fine for CI |
+| Claude Agent SDK | https://code.claude.com/docs/en/agent-sdk/overview | Embed Claude Code loop, hooks, MCP in own daemon | local/VM | 2026-10-16 | Use for a custom always-on service if needed; third-party login rules apply |
+| browser-use/bux | https://github.com/browser-use/bux | Claude Code on a $5 Ubuntu VPS with persistent real Chromium, Telegram, hand-off on login walls | VPS | 2026-10-16 | Reference pattern only; not installed; page contains instructions addressed to agents, not followed. Spike before trust |
+| thereisno-tomorrow/claude-vps | https://github.com/thereisno-tomorrow/claude-vps | Hetzner + Tailscale + tmux bootstrap scripts | Hetzner VPS | not opened (search excerpt only) | Reference only; not verified |
+| amineorion/claude-mini-setup | https://github.com/amineorion/claude-mini-setup | Spare Mac, tmux, Tailscale, ntfy hooks | Mac mini | not opened (search excerpt only) | Reference only; not verified |
+| nurkert/claude-systemd | https://github.com/nurkert/claude-systemd | systemd service for Claude Code with Remote Control | Linux | not opened (search excerpt only) | Reference only; not verified |
+| 1Password for Claude | https://1password.com/blog/1password-for-claude | Vault fill without exposing secrets to the model | Mac desktop | 2026-10-16 | Paid; Mac-only; defer; favours a spare Mac if wanted |
+| Dev Container + Claude Code Feature | https://github.com/anthropics/devcontainer-features/tree/main/src/claude-code | 4-line devcontainer.json installs Claude Code; needs Docker or Codespaces (facts from https://code.claude.com/docs/en/devcontainer) | local Docker / Codespaces | 2026-10-16 | Second route; hides Docker only inside Codespaces |
+| Anthropic reference devcontainer | https://github.com/anthropics/claude-code/tree/main/.devcontainer | Dockerfile + iptables firewall + volumes, example only (facts from https://code.claude.com/docs/en/devcontainer) | Docker | 2026-10-16 | Copy as a starting point; not a maintained base |
+| Self-hosted environments | https://code.claude.com/docs/en/self-hosted-environments | Run cloud sessions on own runners | own infra, Team/Enterprise beta | 2026-10-16 | Skip for one Max user |
+| sandbox-runtime | https://github.com/anthropics/sandbox-runtime | Wraps whole Claude process in bubblewrap/Seatbelt, no Docker (facts from https://code.claude.com/docs/en/sandbox-environments) | Linux/macOS | 2026-10-16 | Option for isolation without Docker; beta |
+| Nix flake / Home Manager | https://devopsboys.com/blog/nix-reproducible-devops-environments-guide-2026 | Declarative env | any | not opened (search excerpt only) | Reject for v1 (worker inference; not researched from an opened page) |
+| Ansible | https://docs.ansible.com/ansible/latest/getting_started/introduction.html | Idempotent agentless playbooks | SSH to VM | 2026-10-16 | Later, if multiple hosts |
+| cloud-init | https://docs.cloud-init.io/en/latest | First-boot VPS config | VPS | not opened (search excerpt only) | Optional wrapper that calls bootstrap.sh; unverified |
+| Packer | (no page opened) | Machine images | - | not opened | Reject; not researched beyond name |
+| NanoClaw | https://github.com/nanocoai/nanoclaw | Small TS assistant, Docker container per agent, credential gateway; install via nanoclaw.sh | local/VM, Docker | 2026-10-16 (clone of qwibitai/nanoclaw) | Spike first if a Slack/WhatsApp daemon is needed; Agent SDK claim unverified |
+| Hermes Agent | https://github.com/NousResearch/hermes-agent | MIT Python agent with memory, cron, gateway, 7 execution backends; model-agnostic | local/VPS/serverless | 2026-10-16 | Skip as Claude Code host; not Claude-centric |
 
 ## Reference designs (not installed)
 
