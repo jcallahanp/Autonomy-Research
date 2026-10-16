@@ -1,16 +1,18 @@
 ---
 name: research
-description: Lead workflow for project-development research. Use when the user asks to research something ("research X", "look into X", "find out whether X"), to find or compare tools, libraries, MCP servers or GitHub repos, to work out how two systems connect or integrate, to check whether an approach is feasible or what its edge cases are, or to answer a factual question about a tool or service with a cited source. Scales effort to the question - a one-fact question is answered inline with one tool call; anything broader is split into facets for researcher workers, merged by a synthesizer into research/findings/, and checked by a verifier.
+description: Lead workflow for project-development research. Use when the user asks to research something ("research X", "look into X", "find out whether X"), to find or compare tools, libraries, MCP servers or GitHub repos, to work out how two systems connect or integrate, to check whether an approach is feasible or what its edge cases are, or to answer a factual question about a tool or service with a cited source. Scales effort to the question - a one-fact question is answered inline with at most two content calls; anything broader is split into facets for researcher workers, merged by a synthesizer into research/findings/, and checked by a verifier.
 ---
 
 # Research (lead)
 
-You are the lead. You plan, dispatch, track and report. Workers read pages; you do not.
+You are the lead. You plan, dispatch, track and report. Workers read pages; you do not. The
+only exception is a one-fact question, which you answer yourself under "One-fact questions".
 
 ## Critical steps
 
-1. Classify the brief with the effort table below. A one-fact question: answer it inline with
-   one tool call (see "One-fact questions") and stop. Spawn no workers and write no files.
+1. Classify the brief with the effort table below. A one-fact question: answer it yourself
+   with at most two content calls (see "One-fact questions") and stop. Spawn no workers and
+   write no files.
 2. Otherwise write `research/runs/<slug>/PLAN.md` before anything else.
 3. Spawn one `researcher` worker per facet, all in one turn. Never more than 8 workers per run.
 4. Read only the workers' returns (`PATH:`, `TAKEAWAYS:`, `GAPS:`, `CONFIDENCE:`). Update the
@@ -21,14 +23,15 @@ You are the lead. You plan, dispatch, track and report. Workers read pages; you 
 8. Reply with the findings path, the answer, the verification count, and any Contradictions
    and Gaps.
 
-Never fetch, search or read a source yourself in a multi-facet run. Never let a worker decide
+In every run except a one-fact question, never fetch, search or read a source yourself;
+workers do all of it. Never let a worker decide
 something that must be consistent across facets; you decide it and write it in PLAN.md.
 
 ## Effort table
 
 | Brief shape | Workers | Example | What the lead does |
 | --- | --- | --- | --- |
-| One fact | 0 | "What is the default port of a Redis server?" | One tool call inline, answer with the URL. No PLAN.md. |
+| One fact | 0 | "What is the default port of a Redis server?" | At most two content calls inline, answer with the URL. No PLAN.md. |
 | One focused question that needs several pages | 1 | "How does DeepWiki handle private repos?" | One worker, full loop. |
 | Comparison, or a few distinct angles | 2-4 | "Exa vs Parallel Search for repo discovery" | One worker per option or criterion. |
 | Landscape or enumeration | 5 | "Which MCP servers exist for browser automation?" | One worker per cluster. |
@@ -39,24 +42,31 @@ If two facets would share sources, merge them.
 
 ### One-fact questions
 
-Make one tool call. If you know the exact URL of the primary page, fetch it with a pointed
-prompt ("Quote the sentence that states <fact>"): WebFetch, or `mcp__Parallel_Search__web_fetch`
-with an objective. Do not guess deep documentation paths; if you are not sure of the URL, make
-one search instead (`mcp__Parallel_Search__web_search`, else `mcp__Exa__web_search_exa`, else
-WebSearch). Answer in one to three sentences with the URL. If the answer rests on a search
-excerpt rather than an opened page, say so.
+This is the one rule for the one-fact path; every other mention points here.
 
-If that call is denied or fails before returning content (permission refused, 404, 403, 429),
-you may make one replacement call with a different tool or URL. Never more than two calls.
-If the fact is still not settled, give what you found, mark anything from memory as uncited,
-and offer a full run.
+- You may make at most two content calls: searches or fetches. ToolSearch and Skill calls do
+  not count.
+- Make the first call a search (`mcp__Parallel_Search__web_search`, else
+  `mcp__Exa__web_search_exa`, else WebSearch), or a fetch of a canonical URL you know exactly,
+  such as a repo's root page or a file at a known path in it. Never guess a deep documentation
+  path. Fetch with a pointed prompt ("Quote the sentence that states <fact>").
+- Make a second call only to open the page the first one pointed to, or to replace a first
+  call that returned no content (denied, 404, 403, 429).
+- Hold only that one result. Answer in one to three sentences with the URL. If the answer rests
+  on a search excerpt rather than an opened page, say so.
+- If the fact is still not settled, give what you found, mark anything from memory as uncited,
+  and offer a full run.
 
 ## Step details
 
 ### 1. Plan
 
-Pick a slug: lowercase words joined by hyphens, under 50 characters, naming the question
-(`exa-vs-parallel-discovery`). If `research/findings/<slug>.md` or `research/runs/<slug>/`
+Slugs: the run slug names the question and each facet slug names its facet. Both are
+lowercase ASCII letters, digits and single hyphens, at most 40 characters, with no leading or
+trailing hyphen (`exa-vs-parallel-discovery`, `pricing-limits`). Every facet's note lives at
+`research/runs/<slug>/notes/<facet-slug>.md`; facet slugs are unique within a run.
+
+If `research/findings/<slug>.md` or `research/runs/<slug>/`
 exists and the user did not ask to update it, choose a different slug. When updating, give the
 synthesizer the existing findings path as background.
 
@@ -79,8 +89,8 @@ Tools: <available search/fetch connectors, or the fallback line>
 Rulings: <terms, scope limits and decisions every worker must share>
 
 ## Facets
-- [ ] <facet> - notes/<facet>.md - pending
-- [ ] <facet> - notes/<facet>.md - pending
+- [ ] <facet title> - notes/<facet-slug>.md - pending
+- [ ] <facet title> - notes/<facet-slug>.md - pending
 
 ## Gap round
 - not run
@@ -107,7 +117,7 @@ Key questions:
 Suggested sources: <primary docs, repos, registries to try first>
 Constraints: <dates, versions, scope from the brief; the Rulings line from PLAN.md>
 Tools: <"Parallel Search and Exa available" or "Connectors missing: use WebSearch and WebFetch">
-Note path: research/runs/<slug>/notes/<facet>.md
+Note path: research/runs/<slug>/notes/<facet-slug>.md
 Today: <YYYY-MM-DD>
 Write the note in the schema at <path to this skill>/note-schema.md, then return only
 PATH:, TAKEAWAYS: (at most 5 bullets), GAPS:, CONFIDENCE: high|medium|low.
@@ -115,11 +125,11 @@ PATH:, TAKEAWAYS: (at most 5 bullets), GAPS:, CONFIDENCE: high|medium|low.
 
 ### 3. Track and fill gaps
 
-For each return, change the facet's line in PLAN.md to `- [x] <facet> - notes/<facet>.md -
-<CONFIDENCE> - <GAPS in a few words>`. Keep only the four-field returns in your context.
+For each return, change the facet's line in PLAN.md to `- [x] <facet title> -
+notes/<facet-slug>.md - <CONFIDENCE> - <GAPS in a few words>`. Keep only the four-field returns in your context.
 
 Run a gap round only when a gap would leave the main question unanswered. Spawn the gap workers
-in one turn, each with a new facet and note path, and write them under "## Gap round" in
+in one turn, each with a new facet slug and note path, and write them under "## Gap round" in
 PLAN.md. Before spawning, write in your reply: "After these workers return, I go straight to
 synthesis." There is never a second gap round.
 
@@ -133,8 +143,8 @@ Plan: research/runs/<slug>/PLAN.md
 Question: <the full question this findings file answers>
 Earlier findings to build on: <path, or "none">
 Output: research/findings/<slug>.md, in the shape of research/findings/_FORMAT.md
-Return: PATH:, a one-line answer, the count of claims dropped for lack of a URL, and the
-Contradictions it recorded, in at most 10 lines.
+Return: PATH:, ANSWER: (up to 5 sentences), DROPPED: (count of claims without an opened
+URL), CONTRADICTIONS: (one line each), in at most 12 lines.
 ```
 
 ### 5. Verify
@@ -144,7 +154,8 @@ Spawn one `verifier` (`research-agent:verifier` when installed):
 ```
 Findings file: research/findings/<slug>.md
 Index: research/findings/INDEX.md
-Title: <short title>   One-line answer: <from the synthesizer>   Date: <YYYY-MM-DD>
+Title: <short title>   One-line answer: <first sentence of the synthesizer's ANSWER>
+Date: <YYYY-MM-DD>
 Return: sample size, verified count, unverified count, and the INDEX line you wrote.
 ```
 
@@ -152,7 +163,8 @@ Update the Outputs lines in PLAN.md.
 
 ### 6. Report
 
-Reply to the user with: the findings path; the answer in three to five sentences; "Verified
+Reply to the user with: the findings path; the synthesizer's ANSWER, relayed as returned
+(do not open the findings file to write it); "Verified
 <n> of <m> sampled claims"; every Contradiction the synthesizer recorded; and the open Gaps.
 Add any question the run could not answer to `research/open-questions.md`.
 
@@ -161,7 +173,8 @@ Add any question the run could not answer to `research/open-questions.md`.
 - `PLAN.md`, `research/findings/INDEX.md`, one status line per facet, and the latest worker
   returns.
 - Never a fetched page, a raw search result, a note, or a full findings file. If you need
-  something from one, spawn a worker to read it and return a short summary.
+  something from one, spawn a worker to read it and return a short summary. The one exception
+  is the single result of a one-fact question (see "One-fact questions").
 - After a compaction, re-read `PLAN.md` and `INDEX.md` before acting. Trust them over your
   recollection.
 - Keep your own model and effort for the whole run.
@@ -178,8 +191,8 @@ Add any question the run could not answer to `research/open-questions.md`.
 
 - When a brief has more than one independent facet, the lead shall spawn one worker per facet
   and shall not fetch sources itself.
-- When a brief asks for one fact, the lead shall answer it inline with one tool call, or two
-  if the first returns no content, and shall spawn no workers.
+- When a brief asks for one fact, the lead shall answer it inline with at most two content
+  calls, not counting ToolSearch or Skill, and shall spawn no workers.
 - When the lead plans a run, it shall write `research/runs/<slug>/PLAN.md` before spawning any
   worker.
 - When workers return gaps, the lead shall run at most one gap-filling round.

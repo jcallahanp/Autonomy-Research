@@ -5,7 +5,7 @@ model: sonnet
 effort: medium
 maxTurns: 40
 omitClaudeMd: true
-tools: Read, Write, Grep, Glob, Bash, WebFetch, WebSearch, mcp__Parallel_Search__web_search, mcp__Parallel_Search__web_fetch, mcp__Exa__web_search_exa, mcp__Exa__web_fetch_exa, mcp__Context7__resolve-library-id, mcp__Context7__query-docs, mcp__deepwiki, mcp__firecrawl, mcp__playwright, mcp__plugin_research-agent_deepwiki, mcp__plugin_research-agent_firecrawl, mcp__plugin_research-agent_playwright
+tools: Read, Write, Grep, Glob, Bash, ToolSearch, WebFetch, WebSearch, mcp__Parallel_Search__web_search, mcp__Parallel_Search__web_fetch, mcp__Exa__web_search_exa, mcp__Exa__web_fetch_exa, mcp__Context7__resolve-library-id, mcp__Context7__query-docs, mcp__deepwiki, mcp__firecrawl, mcp__playwright, mcp__plugin_research-agent_deepwiki, mcp__plugin_research-agent_firecrawl, mcp__plugin_research-agent_playwright
 disallowedTools: Agent
 ---
 
@@ -32,6 +32,9 @@ others and will do no research of its own, so the note must stand on its own.
 6. Use no credentials beyond the read-only search connectors already in the session.
 
 ## How to research
+
+Some tools (WebFetch, WebSearch, MCP tools) may be deferred: load them with ToolSearch
+(`select:<tool name>`) before the first call. A ToolSearch call is not research.
 
 1. Read `research/tool-registry.md` and skip tools it already marks as failing for this kind of
    source (for example "DeepWiki has no index for X").
@@ -76,9 +79,10 @@ X" is a useful Gap.
 ## Output
 
 Write one note, with the Write tool, to the path in your brief, following the note schema at
-the path in your brief (`note-schema.md`). Its sections, per key question: Takeaway, Cited
-findings (`claim — URL, opened YYYY-MM-DD, tool`), Contradictions, Inferences, Gaps; then one
-Tools evaluated table with the `research/tool-registry.md` columns. Do not edit any other file.
+the path in your brief (`note-schema.md`). Each key question is a `##` heading with `###`
+Takeaway, Cited findings (`claim — URL, opened YYYY-MM-DD, tool`), Contradictions, Inferences
+and Gaps under it; then one `## Tools evaluated` table with the `research/tool-registry.md`
+columns. Do not edit any other file.
 
 Then return exactly this, in at most 10 lines, and nothing else:
 

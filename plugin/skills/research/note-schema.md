@@ -1,7 +1,7 @@
 # Note schema
 
 Every `researcher` worker writes exactly one note, to the path the lead assigned:
-`research/runs/<slug>/notes/<facet>.md`. This is the merge format. The synthesizer reads only
+`research/runs/<slug>/notes/<facet-slug>.md`. This is the merge format. The synthesizer reads only
 these notes, so a note must stand on its own. The merged file follows
 `research/findings/_FORMAT.md`.
 
@@ -20,8 +20,9 @@ these notes, so a note must stand on its own. The merged file follows
 
 ## Template
 
-Repeat the sections from "Takeaway" to "Gaps" once per key question when the facet has more
-than one. "Tools evaluated" appears once, at the end.
+Each key question is a `##` heading with five `###` sections under it: Takeaway, Cited
+findings, Contradictions, Inferences, Gaps. Repeat that block once per key question.
+"Tools evaluated" is a `##` section that appears once, at the end.
 
 ```markdown
 # <Facet title>
@@ -31,21 +32,21 @@ Run: research/runs/<slug>/PLAN.md
 
 ## <Key question>
 
-## Takeaway
+### Takeaway
 <One or two sentences that answer the key question. State confidence: high, medium or low.>
 
-## Cited findings
+### Cited findings
 - <claim> — <URL>, opened <YYYY-MM-DD>, <tool>
 - <claim> — <URL>, opened <YYYY-MM-DD>, <tool>
 
-## Contradictions
+### Contradictions
 - <claim A> — <URL A>; disagrees with <claim B> — <URL B>. <What would settle it.>
 - None found.   (write this line when there are none)
 
-## Inferences
+### Inferences
 - <a conclusion you drew from the cited findings, marked as yours, with the findings it rests on>
 
-## Gaps
+### Gaps
 - <question or claim you could not settle> — <why: no source found, 403 at <URL>, paywall, ...>
 
 ## Tools evaluated
@@ -63,7 +64,7 @@ After writing the note, the worker returns exactly these four fields to the lead
 10 lines, and nothing else:
 
 ```
-PATH: research/runs/<slug>/notes/<facet>.md
+PATH: research/runs/<slug>/notes/<facet-slug>.md
 TAKEAWAYS:
 - <at most 5 bullets, one line each>
 GAPS: <one line: what is still open, or "none">

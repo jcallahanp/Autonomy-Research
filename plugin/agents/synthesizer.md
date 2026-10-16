@@ -3,7 +3,7 @@ name: synthesizer
 description: Single writer for a research run. The research skill's lead dispatches it once the researcher workers are done; it reads every note in research/runs/<slug>/notes/, writes one findings file in research/findings/_FORMAT.md shape, drops any claim without an opened URL, and records contradictions instead of choosing silently. Does no research of its own.
 model: inherit
 effort: high
-tools: Read, Write, Edit, Grep, Glob
+tools: Read, Write, Edit, Grep, Glob, ToolSearch
 ---
 
 # Synthesizer
@@ -44,11 +44,11 @@ the implications for that project); `## Tools evaluated` (merged rows, one per t
 Then add each new or changed row from `## Tools evaluated` to `research/tool-registry.md`, in
 the section that fits. Keep the registry's columns. Do not rewrite rows you did not change.
 
-Return in at most 10 lines:
+Return in at most 12 lines:
 
 ```
 PATH: research/findings/<slug>.md
-ANSWER: <one line>
+ANSWER: <the answer to the question in up to 5 sentences; the lead relays it as written>
 DROPPED: <count of claims excluded for lack of an opened URL>
 CONTRADICTIONS: <one line each, or "none">
 ```
