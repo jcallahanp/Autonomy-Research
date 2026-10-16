@@ -167,5 +167,20 @@ class LoopTelegram(unittest.TestCase):
                           if "not understood" in (e.get("detail") or {}).get("text", "")])
 
 
+    def test_plan_tag_push_retried_each_pass(self):
+        """approve-plan exit 75 left plan-approved-1 unpushed: the next pass pushes it and clears the marker."""
+        self.rig.state_dir.mkdir(parents=True, exist_ok=True)
+        marker = self.rig.state_dir / "plan-tags.pending"
+        marker.write_text("plan-approved-1\n")
+        testlib.stub(self.rig.root, "approve-plan", "exit 75")
+        (self.rig.rt / "apply-replies.py.out").write_text(json.dumps(
+            {"item": 4, "kind": "plan", "answer": "yes", "ref": None, "project": "demo"}))
+        self.run_ok(DAY)
+        self.assertIn("demo: plan approval for item 4 is live; the records push is pending", self.sent())
+        self.assertFalse(marker.exists())
+        rec = Path(self.rig.conf["RECORDS_DIR"]) / "demo"
+        self.assertIn(f"agent-run push-branch {rec} engineer-records --tag plan-approved-1", self.rig.argv())
+
+
 if __name__ == "__main__":
     unittest.main()

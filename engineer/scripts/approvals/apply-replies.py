@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Apply John's Telegram replies and T1 timeouts to the open approval items of every project.
 
-Usage: apply-replies.py --events E --records R [--events E2 --records R2 ...] --now ISO [--timeout-hours H]
+Usage: apply-replies.py --events E --records R [--events E2 --records R2 ...] [--read-records F ...] --now ISO
+       [--timeout-hours H]
 One --events/--records pair per project (STATE_DIR/<p>/events.jsonl, RECORDS_DIR/<p>/decisions/approvals.jsonl).
 Item numbers are global across projects, so each reply is parsed once against every project's open items
 and each decision is recorded in its own project's records file: a reply never answers another project's
@@ -12,7 +13,10 @@ Prints each applied decision as a JSON line {item, kind, answer, ref, project, t
 An edited message is ignored. A message that does not parse approves nothing and adds one T1 "not
 understood" ask to the first project. An item asked after a message was sent is not open to that message;
 `N y|n` needs N in a digest or notice John was sent before the message; `all y|n` covers only the reversible
-T1 items the last digest sent before the message listed (a `digest` event's detail.items).
+T1 items the last digest of each project sent before the message listed (a `digest` event's detail.items).
+A record in STATE_DIR/<p>/approvals.pending.jsonl (kept while there is no records clone) counts as answered,
+and so does one in a --read-records file (a records clone's file while new records go to the pending file;
+item numbers are global, so these are read for every project).
 """
 import argparse
 import json
@@ -67,13 +71,14 @@ def _messages(stream):
 
 
 class Applier:
-    def __init__(self, pairs: list, now: str):
+    def __init__(self, pairs: list, now: str, read=()):
         self.now, self.pairs = now, [(Path(e), Path(r)) for e, r in pairs]
         self.events, self.open, dup = [], {}, set()
+        extra = [r for path in read for r in items.read_jsonl(path)]
         for i, (ev_path, rec_path) in enumerate(self.pairs):
             evs = items.read_jsonl(ev_path)
             self.events += evs
-            for n, it in items.open_items(evs, items.read_jsonl(rec_path), now).items():
+            for n, it in items.open_items(evs, items.answers(ev_path, rec_path) + extra, now).items():
                 if n in self.open:
                     dup.add(n)
                 self.open[n] = {**it, "pair": i}
@@ -142,12 +147,13 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description="Apply Telegram replies and T1 timeouts.")
     ap.add_argument("--events", required=True, action="append")
     ap.add_argument("--records", required=True, action="append")
+    ap.add_argument("--read-records", action="append", default=[])
     ap.add_argument("--now", required=True)
     ap.add_argument("--timeout-hours", type=float, default=None)
     a = ap.parse_args(argv)
     if len(a.events) != len(a.records):
         ap.error("give one --records per --events")
-    app = Applier(list(zip(a.events, a.records)), a.now)
+    app = Applier(list(zip(a.events, a.records)), a.now, a.read_records)
     out = []
     for msg in _messages(sys.stdin):
         out += app.reply(msg)

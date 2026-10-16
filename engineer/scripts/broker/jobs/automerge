@@ -34,14 +34,16 @@ fi
 tok=$(secret GH_BOT_PAT)
 [ -n "$tok" ] || die 1 "GH_BOT_PAT is empty"
 view=$(GH_TOKEN=$tok gh pr view "$pr" --repo "$P_REPO" \
-  --json title,files,reviews,headRefOid,state,mergeCommit,autoMergeRequest) || die 1 "gh pr view failed"
+  --json title,files,reviews,headRefOid,state,mergeCommit,mergedBy,autoMergeRequest) || die 1 "gh pr view failed"
 head=$(jq -r '.headRefOid // ""' <<<"$view")
 [[ "$head" =~ ^[0-9a-f]{40}$ ]] || die 1 "gh gave no head commit"
 state=$(jq -r '.state // ""' <<<"$view")
 
 if [ "$state" = MERGED ]; then
   jq -cn --arg h "$head" --arg m "$(jq -r '.mergeCommit.oid // ""' <<<"$view")" \
-    '{merged: true, head: $h, merge_commit: (if $m == "" then null else $m end), auto_merge: false}'
+    --arg by "$(jq -r '.mergedBy.login // ""' <<<"$view")" \
+    '{merged: true, head: $h, merge_commit: (if $m == "" then null else $m end),
+      merged_by: (if $by == "" then null else $by end), auto_merge: false}'
   exit 0
 fi
 if [ "$state" = CLOSED ]; then

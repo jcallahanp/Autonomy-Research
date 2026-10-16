@@ -8,13 +8,28 @@ from supervisor import nightwin, run_status
 
 
 def _outcomes(events: list) -> dict:
-    """Last outcome per task: {task_id: detail of its last `audit` event with a status}."""
+    """Last outcome per task: {task_id: detail of its last `audit` event with a status, or of its `merge`
+    event with detail.merged (its `note`, e.g. a merge John made himself, is shown under Done)}."""
     last = {}
     for e in events:
         detail = e.get("detail") or {}
-        if e["event"] == "audit" and e.get("task_id") and detail.get("status"):
-            last[e["task_id"]] = detail
+        if e.get("task_id") and ((e["event"] == "audit" and detail.get("status"))
+                                 or (e["event"] == "merge" and detail.get("merged") is True)):
+            last[e["task_id"]] = {"note": detail.get("note")} if e["event"] == "merge" else detail
     return last
+
+
+def _pr_line(e: dict) -> str | None:
+    """One Pull requests line for a pr_open or merge event; None for any other event."""
+    d, tid = e.get("detail") or {}, e.get("task_id")
+    if e["event"] == "pr_open":
+        return f"- {tid}: {d.get('url', d.get('number'))}"
+    if e["event"] != "merge":
+        return None
+    if d.get("merged") is True:
+        commit = str(d.get("merge_commit") or e.get("head_sha") or "")[:12]
+        return f"- {tid}: merged" + (f" at {commit}" if commit else "") + (f" ({d['note']})" if d.get("note") else "")
+    return f"- {tid}: auto-merge on" + (f" (tier {d['tier']})" if d.get("tier") is not None else "")
 
 
 def open_t1(events: list) -> int:
@@ -42,26 +57,18 @@ def render(events: list, run_status: dict) -> str:
     reason = (run_status or {}).get("reason")
     out = [f"# Morning report: {project}" + (f", night of {night}" if night else ""), "",
            f"State: **{state}**" + (f" - {reason}" if reason else ""), ""]
-    outcomes = _outcomes(events)
-    by = {s: [t for t, d in outcomes.items() if d["status"] == s]
-          for s in ("done", "in_review", "blocked", "needs_john")}
+    outcomes, st = _outcomes(events), _events.state(events)  # a task is done only once its PR merged
+    order = list(outcomes)
 
-    def noted(tid):
-        note = outcomes[tid].get("reason")
-        return f"- {tid}: {note}" if note else f"- {tid}"
+    def tasks(key, field=None):
+        notes = {t: outcomes[t].get(field) if field else None for t in order}
+        return [f"- {t}: {notes[t]}" if notes[t] else f"- {t}" for t in order if t in st[key]]
 
-    out += _section("Done", [f"- {t}" for t in by["done"]])
-    out += _section("In review (PR open, waiting for the merge)", [f"- {t}" for t in by["in_review"]])
-    out += _section("Blocked", [noted(t) for t in by["blocked"]])
-    out += _section("Needs John", [noted(t) for t in by["needs_john"]])
-    prs = []
-    for e in events:
-        d = e.get("detail") or {}
-        if e["event"] == "pr_open":
-            prs.append(f"- {e.get('task_id')}: {d.get('url', d.get('number'))}")
-        elif e["event"] == "merge":
-            prs.append(f"- {e.get('task_id')}: auto-merge on (tier {d.get('tier')})")
-    out += _section("Pull requests", prs)
+    out += _section("Done", tasks("done", "note"))
+    out += _section("In review (PR open, waiting for the merge)", tasks("in_review"))
+    out += _section("Blocked", tasks("blocked", "reason"))
+    out += _section("Needs John", tasks("needs_john", "reason"))
+    out += _section("Pull requests", [x for x in map(_pr_line, events) if x])
     denials = Counter((e.get("detail") or {}).get("kind", "unknown") for e in events if e["event"] == "denial")
     out += _section("Denials", [f"- {k}: {n}" for k, n in sorted(denials.items())])
     cost = sum(e.get("cost_usd") or 0 for e in events if e["event"] == "task_end")

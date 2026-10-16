@@ -29,6 +29,7 @@ GATES = {"money": "money", "delete": "delete_data", "appstore": "store_submissio
 SECTION = "## Asks for John"
 MAX_TEXT, MAX_NEW, MAX_BYTES = 300, 5, 1 << 20
 STOPPED_EXIT = 75  # run-task's exit when the kill switch stopped the run
+TAG_STALE_HOURS = 12
 
 
 def stopped(result: dict) -> bool:
@@ -176,7 +177,21 @@ def unblocked(evs: list) -> set:
 
 
 def records_health(c) -> None:
-    """Retry a failed engineer-records push; tell John once per distinct failure."""
+    """Retry a failed engineer-records push; tell John once per distinct failure, and once per set of
+    plan-approved tags still unpushed after TAG_STALE_HOURS (STATE_DIR/<p>/plan-tags.pending, approve-plan)."""
+    try:
+        names = " ".join((c.dir / "plan-tags.pending").read_text().split())[:120]
+    except OSError:
+        names = ""
+    seen, key = c.dir / "plan-tags.seen", "plan-tags:" + _hash(names)  # seen: "<key> <first pass that saw it>"
+    old = seen.read_text().split() if names and seen.is_file() else []
+    if names and (len(old) != 2 or old[0] != key):
+        old = [key, str(c.now.timestamp())]
+        seen.write_text(" ".join(old) + "\n")
+    age_h = (c.now.timestamp() - float(old[1])) / 3600 if names else 0
+    if age_h >= TAG_STALE_HOURS:
+        note(c, None, key, f"engineer-records for {c.name}: the plan approval tag(s) {names} are not pushed "
+             f"after {int(age_h)} h; the supervisor retries each pass. Check the broker.")
     run = lambda a: commands.agent_run(c.conf, *a)  # noqa: E731
     if records.retry_push(c.conf["RECORDS_DIR"], c.name, run):
         return

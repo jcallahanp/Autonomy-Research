@@ -24,6 +24,7 @@ view() {  # view REVIEWS_JSON [STATE] [MERGE_COMMIT_OID] [AUTO_MERGE_REQUEST_JSO
   jq -n --arg h "$HEAD" --argjson r "$1" --arg st "${2:-OPEN}" --arg m "${3:-}" --argjson am "${4:-null}" \
     '{title: "feat: t1", headRefOid: $h, reviews: $r, state: $st, autoMergeRequest: $am,
       mergeCommit: (if $m == "" then null else {oid: $m} end),
+      mergedBy: (if $st == "MERGED" then {login: "jcallahanp"} else null end),
       files: [{path: "src/a.py", additions: 3, deletions: 1, extra: true}]}' > "$T/view.json"
 }
 merges() { grep -c '^gh pr merge' "$T/argv.log" || true; }
@@ -36,7 +37,7 @@ expect 0 "tier 1" run demo 7 "$HEAD"
 jq -e '.tier == 1 and .auto_merge == true' "$T/out" >/dev/null || fail "tier 1 output: $(cat "$T/out")"
 grep -q "^gh pr merge 7 --auto --squash --repo owner/demo --match-head-commit $HEAD" "$T/argv.log" \
   || fail "merge call: $(grep '^gh pr merge' "$T/argv.log")"
-grep -q '^gh pr view 7 --repo owner/demo --json title,files,reviews,headRefOid,state,mergeCommit,autoMergeRequest' \
+grep -q '^gh pr view 7 --repo owner/demo --json title,files,reviews,headRefOid,state,mergeCommit,mergedBy,autoMergeRequest' \
   "$T/argv.log" || fail "view call"
 jq -e '.title == "feat: t1" and .files == [{"path": "src/a.py", "additions": 3, "deletions": 1}]' "$T/tier-in.json" \
   >/dev/null || fail "merge-tier input: $(cat "$T/tier-in.json")"
@@ -103,7 +104,7 @@ expect 64 "no sha" run demo 7
 # A merged PR reports its merge commit and is not merged again; a closed one never merges.
 view '[]' MERGED 3333333333333333333333333333333333333333
 expect 0 "merged PR" run demo 7 "$HEAD"
-jq -e '.merged == true and .merge_commit == "3333333333333333333333333333333333333333"' "$T/out" >/dev/null \
+jq -e '.merged == true and .merge_commit == "3333333333333333333333333333333333333333" and .merged_by == "jcallahanp"' "$T/out" >/dev/null \
   || fail "merged output: $(cat "$T/out")"
 view '[]' CLOSED
 expect 3 "closed PR" run demo 7 "$HEAD"

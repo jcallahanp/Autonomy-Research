@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Telegram digest text: one numbered line per open T1 item, and a separate message per T2 hard gate.
 
-CLI (run by the supervisor): digest.py --events E --records R --now ISO [--max-open N] [--json-object]
-prints a JSON list of message strings: each open T2 item first, then the T1 digest. With --json-object it
+CLI (run by the supervisor): digest.py --events E --records R [--read-records F ...] --now ISO [--max-open N]
+[--json-object] prints a JSON list of message strings: each open T2 item first, then the T1 digest. With --json-object it
 prints {"messages": [...], "shown": [item, ...]}: the T1 items the digest lists, which `all y` may cover.
+An answer in R, in STATE_DIR/<p>/approvals.pending.jsonl (next to E) or in a --read-records file closes its item.
 """
 import argparse
 import json
@@ -70,11 +71,13 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--events", required=True)
     ap.add_argument("--records", required=True)
+    ap.add_argument("--read-records", action="append", default=[])
     ap.add_argument("--now", required=True)
     ap.add_argument("--max-open", type=int, default=None)
     ap.add_argument("--json-object", action="store_true")
     a = ap.parse_args(argv)
-    open_ = _items.open_items(_items.read_jsonl(a.events), _items.read_jsonl(a.records), a.now)
+    answered = _items.answers(a.events, a.records) + [r for f in a.read_records for r in _items.read_jsonl(f)]
+    open_ = _items.open_items(_items.read_jsonl(a.events), answered, a.now)
     max_open = a.max_open if a.max_open is not None else _max_open_default()
     msgs = [render_t2(it) for it in _oldest_first(open_) if it.get("tier") == "T2"]
     msgs += render(open_, max_open)

@@ -95,5 +95,24 @@ class Digest(unittest.TestCase):
             self.assertIn("+2 more in the next digest", doc["messages"][-1])
 
 
+    def test_cli_pending_answers_count(self):
+        """A reply kept in STATE_DIR/<p>/approvals.pending.jsonl (no records clone) closes its item too."""
+        with tempfile.TemporaryDirectory() as tmp:
+            ev, rec = Path(tmp) / "events.jsonl", Path(tmp) / "records" / "approvals.jsonl"
+            ev.write_text("".join(json.dumps(
+                {"ts": f"2026-10-16T0{n}:00:00Z", "project": "demo", "event": "approval_ask",
+                 "detail": {"item": n, "tier": "T1", "kind": "other", "text": f"ask {n}", "default": "no",
+                            "reversible": True, "ref": None}}) + "\n" for n in (1, 2)))
+            (Path(tmp) / "approvals.pending.jsonl").write_text(json.dumps({"item": "1", "answer": "yes"}) + "\n")
+            clone = Path(tmp) / "clone.jsonl"  # the records clone's file, read only while replies go to pending
+            clone.write_text(json.dumps({"item": "2", "answer": "no"}) + "\n")
+            cmd = [sys.executable, str(REPO / "engineer/scripts/approvals/digest.py"), "--events", str(ev),
+                   "--records", str(rec), "--now", "2026-10-16T09:30:00Z", "--json-object"]
+            out = subprocess.run(cmd, capture_output=True, text=True, check=True)
+            self.assertEqual(json.loads(out.stdout)["shown"], [2])
+            out = subprocess.run(cmd + ["--read-records", str(clone)], capture_output=True, text=True, check=True)
+            self.assertEqual(json.loads(out.stdout)["shown"], [])
+
+
 if __name__ == "__main__":
     unittest.main()

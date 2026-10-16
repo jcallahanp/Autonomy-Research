@@ -94,7 +94,7 @@ def build(conf: dict, a: dict, profiles: dict, task: dict, wt: Path) -> tuple:
     p = profiles[profile]
     limit = ["timeout", "--kill-after=30s", f"{int(p['timeout_minutes'])}m"]
     if profile == "check":  # task: {"check"}, wt: the clean checkout, a["tmp"]: its scratch dir
-        return limit + check.sandbox(["bash", "-c", task["check"]], wt, a["tmp"], a["home"], a["bwrap"])
+        return limit + check.sandbox(["bash", "-c", task["check"]], wt, a["tmp"], a["bwrap"], a["spec"])
     prompt = (ROOT / "templates" / "prompts" / f"{profile}.md").read_text()
     prompt = prompt.replace("{{TASK_ID}}", task_id).replace("{{PROJECT}}", project)
     argv = limit + ["claude", "-p", prompt, "--plugin-dir", str(ROOT / "plugin"), "--agent", p["agent"],
@@ -126,14 +126,20 @@ def run_check(conf: dict, a: dict, profiles: dict, row: dict, clone: Path) -> in
     except ValueError as e:
         raise Refuse(65, str(e))
     env = child_env(conf, project, task_id)
-    a.update(home=env["HOME"], bwrap=check.bwrap(ROOT), tmp="<tmp>")
+    wt = Path(conf["PROJECTS_DIR"]) / f"{project}.wt" / task_id  # its untracked dependency dirs, read-only
+    a.update(bwrap=check.bwrap(ROOT), tmp="<tmp>")
     if a["dry_run"]:
+        a["spec"] = check.spec(conf, clone, wt, "<checkout>", env["HOME"])
+        env.update(check.env(conf, "<tmp>"))
         print(json.dumps({"argv": build(conf, a, profiles, task, "<checkout>"), "cwd": "<checkout>", "env": env,
                           "sha": sha}))
         return 0
     base = worktree.base_ref(clone, row["default"])
     with check.checkout(clone, sha) as (co, scratch):
-        a["tmp"], env["TMPDIR"] = str(scratch), str(scratch)
+        a["spec"] = check.spec(conf, clone, wt, co, env["HOME"])
+        check.place(a["spec"], a["bwrap"])
+        a["tmp"] = str(scratch)
+        env.update(check.env(conf, scratch))
         res = run("check", build(conf, a, profiles, task, co), co, env, base)
     if not a["bwrap"]:
         print(check.WARNING, file=sys.stderr)

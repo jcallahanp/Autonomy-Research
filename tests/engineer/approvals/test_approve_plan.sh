@@ -6,7 +6,11 @@ set -euo pipefail
 . "$(dirname "$0")/../lib.sh"
 
 root=$(mk_root "$T")
-stub "$root" agent-run 'exit 0'
+ASKED=1234567123456712345671234567123456789abc  # the PR head sha every plan ask below carries
+# agent-run: pr-head prints $T/pr-head.json (the PR's head now); push-branch exits with $T/push.rc (default 0).
+stub "$root" agent-run "case \"\$1\" in pr-head) cat '$T/pr-head.json' ;; push-branch) exit \$(cat '$T/push.rc' 2>/dev/null || echo 0) ;; esac"
+head_now() { printf '{"number": 3, "state": "%s", "head_sha": "%s"}\n' "${2:-OPEN}" "$1" > "$T/pr-head.json"; }
+head_now "$ASKED"
 state="$T/var/lib/engineer"
 proj="$T/home/engineer/projects/demo"
 rec="$T/var/lib/engineer/records/demo"
@@ -42,6 +46,11 @@ open(ev, "a").write(json.dumps({"ts": "2026-10-16T07:00:00Z", "project": "demo",
 PY
 }
 # said_yes N: John's yes for item N in the records clone's approvals.jsonl.
+# said_yes_pending N: John's yes kept in STATE_DIR/demo/approvals.pending.jsonl (no records clone at the time).
+said_yes_pending() {
+  printf '{"ts": "2026-10-16T08:00:00Z", "item": "%s", "tier": "T1", "kind": "plan", "ask": "a", "answer": "yes", "source": "telegram"}\n' "$1" \
+    >> "$state/demo/approvals.pending.jsonl"
+}
 said_yes() {
   mkdir -p "$rec/decisions"
   printf '{"ts": "2026-10-16T08:00:00Z", "item": "%s", "tier": "T1", "kind": "plan", "ask": "a", "answer": "yes", "source": "telegram"}\n' "$1" \
@@ -75,6 +84,7 @@ git -C "$rec" rev-parse -q --verify refs/tags/plan-approved-1 >/dev/null || fail
 [ -z "$(git -C "$rec" status --porcelain)" ] || fail "records clone left dirty"
 grep -qx "agent-run push-branch $rec engineer-records --tag plan-approved-1" "$T/argv.log" \
   || fail "push-branch not called with --tag plan-approved-1: $(cat "$T/argv.log")"
+grep -qx "agent-run pr-head demo 3" "$T/argv.log" || fail "the PR head was not read again on yes"
 
 # --- v3 approved from a PR review: scope_version is the plan version, not previous + 1.
 store 3; plan_ask 2 3
@@ -101,7 +111,17 @@ refused "unknown item" demo --record-id tg-14 --item 99 --by John --source pr
 rc=0; ap demo --record-id tg-15 --by John --source pr 2>/dev/null || rc=$?; [ "$rc" -ne 0 ] || fail "missing --item accepted"
 store 7 '[]'; plan_ask 8 7; refused "test_empty_hard_gates_refused" demo --record-id x --item 8 --by John --source pr
 grep -q 'hard_gates is empty' "$T/err" || fail "empty gates: $(cat "$T/err")"
-store 8; plan_ask 9 8
+# test_head_moved_after_ask_refused: John saw commit ASKED; the PR head is another commit now.
+store 8; plan_ask 9 8; said_yes 9
+head_now "fedcba9876543210fedcba9876543210fedcba98"
+refused "test_head_moved_after_ask_refused" demo --record-id tg-16 --item 9 --by John --source telegram
+grep -q 'moved' "$T/err" || fail "head moved: $(cat "$T/err")"
+head_now "$ASKED" CLOSED
+refused "closed PR" demo --record-id tg-16 --item 9 --by John --source telegram
+printf 'not json\n' > "$T/pr-head.json"
+rc=0; ap demo --record-id tg-16 --item 9 --by John --source telegram 2>/dev/null >&2 || rc=$?
+[ "$rc" -ne 0 ] || fail "approved without reading the PR head"
+head_now "$ASKED"
 refused "bad name" Bad_Name --record-id x --item 9 --by John --source pr
 refused "unlisted project" other --record-id x --item 9 --by John --source pr
 refused "bad source" demo --record-id x --item 9 --by John --source email
@@ -117,8 +137,16 @@ git -C "$rec" rm -q approvals/demo/v8/docs/plan/requirements.md && gc commit -qm
 refused "missing stored file" demo --record-id x --item 9 --by John --source pr
 [ "$before" = "$(cat "$j")" ] || fail "a refused run changed the approval"
 
-# A failed push is reported.
-store 9; plan_ask 10 9
-stub "$root" agent-run 'exit 9'
-rc=0; ap demo --record-id x --item 10 --by John --source pr >/dev/null 2>&1 || rc=$?; [ "$rc" -eq 1 ] || fail "push failure rc=$rc"
+# test_pending_yes_accepted: the yes is still in the pending file (records clone was missing at the reply).
+store 9; plan_ask 10 9; said_yes_pending 10
+ap demo --record-id tg-17 --item 10 --by John --source telegram >/dev/null 2>"$T/err" || fail "pending yes: $(cat "$T/err")"
+
+# test_push_failure_applied_push_pending: exit 75, the approval is live and the tag is marked for a retry.
+store 10; plan_ask 11 10
+echo 9 > "$T/push.rc"
+rc=0; ap demo --record-id x --item 11 --by John --source pr >"$T/out" 2>"$T/err" || rc=$?
+[ "$rc" -eq 75 ] || fail "push failure rc=$rc ($(cat "$T/err"))"
+python3 -c 'import json,sys; a=json.load(open(sys.argv[1])); assert a["scope_version"]==10, a' "$j" || fail "not live"
+grep -q '"pushed": false' "$T/out" || fail "push failure not in the result: $(cat "$T/out")"
+grep -qx "plan-approved-10" "$state/demo/plan-tags.pending" || fail "no retry marker for the tag"
 exit 0

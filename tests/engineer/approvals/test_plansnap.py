@@ -82,7 +82,9 @@ class PlanSnap(unittest.TestCase):
         self.assertEqual(git("rev-parse", "HEAD", cwd=rec), d["records_sha"])
         self.assertIn(["push-branch", str(rec), "engineer-records"], self.calls)
         text = plansnap.text_for("o/demo", "https://github.com/o/demo/pull/3", d)
-        self.assertTrue(text.startswith(f"Approve plan v2 @ {self.sha[:7]}? PR https://github.com/o/demo/pull/3; "
+        # The link is the commit John approves, not the PR page (which shows the latest head).
+        self.assertTrue(text.startswith(f"Approve plan v2 @ {self.sha[:7]}? PR "
+                                        f"https://github.com/o/demo/pull/3/commits/{self.sha}; "
                                         f"signed files https://github.com/o/demo/tree/{d['records_sha']}/approvals/demo/v2"))
         self.assertIn(f"brief.md {want['docs/plan/brief.md'][:8]}", text)
 

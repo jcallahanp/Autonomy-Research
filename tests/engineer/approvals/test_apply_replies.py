@@ -167,8 +167,8 @@ class ApplyReplies(unittest.TestCase):
         self.assertFalse([e for e in evs if "not understood" in e["detail"].get("text", "")])
         out, _, _ = self.run_cli([ask(1), ask(2), digest_ev([1, 2])], [msg("all y", uid=2)],
                                  extra=("--events", str(gev), "--records", str(grec)))
-        self.assertEqual([(o["project"], o["item"]) for o in out], [])  # the last digest (gtm's) is answered
-        self.assertTrue(self.notices)
+        self.assertEqual(([(o["project"], o["item"]) for o in out], self.notices),
+                         ([("demo", 1), ("demo", 2)], []))  # each project's last digest; gtm's 3 is answered
 
     def test_not_understood_takes_a_global_number(self):
         gev, grec = self.other_project([ask(7)])
@@ -188,6 +188,13 @@ class ApplyReplies(unittest.TestCase):
         out, recs, _ = self.run_cli([ask(1)], [], extra=("--events", str(gev), "--records", str(grec)))
         self.assertEqual([(o["project"], o["item"]) for o in out], [("gtm", 5)])
         self.assertEqual(recs, [])
+
+    def test_pending_answer_is_not_answered_again(self):  # pending file and --read-records (clone's) count
+        for path, n in ((self.dir / "approvals.pending.jsonl", "1"), (self.dir / "clone.jsonl", "2")):
+            path.write_text(json.dumps({"item": n, "answer": "yes"}) + "\n")
+        out, recs, _ = self.run_cli([ask(1), ask(2), ask(3), digest_ev([1, 2, 3])], [msg("all y")],
+                                    extra=("--read-records", str(self.dir / "clone.jsonl")))
+        self.assertEqual(([o["item"] for o in out], [r["item"] for r in recs]), ([3], ["3"]))
 
 
 if __name__ == "__main__":

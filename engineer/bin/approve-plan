@@ -2,17 +2,20 @@
 """approve-plan PROJECT --record-id ID --item N --by NAME --source telegram|pr
 
 Run by the supervisor when John approves plan item N. The ask (STATE_DIR/<p>/events.jsonl) names plan
-version V, the plan PR's head sha, the sha256 of each signed file at that commit and where the supervisor
+version V, the plan PR and the head sha John was shown (linked as that commit), the sha256 of each signed file at that commit and where the supervisor
 stored those exact bytes: RECORDS_DIR/<p>/approvals/<p>/v<V>/ (committed on engineer-records when the ask
 was raised, approvals/plansnap.py). approve-plan copies the stored files (regular files only, no symlinks,
 committed) and refuses unless each has the hash the ask carried, so John approves exactly the commit he
-could see; the engineer's working tree is never read. It also refuses V <= the live scope_version, a
-profile with empty hard_gates, and (source telegram) an item without John's recorded `yes`.
+could see; the engineer's working tree is never read. It reads the PR head again (`AGENT_RUN pr-head`) and
+refuses when it moved off that sha or the PR is closed. It also refuses V <= the live scope_version, a
+profile with empty hard_gates, and (source telegram) an item without John's recorded `yes` (in the records
+clone or STATE_DIR/<p>/approvals.pending.jsonl).
 Writes STATE_DIR/approvals/<p>.json (approval schema, scope_version = V), commits the same JSON as
 docs/plan/approval.json on engineer-records, tags it plan-approved-V and pushes with
 `AGENT_RUN push-branch RECORDS_DIR/<p> engineer-records --tag plan-approved-V`.
-Exit 65: refused (the reason on stderr, which the supervisor sends John); 1: failure after checks
-(a failed push leaves the approval in place).
+Exit 0: applied and pushed; 75: applied, records push pending (the tag is listed in STATE_DIR/<p>/
+plan-tags.pending and the supervisor pushes it again every pass); 65: refused (the reason on stderr, which the
+supervisor sends John); 1: failure, nothing applied.
 """
 import argparse
 import datetime
@@ -89,7 +92,8 @@ def checked_ask(conf: dict, a) -> dict:
     """The plan ask, with John's yes (telegram) and a version newer than the live approval."""
     ask = planask.ask(Path(conf["STATE_DIR"]) / a.project / "events.jsonl", a.item)
     records = Path(conf["RECORDS_DIR"]) / a.project / "decisions" / "approvals.jsonl"
-    if a.source == "telegram" and not planask.answered_yes(records, a.item):
+    if a.source == "telegram" and not planask.answered_yes(Path(conf["STATE_DIR"]) / a.project / "events.jsonl",
+                                                          records, a.item):
         raise Refused(f"no recorded yes for item {a.item}")
     live = planask.previous_version(Path(conf["STATE_DIR"]) / "approvals" / f"{a.project}.json")
     if ask["version"] <= live:
@@ -97,6 +101,31 @@ def checked_ask(conf: dict, a) -> dict:
     if ask["snapshot"] != f"approvals/{a.project}/v{ask['version']}":
         raise Refused("the plan ask names an unexpected snapshot path")
     return ask
+
+
+def head_unmoved(conf: dict, project: str, ask: dict) -> None:
+    """Refuse unless the plan PR's head is still the commit John was shown (pr-head through the broker)."""
+    pr = ask.get("pr")
+    if not isinstance(pr, int) or isinstance(pr, bool) or pr < 1:
+        raise Refused("the plan ask names no PR")
+    p = subprocess.run(shlex.split(conf["AGENT_RUN"]) + ["pr-head", project, str(pr)], stdin=subprocess.DEVNULL,
+                       capture_output=True, text=True)
+    head = {}
+    for line in reversed(p.stdout.splitlines() if p.returncode == 0 else []):
+        try:
+            head = json.loads(line)
+            break
+        except ValueError:
+            continue
+    sha = head.get("head_sha") if isinstance(head, dict) else None
+    if not isinstance(sha, str) or not re.fullmatch(r"[0-9a-f]{40}", sha):
+        raise RuntimeError(f"pr-head gave no head commit for PR {pr} (exit {p.returncode}); nothing approved")
+    asked = str(ask.get("sha") or "")
+    if head.get("state") == "CLOSED":
+        raise Refused(f"PR {pr} is closed; nothing approved")
+    if sha != asked:
+        raise Refused(f"PR {pr} moved from {asked[:7]} to {sha[:7]} after you were asked; nothing approved. "
+                      f"The engineer must ask again with plan v{ask['version'] + 1}.")
 
 
 def main(argv) -> int:
@@ -122,6 +151,7 @@ def main(argv) -> int:
         now = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         doc = approval.make(Path(tmp), a.by, a.source, a.record_id, version,
                             planask.gates(Path(tmp) / "docs/plan/profile.yaml"), now)
+    head_unmoved(conf, a.project, ask)
     errors = schema.validate(doc, schema.load(ROOT, "approval"))
     if errors:
         raise RuntimeError(f"approval invalid: {errors[0]}")
@@ -137,9 +167,12 @@ def main(argv) -> int:
     push = shlex.split(conf["AGENT_RUN"]) + ["push-branch", str(rec), "engineer-records", "--tag", tag]
     rc = subprocess.run(push, stdin=subprocess.DEVNULL).returncode
     if rc != 0:
-        raise RuntimeError(f"push-branch exited {rc}; approval v{version} is live, tag {tag} is local only")
-    print(json.dumps({"project": a.project, "scope_version": version, "tag": tag}))
-    return 0
+        with open(Path(conf["STATE_DIR"]) / a.project / planask.TAG_PENDING, "a") as f:
+            f.write(tag + "\n")
+        print(f"approve-plan: push-branch exited {rc}; approval v{version} is live, tag {tag} push pending",
+              file=sys.stderr)
+    print(json.dumps({"project": a.project, "scope_version": version, "tag": tag, "pushed": rc == 0}))
+    return 0 if rc == 0 else 75
 
 
 if __name__ == "__main__":

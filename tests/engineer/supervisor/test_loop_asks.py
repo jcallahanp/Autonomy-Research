@@ -46,8 +46,13 @@ class LoopAsks(unittest.TestCase):
         """The rig's AGENT_RUN stub with extra `case` lines tried first."""
         testlib.stub(self.rig.root, "agent-run", extra + "\n" + AGENT_RUN.replace("__D__", repr(str(self.rig.tmp))))
 
+    def no_approval(self):
+        """No live plan approval yet (the rig approves its tasks.json by default)."""
+        (Path(self.rig.conf["STATE_DIR"]) / "approvals" / "demo.json").unlink()
+
     def plan_pr(self):
         """GitHub's plan PR 3 in the broker mirror, with signed files that differ from the working tree."""
+        self.no_approval()
         mirror = Path(self.rig.conf["MIRROR_DIR"]) / "demo.git"
         seed = self.rig.tmp / "plan-seed"
         git = lambda *a: subprocess.run(["git", *a], cwd=seed, check=True, capture_output=True, text=True).stdout  # noqa: E731
@@ -180,12 +185,25 @@ esac""")
         self.assertFalse([a for a in self.rig.argv() if a.startswith("run-task")])
 
     def test_plan_without_pr_head_is_a_note_not_an_ask(self):
+        self.no_approval()
         self.progress(PLAN, where=self.clone)
         self.run_ok(DAY)
         self.run_ok(DAY)
         got = [a["detail"] for a in self.asks()]
         self.assertEqual([d["kind"] for d in got], ["other"])
         self.assertIn("Plan v1 not asked yet", got[0]["text"])
+
+    def test_plan_tag_push_pending_over_12_hours_is_a_t1_line(self):
+        self.agent_run('case "$1 $*" in "push-branch "*--tag*) exit 1 ;; esac')
+        self.rig.state_dir.mkdir(parents=True, exist_ok=True)
+        (self.rig.state_dir / "plan-tags.pending").write_text("plan-approved-1\n")
+        for now in ("2026-10-15T22:00:00Z", "2026-10-16T08:00:00Z"):  # first seen, then 10 h later
+            self.run_ok(now)
+        self.assertFalse([a for a in self.asks() if "plan-approved-1" in a["detail"]["text"]])
+        self.run_ok(DAY)  # 13 h 45 min after the first pass that saw it
+        self.run_ok(DAY)
+        got = [a["detail"] for a in self.asks() if "plan-approved-1" in a["detail"]["text"]]
+        self.assertEqual([(d["tier"], d["kind"]) for d in got], [("T1", "other")])
 
     def test_first_attempt_without_commits_is_no_diff(self):
         self.rig.reply("implementer", result(base_sha=SHA))

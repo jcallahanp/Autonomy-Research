@@ -106,13 +106,20 @@ def snapshot(conf: dict, project: str, version: int, pr: int, run) -> dict:
             "records_sha": res["sha"], "pushed": bool(res["pushed"])}
 
 
+def commit_url(url: str, sha: str) -> str:
+    """The PR's page for this one commit: what John approves, even after the PR moves on."""
+    return f"{url}/commits/{sha}"
+
+
 def text_for(repo: str, url: str, d: dict) -> str:
-    """The ask line John sees: version, short sha, PR, where the stored files are, short hashes."""
+    """The ask line John sees: version, short sha, the commit's link in the PR (not the PR page, which shows
+    its latest head), where the stored files are, short hashes. approve-plan refuses if the head moved."""
     where = f"https://github.com/{repo}/tree/{d['records_sha']}/{d['snapshot']}"
     if not d["pushed"]:
         where += " (records push pending)"
     short = ", ".join(f"{Path(rel).name} {h[:8]}" for rel, h in sorted(d["files"].items()))
-    return f"Approve plan v{d['version']} @ {d['sha'][:7]}? PR {url}; signed files {where} ({short})"
+    return (f"Approve plan v{d['version']} @ {d['sha'][:7]}? PR {commit_url(url, d['sha'])}; signed files {where} "
+            f"({short})")
 
 
 def approved_version(conf: dict, project: str) -> int:

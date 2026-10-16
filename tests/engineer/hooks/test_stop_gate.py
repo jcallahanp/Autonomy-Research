@@ -84,15 +84,26 @@ class StopGateTest(HookCase):
         (Path(self.conf["STATE_DIR"]) / "approvals" / "demo.json").unlink()
         self.assertDenied(self.stop(), "approval")
 
+    def test_check_uses_worktree_deps_and_git(self):
+        self.set_check("test -f node_modules/dep/index.js && git rev-parse HEAD")
+        self.write(self.proj / "node_modules/dep/index.js", "module.exports = 1\n")  # untracked
+        self.assertAllowed(self.stop())
+        self.assertTrue((self.proj / "node_modules/dep/index.js").exists())
+
     def test_check_runs_in_bwrap_when_present(self):
         path = testlib.stub(self.root, "bwrap", 'while [ "$1" != -- ]; do shift; done; shift; exec "$@"')
         self.addCleanup(path.unlink)
+        (self.home / ".ssh").mkdir(exist_ok=True)
         self.set_check("echo inside")
+        self.write(self.proj / "node_modules/dep/index.js", "module.exports = 1\n")
         self.assertAllowed(self.stop())
         line = [x for x in testlib.argv_log(self.root) if x.startswith("bwrap ")][-1]
-        for want in ("--unshare-all", "--ro-bind / /", "--tmpfs /tmp", "-- bash -c echo inside"):
+        gitdir = (self.proj / ".git").resolve()
+        for want in ("--unshare-all --share-net", "--ro-bind / /", "--tmpfs /tmp", "-- bash -c echo inside",
+                     f"--tmpfs {self.home}/.ssh ", f"--ro-bind {gitdir} {gitdir} ",
+                     f"--ro-bind {self.proj.resolve()}/node_modules "):
             self.assertIn(want, line)
-        self.assertNotIn("--share-net", line)
+        self.assertNotIn(f"--tmpfs {self.home} ", line)
 
     def test_dependents_doc_missing_blocks(self):
         self.write(self.proj / "src/a.py", "A = 2\n")

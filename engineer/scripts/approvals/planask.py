@@ -1,7 +1,7 @@
 """What John approved: the plan ask he answered and the signed files stored for it (approvals/plansnap.py).
 
 approve-plan (run by the supervisor) reads the ask from STATE_DIR/<p>/events.jsonl, John's answer from
-RECORDS_DIR/<p>/decisions/approvals.jsonl and the files from RECORDS_DIR/<p>/approvals/<p>/v<N>/ (the bytes of
+RECORDS_DIR/<p>/decisions/approvals.jsonl (or STATE_DIR/<p>/approvals.pending.jsonl) and the files from RECORDS_DIR/<p>/approvals/<p>/v<N>/ (the bytes of
 the plan PR's head commit, committed when the ask was raised), and refuses unless every stored file has the
 hash the ask carried (security: John approves exactly what he saw, never the engineer's working tree).
 """
@@ -12,6 +12,7 @@ from pathlib import Path
 from approvals import items
 from eng import approval
 
+TAG_PENDING = "plan-tags.pending"  # STATE_DIR/<p>/: plan-approved tags whose push failed (telegram retries)
 GATES = ("money", "delete_data", "store_submission")
 MAX_BYTES = 1 << 20
 
@@ -35,10 +36,10 @@ def ask(events_path, item: int) -> dict:
     return found
 
 
-def answered_yes(records_path, item: int) -> bool:
-    """True when approvals.jsonl holds John's `yes` for this item."""
+def answered_yes(events_path, records_path, item: int) -> bool:
+    """True when approvals.jsonl, or the pending file kept while there was no records clone, holds John's `yes`."""
     return any(items.item_num(r.get("item")) == item and r.get("answer") == "yes" and r.get("kind") == "plan"
-               for r in items.read_jsonl(records_path))
+               for r in items.answers(events_path, records_path))
 
 
 def copy_signed(src: Path, dest: Path) -> None:

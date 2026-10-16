@@ -4,7 +4,8 @@
 Exit 0 when ENGINEER_TASK_ID is unset. Otherwise run the task's `check` with `bash -c` (timeout:
 run-defaults profile `check`) the way run-task does (scripts/runtask/check.py): the command comes only from
 the approved docs/plan/tasks.json at HEAD (sha256 equal to the live plan approval's), and it runs in a clean
-detached checkout of HEAD, inside bwrap when it exists, so uncommitted work does not count. Then every changed
+detached checkout of HEAD (dependency dirs from the worktree, read-only), inside bwrap when it exists, so
+uncommitted work does not count. Then every changed
 file matching a `| <glob> | <doc> |` row of docs/DEPENDENTS.md needs its doc changed too. A failure
 exits 2 with the reason on stderr (contract: https://code.claude.com/docs/en/hooks; Stop: Claude
 continues; TaskCompleted: the task stays open). At the 8th block of a session the gate gives up:
@@ -41,10 +42,13 @@ def run_check(ctx, task_id: str):
     if not bw:
         print(check.WARNING, file=sys.stderr)
     with check.checkout(ctx.project_dir, sha) as (co, scratch):
-        argv = check.sandbox(["bash", "-c", task["check"]], co, scratch, str(Path.home()), bw)
+        sp = check.spec(ctx.conf, ctx.project_dir, ctx.project_dir, co, str(Path.home()))
+        check.place(sp, bw)
+        argv = check.sandbox(["bash", "-c", task["check"]], co, scratch, bw, sp)
         try:
             r = subprocess.run(argv, cwd=co, text=True, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
-                               stderr=subprocess.STDOUT, timeout=secs, errors="replace")
+                               stderr=subprocess.STDOUT, timeout=secs, errors="replace",
+                               env={**os.environ, **check.env(ctx.conf, scratch)})
         except subprocess.TimeoutExpired:
             return f"check for {task_id} timed out after {secs // 60} min: {task['check']}"
     if r.returncode != 0:

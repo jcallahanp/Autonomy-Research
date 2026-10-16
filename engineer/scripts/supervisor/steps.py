@@ -147,9 +147,10 @@ def outcome(c, task, r, verdict, lines, auditor_cost=None, status=None, head=Non
     heads = [e.get("head_sha") for e in mine if e["event"] == "task_end"][:-1]
     attempts = events.state(evs)["attempts"].get(tid, 0) + 1
     status = status or breaker.task_status(verdict, sig, fails, attempts, c.defaults.get("task", {}).get("attempts", 2))
-    head = r.get("head_sha")
+    ran = r.get("head_sha")
+    head = head or ran
     detail = {"verdict": verdict, "status": status, "reason": "; ".join(lines)[:300], "lines": list(lines)[:15],
-              "sig": sig, "diff": bool(head) and head != r.get("base_sha") and head not in heads,
+              "sig": sig, "diff": bool(ran) and ran != r.get("base_sha") and ran not in heads,
               "auditor_cost_usd": auditor_cost, "audited_sha": head}
-    c.ev("audit", tid, head_sha=head or r.get("head_sha"), detail=detail)
+    c.ev("audit", tid, head_sha=head, detail=detail)
     return {"status": status}

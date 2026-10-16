@@ -16,7 +16,8 @@ new_clone "$src"
 mkdir -p "$src/docs/plan"
 jq -n '{version: 1, tasks: [
   {id: "t1", title: "T one", type: "feat", status: "ready", depends_on: [], requirement_ids: [], files: [],
-   check: "test -f README.md && test ! -e untracked.txt && echo checked-ok", passes: false, attempts: 0},
+   check: "test -f README.md && test ! -e untracked.txt && test ! -e .venv && test -f node_modules/dep/index.js && echo \"at $(git rev-parse HEAD)\" && echo checked-ok",
+   passes: false, attempts: 0},
   {id: "t2", title: "T two", type: "fix", status: "ready", depends_on: [], requirement_ids: [], files: [],
    check: "echo failing-check; exit 3", passes: false, attempts: 0}]}' > "$src/docs/plan/tasks.json"
 git -C "$src" add docs && git -C "$src" commit -qm "docs: plan"
@@ -115,12 +116,18 @@ expect 0 "second run reuses the worktree" "$RT" demo t1 implementer
 
 # check profile: the check comes from the approved tasks.json at the task's commit and runs in a clean
 # detached checkout of that commit (untracked files in the worktree are not there).
+# --- test_check_uses_worktree_deps: untracked dependency dirs of the engineer's worktree (node_modules, .venv,
+# vendor ...) are there read-only; a symlinked one is not; git works in the checkout.
 touch "$wt/untracked.txt"
+mkdir -p "$wt/node_modules/dep" "$T/outside" && echo 'module.exports = 1' > "$wt/node_modules/dep/index.js"
+ln -s "$T/outside" "$wt/.venv"
 t1=$(git -C "$src" rev-parse task/t1)
 expect 0 "check t1" "$RT" demo t1 check
 res=$(validate "$T/out") || fail "check run-result invalid: $(cat "$T/out")"
 echo "$res" | jq -e --arg h "$t1" '.profile == "check" and .exit_code == 0 and .is_error == false
-  and .head_sha == $h and (.output_tail | contains("checked-ok"))' >/dev/null || fail "check result: $res"
+  and .head_sha == $h and (.output_tail | contains("checked-ok")) and (.output_tail | contains("at " + $h))' \
+  >/dev/null || fail "test_check_uses_worktree_deps: $res"
+[ -e "$wt/node_modules/dep/index.js" ] || fail "the check removed the worktree's node_modules"
 # --- test_check_without_bwrap_warns: this container has no bwrap, so the run says it is unsandboxed.
 echo "$res" | jq -e '.output_tail | contains("bwrap not found")' >/dev/null || fail "no bwrap warning: $res"
 [ "$(git -C "$src" worktree list | grep -c run-task-check)" -eq 0 ] || fail "check checkout left behind"
@@ -155,18 +162,35 @@ expect 65 "approval hash differs" "$RT" demo t1 check
 rm -f "$STATE_DIR/approvals/demo.json"
 expect 65 "no approval" "$RT" demo t1 check
 approve
-# --- test_check_runs_in_bwrap: with bwrap present the check runs inside it, no network, writes only to the
-# checkout and its tmp dir (a stub bwrap logs its argv, then runs the command after --).
-stub "$R" bwrap 'while [ "$1" != -- ]; do shift; done; shift; exec "$@"'
+# --- test_check_runs_in_bwrap: with bwrap present the check runs inside it: root read-only, writable only the
+# checkout and its tmp dir, the clone's .git read-only, the worktree's dependency dirs read-only, network
+# through the egress proxy (nft confines the engineer uid), credential stores hidden, not the whole HOME.
+# The stub bwrap logs its argv, links each empty --ro-bind target to its source, then runs the command.
+stub "$R" bwrap 'while [ "$1" != -- ]; do
+  if [ "$1" = --ro-bind ] && [ -d "$3" ] && [ -z "$(ls -A "$3")" ]; then rmdir "$3" && ln -s "$2" "$3"; fi; shift
+done; shift; exec "$@"'
+mkdir -p "$CHROME_PROFILE"
+home=$(getent passwd "$(id -u)" | cut -d: -f6)
 expect 0 "check t1 in bwrap" "$RT" demo t1 check
 line=$(grep '^bwrap ' "$T/argv.log" | tail -n 1 || true)
-for want in "--unshare-all" "--die-with-parent" "--ro-bind / /" "--tmpfs /tmp" "--chdir /" "-- bash -c test -f README.md"; do
+for want in "--unshare-all --share-net" "--die-with-parent" "--ro-bind / /" "--tmpfs /tmp" "--chdir /" \
+  "--ro-bind $src/.git $src/.git" "--tmpfs $CHROME_PROFILE" "-- bash -c test -f README.md"; do
   case "$line" in *"$want"*) ;; *) fail "bwrap argv lacks '$want': $line" ;; esac
 done
 co=$(sed -E 's/.*--chdir ([^ ]+) .*/\1/' <<< "$line")
 case "$line" in *"--bind $co $co"*) ;; *) fail "bwrap does not bind the checkout read-write: $line" ;; esac
-case "$line" in *"--share-net"*) fail "bwrap shares the network: $line" ;; esac
-jq -e '(.output_tail | contains("bwrap not found") | not) and .exit_code == 0' "$T/out" >/dev/null || fail "bwrap run: $(cat "$T/out")"
+case "$line" in *"--ro-bind $wt/node_modules $co/node_modules"*) ;; *) fail "node_modules not bound read-only: $line" ;; esac
+case "$line" in *"$co/.venv"*|*"$T/outside"*) fail "a symlinked dependency dir is bound: $line" ;; esac
+case "$line" in *"--tmpfs $home "*) fail "bwrap hides the whole HOME: $line" ;; esac
+for d in .claude .ssh .config/gh .engineer; do
+  [ -d "$home/$d" ] || continue
+  case "$line" in *"--tmpfs $home/$d "*) ;; *) fail "bwrap does not hide ~/$d: $line" ;; esac
+done
+jq -e '(.output_tail | contains("bwrap not found") | not) and .exit_code == 0 and (.output_tail | contains("checked-ok"))' \
+  "$T/out" >/dev/null || fail "bwrap run: $(cat "$T/out")"
+expect 0 "check t1 in bwrap, proxy env" "$RT" demo t1 check --dry-run
+jq -e --arg p "http://127.0.0.1:$PROXY_PORT" '.env.HTTPS_PROXY == $p and .env.https_proxy == $p and .env.HTTP_PROXY == $p
+  and (.env.NO_PROXY | contains("127.0.0.1"))' "$T/out" >/dev/null || fail "check env lacks the proxy: $(jq -c .env "$T/out")"
 expect 0 "dry-run check shows bwrap" "$RT" demo t1 check --dry-run
 jq -e '.argv | index("bwrap") != null' "$T/out" >/dev/null 2>&1 || jq -e '[.argv[] | test("bwrap$")] | any' "$T/out" >/dev/null \
   || fail "dry-run check argv: $(cat "$T/out")"

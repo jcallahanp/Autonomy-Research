@@ -8,13 +8,16 @@
 - apply_all: one apply-replies.py run over every project (item numbers are global), so a reply never answers
   another project's item; timeouts run on every pass, even with no message. A plan yes runs approve-plan (a
   refusal becomes a T1 line sent at once); a merge yes tells John to approve the PR on GitHub, where the
-  supervisor's merge pass picks it up.
+  supervisor's merge pass picks it up. approve-plan exit 75 means the approval is live but its records push
+  failed: John is told so, and retry_tags pushes the plan-approved tag again on every pass until it goes.
+- open_items counts answers in the records clone and in STATE_DIR/<p>/approvals.pending.jsonl alike.
 """
+import re
 import subprocess
 import sys
 from pathlib import Path
 
-from approvals import items, render
+from approvals import items, planask, render
 from supervisor import commands, events, nightwin, records
 
 
@@ -26,7 +29,7 @@ def send(c, texts: list) -> bool:
 def records_path(c) -> Path:
     """approvals.jsonl in the records clone; STATE_DIR/<p>/approvals.pending.jsonl while there is no clone
     (its lines move into the clone's file once there is one)."""
-    pending = c.dir / "approvals.pending.jsonl"
+    pending = c.dir / items.PENDING
     target = Path(c.conf["RECORDS_DIR"]) / c.name / "decisions" / "approvals.jsonl"
     try:
         records.ensure(c.conf["RECORDS_DIR"], c.name, c.conf.get("MIRROR_DIR"),
@@ -43,8 +46,21 @@ def records_path(c) -> Path:
     return target
 
 
+def _clone_file(c, path: Path) -> list:
+    """The records clone's approvals.jsonl when replies go to the pending file but the clone's file exists
+    (the clone is there but could not be checked this pass): its answers still count."""
+    target = Path(c.conf["RECORDS_DIR"]) / c.name / "decisions" / "approvals.jsonl"
+    return [target] if path != target and target.is_file() and not target.is_symlink() else []
+
+
+def _read_args(c, path: Path) -> list:
+    return [a for f in _clone_file(c, path) for a in ("--read-records", f)]
+
+
 def open_items(c) -> dict:
-    return items.open_items(items.read_jsonl(c.events), items.read_jsonl(records_path(c)), events.now_iso(c.now))
+    path = records_path(c)
+    answered = items.answers(c.events, path) + [r for f in _clone_file(c, path) for r in items.read_jsonl(f)]
+    return items.open_items(items.read_jsonl(c.events), answered, events.now_iso(c.now))
 
 
 def send_items(c, nums: list, why: str) -> bool:
@@ -65,8 +81,9 @@ def _approvals(c, script, *argv, stdin=None):
 
 def send_digest(c, header=None) -> bool:
     """Send the digest (with an optional header line); record it only when every message went out."""
-    doc = commands.json_line(_approvals(c, "digest.py", "--events", c.events, "--records", records_path(c),
-                                        "--json-object").stdout, (dict, list))
+    path = records_path(c)
+    doc = commands.json_line(_approvals(c, "digest.py", "--events", c.events, "--records", path,
+                                        *_read_args(c, path), "--json-object").stdout, (dict, list))
     msgs, shown = (doc.get("messages"), doc.get("shown")) if isinstance(doc, dict) else (doc, None)
     msgs = [m for m in msgs or [] if isinstance(m, str)]
     if not send(c, ([header] if header else []) + msgs):
@@ -101,6 +118,10 @@ def _act(c, d: dict) -> None:
         if p.returncode == 0:
             send(c, [f"{c.name}: plan approval for item {item} is live."])
             return
+        if p.returncode == 75:
+            send(c, [f"{c.name}: plan approval for item {item} is live; the records push is pending and is "
+                     "retried every pass."])
+            return
         why = ((p.stderr or "").strip().splitlines() or [f"exit {p.returncode}"])[-1][:200]
         from supervisor import asks
         asks.note(c, None, f"plan-refused:{item}:{p.returncode}", f"Plan approval {item} not applied: {why}",
@@ -110,13 +131,28 @@ def _act(c, d: dict) -> None:
                  "audited commit; the supervisor merges it on its next pass."])
 
 
+def retry_tags(c) -> None:
+    """Push each plan-approved tag whose push failed in approve-plan; keep those that fail again."""
+    marker = c.dir / planask.TAG_PENDING
+    if not marker.is_file():
+        return
+    rec = Path(c.conf["RECORDS_DIR"]) / c.name
+    left = [t for t in dict.fromkeys(marker.read_text().split()) if re.fullmatch(r"plan-approved-[0-9]+", t)
+            and commands.agent_run(c.conf, "push-branch", rec, "engineer-records", "--tag", t).returncode != 0]
+    if left:
+        marker.write_text("".join(t + "\n" for t in left))
+    else:
+        marker.unlink()
+
+
 def apply_all(ctxs: list, polled: str) -> None:
     """Apply polled replies and timeouts for every project at once; act on the decisions; push records."""
     if not ctxs:
         return
     argv = []
     for c in ctxs:
-        argv += ["--events", c.events, "--records", records_path(c)]
+        path = records_path(c)
+        argv += ["--events", c.events, "--records", path, *_read_args(c, path)]
     out = _approvals(ctxs[0], "apply-replies.py", *argv, stdin=polled or "").stdout
     by = {c.name: c for c in ctxs}
     for d in (commands.json_line(line) for line in out.splitlines()):
@@ -135,4 +171,5 @@ def apply_all(ctxs: list, polled: str) -> None:
         path = records_path(c)
         if path.is_file() and path.parent.parent == Path(c.conf["RECORDS_DIR"]) / c.name:
             c.push("decisions/approvals.jsonl", path.read_text(), "records: approvals")
+        retry_tags(c)
 

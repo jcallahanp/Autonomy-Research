@@ -98,5 +98,29 @@ class Items(unittest.TestCase):
         self.assertEqual(items.seen(evs, 0), (set(), set()))
 
 
+    def test_seen_all_covers_last_digest_of_each_project(self):
+        def sent(project, ts, nums):
+            return {"ts": ts, "project": project, "event": "digest", "detail": {"items": nums}}
+        evs = [sent("demo", "2026-10-20T07:00:00Z", [1]), sent("demo", "2026-10-20T07:30:00Z", [2]),
+               sent("gtm", "2026-10-20T07:31:00Z", [3, 4])]
+        at = int(items.parse_ts("2026-10-20T10:00:00Z").timestamp())
+        self.assertEqual(items.seen(evs, at), ({2, 3, 4}, {1, 2, 3, 4}))
+
+    def test_answers_read_records_and_pending_file(self):
+        import json
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            state, rec = Path(tmp) / "state" / "demo", Path(tmp) / "records" / "demo" / "decisions"
+            state.mkdir(parents=True)
+            rec.mkdir(parents=True)
+            (rec / "approvals.jsonl").write_text(json.dumps({"item": "1", "answer": "yes"}) + "\n")
+            (state / items.PENDING).write_text(json.dumps({"item": "2", "answer": "no"}) + "\n")
+            got = items.answers(state / "events.jsonl", rec / "approvals.jsonl")
+            self.assertEqual(sorted(r["item"] for r in got), ["1", "2"])
+            self.assertEqual(len(items.answers(state / "events.jsonl", state / items.PENDING)), 1)
+            evs = [ask(1), ask(2), ask(3)]
+            self.assertEqual(sorted(items.open_items(evs, got, NOW)), [3])
+
+
 if __name__ == "__main__":
     unittest.main()

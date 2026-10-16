@@ -63,5 +63,29 @@ class MorningTest(unittest.TestCase):
         self.assertIn("none", md)
 
 
+    def test_merged_task_is_done_not_in_review(self):
+        evs = [ev("audit", "d", detail={"verdict": "PASS", "status": "in_review"}),
+               ev("pr_open", "d", head_sha="a" * 40, detail={"number": 8, "url": "https://github.com/o/r/pull/8"}),
+               ev("merge", "d", head_sha="a" * 40, detail={"tier": 1, "auto_merge": True, "number": 8}),
+               ev("merge", "d", head_sha="a" * 40, detail={"merged": True, "number": 8, "merge_commit": "b" * 40,
+                                                           "url": "https://github.com/o/r/pull/8"}),
+               ev("audit", "e", detail={"verdict": "PASS", "status": "in_review"}),
+               ev("merge", "e", head_sha="c" * 40, detail={"auto_merge": True, "number": 9}),
+               ev("merge", "f", head_sha="d" * 40, detail={"merged": True, "number": 10,
+                                                           "note": "John merged it himself"})]
+        md = morning.render(evs, {"state": "done"})
+        done = md.split("## Done")[1].split("##")[0]
+        self.assertIn("- d", done)
+        self.assertIn("- f: John merged it himself", done)
+        review = md.split("## In review")[1].split("##")[0]
+        self.assertNotIn("- d", review)
+        self.assertIn("- e", review)
+        prs = md.split("## Pull requests")[1].split("##")[0]
+        self.assertIn("- d: auto-merge on (tier 1)", prs)
+        self.assertIn(f"- d: merged at {'b' * 12}", prs)
+        self.assertIn("- e: auto-merge on", prs)
+        self.assertNotIn("None", md)
+
+
 if __name__ == "__main__":
     unittest.main()

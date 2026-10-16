@@ -1,4 +1,5 @@
 """Test rig for loop.py: a make_root temp root with stub RUN_TASK, AUDIT_CMD, AGENT_RUN and Task 7 CLIs."""
+import hashlib
 import json
 import os
 import subprocess
@@ -84,10 +85,18 @@ class Rig:
     def close(self):
         self._tmp.cleanup()
 
-    def tasks(self, tasks):
+    def tasks(self, tasks, approve=True):
+        """The clone's docs/plan/tasks.json; approve=True also makes those bytes the live plan approval's."""
         plan = Path(self.conf["PROJECTS_DIR"]) / "demo" / "docs" / "plan"
         plan.mkdir(parents=True, exist_ok=True)
-        (plan / "tasks.json").write_text(json.dumps({"version": 1, "tasks": tasks}))
+        data = json.dumps({"version": 1, "tasks": tasks}).encode()
+        (plan / "tasks.json").write_bytes(data)
+        if approve:
+            path = Path(self.conf["STATE_DIR"]) / "approvals" / "demo.json"
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(json.dumps({"scope_version": 1, "files": {
+                "docs/plan/tasks.json": hashlib.sha256(data).hexdigest()}}))
+        return data
 
     def reply(self, name, obj, n=None, rc=0):
         f = self.rt / (f"{name}.{n}" if n else name)

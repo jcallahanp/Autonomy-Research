@@ -15,6 +15,7 @@ sys.path.insert(0, str(REPO / "engineer" / "scripts"))
 
 import testlib  # noqa: E402
 from eng import conf as engconf  # noqa: E402
+from approvals import items  # noqa: E402
 from supervisor import dag, events, merges  # noqa: E402
 
 NOW = datetime(2026, 10, 16, 7, 0, tzinfo=timezone.utc)
@@ -67,7 +68,8 @@ class MergesTest(unittest.TestCase):
         self.tmp = Path(td.name)
         self.root = testlib.make_root(self.tmp)
         self.conf = engconf.load(self.root)
-        (Path(self.conf["ETC_DIR"]) / "projects.txt").write_text("demo o/demo main self_merge=on scratch=yes\n")
+        (Path(self.conf["ETC_DIR"]) / "projects.txt").write_text(
+            "demo o/demo main self_merge=on scratch=yes owner_login=john-test\n")
         testlib.stub(self.root, "agent-run", AGENT_RUN.replace("__D__", repr(str(self.tmp))))
         self.automerge({"tier": 2, "auto_merge": False, "reasons": ["auth/**"]}, rc=3)
         self.work = self.tmp / "work"
@@ -117,11 +119,51 @@ class MergesTest(unittest.TestCase):
         self.assertEqual(out[0]["detail"]["merge_commit"], squash)
         self.assertEqual(self.state()["done"], {"t1"})
 
-    def test_merged_report_for_another_head_is_ignored(self):
+    def test_merged_at_unaudited_head_needs_john_once(self):
         self.mirror_main("main")
-        self.automerge({"merged": True, "head": "f" * 40, "merge_commit": git(self.work, "rev-parse", "main")})
+        self.automerge({"merged": True, "head": "f" * 40, "merge_commit": git(self.work, "rev-parse", "main"),
+                        "merged_by": "someone-else"})
+        out = merges.pass_open_prs(self.conf, "demo", NOW)
+        self.assertEqual([(e["event"], e["detail"]["status"]) for e in out], [("audit", "needs_john")])
+        self.assertIn("unaudited", out[0]["detail"]["reason"])
+        self.assertEqual((self.state()["needs_john"], self.state()["done"]), ({"t1"}, set()))
+        n = len(self.calls("automerge"))
+        self.assertEqual(merges.pass_open_prs(self.conf, "demo", NOW), [])  # raised once, not every pass
+        self.assertEqual(len(self.calls("automerge")), n)
+
+    def test_merge_john_made_himself_counts_done_with_a_note(self):
+        main = git(self.work, "rev-parse", "main")
+        self.mirror_main("main")
+        self.automerge({"merged": True, "head": "f" * 40, "merge_commit": main, "merged_by": "john-test"})
+        out = merges.pass_open_prs(self.conf, "demo", NOW)
+        self.assertEqual([(e["event"], e["detail"].get("merged")) for e in out], [("merge", True)])
+        self.assertIn("john-test", out[0]["detail"]["note"])
+        self.assertIn("not the audited", out[0]["detail"]["note"])
+        self.assertEqual(self.state()["done"], {"t1"})
+
+    def test_head_moved_needs_john_once(self):
+        self.automerge({"tier": None, "auto_merge": False,
+                        "reasons": ["head moved: GitHub has ffffffffffff, the audit passed 0123456789ab"]}, rc=65)
+        out = merges.pass_open_prs(self.conf, "demo", NOW)
+        self.assertEqual([(e["event"], e["detail"]["status"]) for e in out], [("audit", "needs_john")])
+        self.assertIn("head moved", out[0]["detail"]["reason"])
         self.assertEqual(merges.pass_open_prs(self.conf, "demo", NOW), [])
-        self.assertEqual(self.state()["in_review"], {"t1"})
+        self.assertEqual(len(self.calls("automerge")), 1)
+
+    def test_merge_closes_the_open_merge_ask(self):
+        for n, kind in ((3, "merge"), (4, "other")):
+            events.append(self.events, {"project": "demo", "event": "approval_ask", "task_id": "t1", "detail": {
+                "item": n, "tier": "T1", "kind": kind, "text": f"ask {n}", "default": "n", "reversible": True,
+                "ref": "https://github.com/o/demo/pull/7"}})
+        self.mirror_main(self.sha)
+        out = merges.pass_open_prs(self.conf, "demo", NOW)
+        ans = [e for e in out if e["event"] == "approval_answer"]
+        self.assertEqual([(e["detail"]["item"], e["detail"]["answer"], e["detail"]["by"]) for e in ans],
+                         [(3, "merged", "system")])
+        records = Path(self.conf["RECORDS_DIR"]) / "demo" / "decisions" / "approvals.jsonl"
+        recs = items.answers(self.events, records)
+        self.assertEqual([(r["item"], r["answer"], r["source"]) for r in recs], [("3", "yes", "pr")])
+        self.assertEqual(sorted(items.open_items(items.read_jsonl(self.events), recs, "2026-10-16T08:00:00Z")), [4])
 
     def test_tier2_approval_runs_automerge_with_audited_sha(self):
         self.assertEqual(merges.pass_open_prs(self.conf, "demo", NOW), [])  # no approving review yet

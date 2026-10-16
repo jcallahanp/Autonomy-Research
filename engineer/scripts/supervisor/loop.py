@@ -3,8 +3,9 @@
 
 Per iteration: poll Telegram once and apply replies and timeouts for every project at once (item numbers
 are global). Then per project: ingest the hook spool, reconcile, ping hc-ping, retry a failed records push,
-raise PROGRESS.md asks, run the merge pass, send reminders; inside the night window run the first ready task;
-outside it, end an open night and send the digest when due. The kill switch stops tasks, never messages.
+raise PROGRESS.md asks, run the merge pass, send reminders; inside the night window run the first ready task of
+the approved tasks.json (a PR on auto-merge keeps the night open); outside it, end an open night and send the
+digest when due. The kill switch stops tasks, never messages.
 Usage: loop.py [--projects FILE] [--project NAME] [--once] [--now ISO]
 """
 import argparse
@@ -20,12 +21,8 @@ import yaml  # noqa: E402
 
 from eng import conf as engconf  # noqa: E402
 from approvals import telegram  # noqa: E402
-from supervisor import asks, breaker, dag, events, morning, nightwin, run_status, spool, steps  # noqa: E402
-
-try:
-    from supervisor import merges  # noqa: E402  (the merge pass; F1's module, absent in older trees)
-except ImportError:  # pragma: no cover
-    merges = None
+from runtask import check as plan  # noqa: E402  (the approved tasks.json, as run-task's check reads it)
+from supervisor import asks, breaker, dag, events, merges, morning, nightwin, run_status, spool, steps  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
 SLEEP_SECONDS = 60
@@ -59,6 +56,18 @@ def read_projects(path, only=None) -> list:
     return rows
 
 
+def approved_tasks(c) -> list:
+    """Tasks of the approved tasks.json (stored copy, else the clone's file if its sha256 matches); no status."""
+    try:
+        wt = (Path(c.conf["PROJECTS_DIR"]) / c.name / plan.REL).read_bytes()
+    except OSError:
+        wt = None
+    data = plan.approved_copy(c.conf, c.name, wt, "the clone")
+    path = c.dir / "tasks.approved.json"  # c.dir exists: night_start is already in events.jsonl
+    path.write_bytes(data)
+    return dag.load(path)
+
+
 def end_night(c, state, reason):
     """Terminal state (morning.finish_night): RUN_STATUS.json, MORNING.md, night_end, digest."""
     morning.finish_night(c, state, reason)
@@ -80,8 +89,7 @@ def housekeeping(c):
     steps.agent_run(c.conf, "hc-ping")
     asks.records_health(c)
     asks.from_progress(c)  # the clone's asks (a plan approval comes before any task runs)
-    if merges is not None and hasattr(merges, "pass_open_prs"):
-        merges.pass_open_prs(c.conf, c.name, c.now)
+    merges.pass_open_prs(c.conf, c.name, c.now)
     asks.deadends(c)
     telegram.reminders(c)
 
@@ -116,7 +124,7 @@ def iterate(c):
     elif not open_night:
         return None
     try:
-        tasks = dag.load(Path(c.conf["PROJECTS_DIR"]) / c.name / "docs" / "plan" / "tasks.json")
+        tasks = approved_tasks(c)
         cycle = dag.find_cycle(tasks)
         if cycle:
             raise ValueError("tasks.json has a dependency cycle: " + " -> ".join(cycle))
@@ -133,15 +141,15 @@ def iterate(c):
             if c.now < _when(wait["reset_at"]):
                 return _after(c, {"wait": wait["reset_at"]})
             return _after(c, steps.attempt(c, by_id[tid], resume=wait["session_id"]))
-    done = st["done"] | {t["id"] for t in tasks if t["status"] == "done"}
-    stuck = (st["blocked"] | st["needs_john"]) - again
-    stuck |= {t["id"] for t in tasks if t["status"] in ("blocked", "needs_john")}
+    done, stuck = st["done"], (st["blocked"] | st["needs_john"]) - again  # events only, never tasks.json status
     review = st.get("in_review", set()) - done
     ready = dag.ready(tasks, done, stuck | review, st["running"])
     if ready:
         return _after(c, steps.attempt(c, by_id[ready[0]]))
     if all(t["id"] in done for t in tasks):
         return end_night(c, "done", "all tasks done")
+    if merges.auto_merging(evs, review):
+        return None  # a PR merges by itself: stay open (the merge pass runs each pass) until the window or a bound
     if review and not stuck:
         return end_night(c, "done", "waiting for merge: " + ", ".join(sorted(review)))
     return end_night(c, "blocked", "no task ready; stuck: " + (", ".join(sorted(stuck)) or "none"))

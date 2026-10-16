@@ -41,6 +41,8 @@ class LoopTest(unittest.TestCase):
         self.assertIn("PASS", (self.rig.rt / "pr-body.txt").read_text())
 
     def test_night_done_writes_morning_and_digest(self):
+        # Tier 2 without John's approval: nothing merges tonight, so the night ends (an auto-merge keeps it open).
+        self.rig.reply("automerge", {"tier": 2, "auto_merge": False, "reasons": ["auth/**"]}, rc=3)
         self.run_ok()
         self.run_ok()
         self.assertEqual(self.rig.status()["state"], "done")

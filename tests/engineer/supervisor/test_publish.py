@@ -140,6 +140,15 @@ class PublishTest(unittest.TestCase):
         self.assertFalse([a for a in testlib.argv_log(self.root) if a.startswith(("agent-run open-pr", "gh pr"))])
         self.assertIn("push", self.evs("audit")[-1]["detail"]["reason"])
 
+    def test_outcome_records_the_audited_head_not_the_runs(self):
+        run_head, base = "a" * 40, "b" * 40
+        steps.outcome(self.ctx, self.task(), {"head_sha": run_head, "base_sha": base}, "FAIL", ["x"], head=self.sha)
+        audit = self.evs("audit")[-1]
+        self.assertEqual((audit["head_sha"], audit["detail"]["audited_sha"]), (self.sha, self.sha))
+        self.assertTrue(audit["detail"]["diff"])  # the run's own head differs from its base
+        steps.outcome(self.ctx, self.task(), {"head_sha": run_head, "base_sha": base}, "FAIL", ["y"])
+        self.assertEqual(self.evs("audit")[-1]["head_sha"], run_head)
+
 
 if __name__ == "__main__":
     unittest.main()

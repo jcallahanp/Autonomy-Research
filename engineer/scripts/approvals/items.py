@@ -12,6 +12,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 TIERS = ("T1", "T2")
+PENDING = "approvals.pending.jsonl"
 KINDS = ("merge", "plan", "promote", "relogin", "deadend", "denial", "other")
 
 
@@ -46,6 +47,13 @@ def parse_ts(value) -> datetime:
 
 def iso(dt: datetime) -> str:
     return dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def answers(events_path, records_path) -> list:
+    """One project's approval records: its records file plus PENDING next to its events.jsonl (STATE_DIR/<p>/),
+    where replies are kept while the records clone cannot be made; both count as answered."""
+    paths = {Path(records_path), Path(events_path).parent / PENDING}
+    return [r for p in sorted(paths) for r in read_jsonl(p)]
 
 
 def read_jsonl(path) -> list:
@@ -116,9 +124,10 @@ def next_global(state_dir) -> int:
 
 
 def seen(events: list, date) -> tuple:
-    """(items of the last `digest` sent at or before date, every item a `digest` or `notify` event listed
-    by then); date is a Unix time. `all y` covers the first set; a numbered reply must be in the second."""
-    last, listed, last_ts = set(), set(), None
+    """(items of each project's last `digest` sent at or before date, every item a `digest` or `notify` event
+    listed by then); date is a Unix time. `all y` covers the first set (the union over projects, since each
+    project sends its own digest); a numbered reply must be in the second."""
+    last, listed = {}, set()
     for ev in events:
         d = ev.get("detail")
         if ev.get("event") not in ("digest", "notify") or not isinstance(d, dict) or not isinstance(d.get("items"), list):
@@ -131,9 +140,10 @@ def seen(events: list, date) -> tuple:
             continue
         nums = {n for n in (item_num(x) for x in d["items"] if isinstance(x, int)) if n}
         listed |= nums
-        if ev["event"] == "digest" and (last_ts is None or sent >= last_ts):
-            last, last_ts = nums, sent
-    return last, listed
+        project = ev.get("project")
+        if ev["event"] == "digest" and (project not in last or sent >= last[project][0]):
+            last[project] = (sent, nums)
+    return set().union(*(nums for _, nums in last.values())), listed
 
 
 def record(item: dict, now, answer: str, source: str, from_id=None, raw=None) -> dict:
