@@ -60,8 +60,9 @@ and shall not attempt to bypass it.
 
 1. Stop browser work at once. Leave the tab as it is, so John sees the same page on noVNC.
 2. Do not commit half-done browser writes as if they succeeded; note which steps ran.
-3. End the session with these two lines in the final message (the supervisor turns them into the
-   task's `blocked` note and the morning T1 item):
+3. End the session with these two lines in the final message, each on its own line and exactly in
+   this form (the supervisor reads the `BLOCKED:` line from the run output, marks the task `blocked`
+   and raises a T1 `relogin` item, default `n`, that retries the task when John answers `y`):
 
    ```
    BLOCKED: browser challenge kind=<kind> host=<host> url=<url>

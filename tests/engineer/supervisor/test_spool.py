@@ -54,6 +54,45 @@ class SpoolTest(unittest.TestCase):
     def test_missing_spool_dir(self):
         self.assertEqual(spool.ingest(self.spool / "nope", self.events, "demo"), 0)
 
+    def test_spool_maps_event_tap_lines(self):
+        """Lines written by the real plugin/hooks/event_tap.py and hookctx.tap_record map to events."""
+        import os
+        import subprocess
+        sys.path.insert(0, str(REPO / "tests" / "engineer"))
+        import testlib
+        root = testlib.make_root(self.spool.parent / "t")
+        conf_spool = Path(next(l.split("=", 1)[1].strip('"') for l in (root / "etc/engineer.conf").read_text().splitlines()
+                               if l.startswith("SPOOL_DIR=")))
+        conf_spool.mkdir(parents=True, exist_ok=True)
+        env = dict(os.environ, ENGINEER_PROJECT="demo", ENGINEER_TASK_ID="t1")
+        for ev in ({"hook_event_name": "Notification", "notification_type": "permission_prompt", "message": "m"},
+                   {"hook_event_name": "StopFailure", "error": "rate_limit"}):
+            ev.update(session_id="sess-9", cwd=str(self.spool.parent))
+            subprocess.run([sys.executable, str(root / "plugin/hooks/event_tap.py")], input=json.dumps(ev),
+                           env=env, text=True, check=True, capture_output=True)
+        code = ("import json, sys; sys.path.insert(0, sys.argv[1]); import hookctx\n"
+                "for h in ('Stop', 'TaskCompleted'):\n"
+                "    print(json.dumps(hookctx.tap_record({'session_id': 'sess-9', 'hook_event_name': h}, None,"
+                " {'kind': 'gate_gave_up', 'blocks': 3, 'reason': 'check fails'})))")
+        out = subprocess.run([sys.executable, "-c", code, str(root / "plugin/hooks")], env=env, text=True,
+                             check=True, capture_output=True).stdout
+        with open(conf_spool / "sess-9.jsonl", "a") as f:
+            f.write(out)
+        self.assertEqual(spool.ingest(conf_spool, self.events, "demo"), 4)
+        got = events.read(self.events)
+        self.assertEqual([e["event"] for e in got], ["denial", "limit", "gate", "gate"])
+        self.assertEqual(got[0]["detail"]["kind"], "permission_prompt")
+        self.assertTrue(all(e["task_id"] == "t1" and e["session_id"] == "sess-9" and e["project"] == "demo"
+                            and e["detail"]["source"] == "hook" for e in got))
+        self.assertEqual([e["detail"]["hook_event_name"] for e in got[2:]], ["Stop", "TaskCompleted"])
+        self.assertEqual(got[3]["detail"]["kind"], "gate_gave_up")
+
+    def test_unknown_hook_event_dropped(self):
+        (self.spool / "s4.jsonl").write_text(tap("SessionStart") + "\n" + tap("Stop", kind="other") + "\n")
+        counts = {}
+        self.assertEqual(spool.ingest(self.spool, self.events, "demo", counts), 0)
+        self.assertEqual(counts["dropped"], 2)
+
 
 if __name__ == "__main__":
     unittest.main()

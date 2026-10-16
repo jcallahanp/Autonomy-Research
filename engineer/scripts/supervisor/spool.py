@@ -1,8 +1,9 @@
 """Move hook-tap lines (plugin/hooks/event_tap.py, stop_gate.py) from SPOOL_DIR into events.jsonl.
 
-A tap line is {ts, session_id, hook_event_name, project, task_id, detail}. StopFailure becomes a
-`limit` event, Notification a `denial`, anything else (Stop, TaskCompleted, gate_gave_up) a `gate`;
-every one carries detail.source = "hook". A file holding another project's lines is left alone.
+A tap line is {ts, session_id, hook_event_name, project, task_id, detail} (hookctx.tap_record).
+StopFailure becomes a `limit` event, Notification a `denial`, Stop or TaskCompleted with
+detail.kind == "gate_gave_up" (stop_gate.py) a `gate`; any other line is dropped and counted. Every
+event carries detail.source = "hook". A file holding another project's lines is left alone.
 """
 import json
 import re
@@ -10,7 +11,7 @@ from pathlib import Path
 
 from supervisor import events
 
-KINDS = {"StopFailure": "limit", "Notification": "denial"}
+KINDS = {"StopFailure": "limit", "Notification": "denial", "Stop": "gate", "TaskCompleted": "gate"}
 _TS = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$")
 
 
@@ -20,7 +21,9 @@ def _event(line: dict) -> dict | None:
         return None
     detail = line.get("detail") if isinstance(line.get("detail"), dict) else {}
     detail = {**detail, "source": "hook", "hook_event_name": hook}
-    kind = KINDS.get(hook, "gate")
+    kind = KINDS.get(hook)
+    if kind is None or (kind == "gate" and detail.get("kind") != "gate_gave_up"):
+        return None
     if kind == "denial":
         detail.setdefault("kind", detail.get("notification_type") or detail.get("tool_name") or hook)
     ts = line.get("ts")

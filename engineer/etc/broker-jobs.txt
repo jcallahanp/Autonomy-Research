@@ -7,3 +7,4 @@ api-call	engineer,supervisor
 hc-ping	supervisor
 tg-send	supervisor
 tg-poll	supervisor
+sync-mirror	supervisor

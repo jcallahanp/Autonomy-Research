@@ -68,6 +68,20 @@ class Digest(unittest.TestCase):
                                       "No reply means no.")
             self.assertEqual(msgs[1], '1. ask 1 (default: no). Reply "1 y" or "1 n".')
 
+    def test_cli_json_object_lists_shown_items(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            ev, rec = Path(tmp) / "events.jsonl", Path(tmp) / "approvals.jsonl"
+            ev.write_text("".join(json.dumps(
+                {"ts": f"2026-10-16T0{n}:00:00Z", "project": "demo", "event": "approval_ask",
+                 "detail": {"item": n, "tier": "T1", "kind": "other", "text": f"ask {n}", "default": "no",
+                            "reversible": True, "ref": None}}) + "\n" for n in range(1, 8)))
+            out = subprocess.run([sys.executable, str(REPO / "engineer/scripts/approvals/digest.py"),
+                                  "--events", str(ev), "--records", str(rec), "--now", "2026-10-16T09:30:00Z",
+                                  "--max-open", "5", "--json-object"], capture_output=True, text=True, check=True)
+            doc = json.loads(out.stdout)
+            self.assertEqual(doc["shown"], [1, 2, 3, 4, 5])
+            self.assertIn("+2 more in MORNING.md", doc["messages"][-1])
+
 
 if __name__ == "__main__":
     unittest.main()

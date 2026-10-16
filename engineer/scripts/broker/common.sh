@@ -57,3 +57,14 @@ branch_ok() {
   esac
   git check-ref-format "refs/heads/$b" || die 65 "bad branch name"
 }
+
+# git_with_pat ARGS...: run one git command with the bot PAT as an http.extraheader in its environment only.
+# The PAT stays in local variables; printf is a builtin, so it is never on a command line.
+git_with_pat() {
+  local pat auth
+  pat=$(secret GH_BOT_PAT)
+  [ -n "$pat" ] || die 1 "GH_BOT_PAT is empty"
+  auth=$(printf 'x-access-token:%s' "$pat" | base64 -w0)
+  GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0="http.$GITHUB_URL/.extraheader" GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $auth" \
+    git "$@"
+}

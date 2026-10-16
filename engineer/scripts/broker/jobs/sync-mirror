@@ -1,0 +1,34 @@
+#!/bin/bash
+set -euo pipefail
+# sync-mirror PROJECT   (agent-run job; caller supervisor only)
+# Fetches the project's default branch from GitHub into the broker-owned bare mirror MIRROR_DIR/<p>.git
+# (default STATE_DIR/mirrors), which `engineer` may read but not write: run-task then fetches it over
+# file:// in its own clone before branching, so a task starts from GitHub's head without the engineer
+# holding a credential and without a privileged user running git inside an engineer-writable repo.
+# Only the default branch is mirrored. The bot PAT reaches git only as an http.extraheader in the environment.
+# Prints {"project", "branch", "sha"}. Exit: 64 usage, 65 refused, 77 caller not allowed, else git's failure.
+root=$(cd "$(dirname "$(readlink -f "$0")")/../../.." && pwd)
+# shellcheck disable=SC1091
+. "$root/scripts/broker/common.sh"
+need_caller
+[ "$AGENT_RUN_CALLER" = supervisor ] || die 77 "only supervisor may sync a mirror"
+[ $# -eq 1 ] || die 64 "usage: sync-mirror PROJECT"
+project_row "$1"
+name=$1
+
+# Owner rwx, group (engineer, from the setgid MIRROR_DIR) read-only, others nothing.
+umask 027
+mdir=${MIRROR_DIR:-$STATE_DIR/mirrors}
+m="$mdir/$name.git"
+[ ! -L "$mdir" ] && [ ! -L "$m" ] || die 65 "mirror path is a symlink"
+if [ ! -d "$m" ]; then
+  mkdir -p "$mdir"
+  git init -q --bare --template= --shared=0640 "$m"
+  git --git-dir="$m" config core.hooksPath /dev/null
+fi
+
+ref="refs/heads/$P_DEFAULT"
+git_with_pat --git-dir="$m" fetch --quiet --no-tags --prune --no-write-fetch-head \
+  "$GITHUB_URL/$P_REPO.git" "+$ref:$ref" >&2 || die 1 "git fetch from GitHub failed"
+sha=$(git --git-dir="$m" rev-parse --verify "$ref^{commit}")
+jq -cn --arg p "$name" --arg b "$P_DEFAULT" --arg s "$sha" '{project: $p, branch: $b, sha: $s}'

@@ -21,7 +21,7 @@ def open_t1(events: list) -> int:
             asked[d["item"]] = d
         elif e["event"] == "approval_answer" and "item" in d:
             answered.add(d["item"])
-    return sum(1 for n, d in asked.items() if d.get("tier") == 1 and n not in answered)
+    return sum(1 for n, d in asked.items() if d.get("tier") in ("T1", 1) and n not in answered)
 
 
 def _section(title: str, lines: list) -> list:

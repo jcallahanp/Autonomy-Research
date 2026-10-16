@@ -27,6 +27,10 @@ def ask(n, tier="T1", ts=ASKED, **extra):
     return {"ts": ts, "project": "demo", "event": "approval_ask", "detail": detail}
 
 
+def digest_ev(shown, ts="2026-10-16T07:30:00Z"):
+    return {"ts": ts, "project": "demo", "event": "digest", "detail": {"items": shown}}
+
+
 def msg(text, date=AFTER, edited=False, uid=1):
     return {"update_id": uid, "from_id": 111111, "date": date, "text": text, "edited": edited}
 
@@ -88,8 +92,27 @@ class ApplyReplies(unittest.TestCase):
         self.assertEqual(recs[0]["tier"], "T2")
 
     def test_reply_sent_before_ask_does_not_cover_it(self):
-        out, recs, _ = self.run_cli([ask(1), ask(2, ts="2026-10-16T09:00:00Z")], [msg("all y")])
+        out, recs, _ = self.run_cli([ask(1), ask(2, ts="2026-10-16T09:00:00Z"), digest_ev([1, 2])], [msg("all y")])
         self.assertEqual([o["item"] for o in out], [1])
+
+    def test_reply_all_y_skips_hidden_items(self):
+        evs = [ask(n) for n in range(1, 7)] + [digest_ev([1, 2, 3, 4, 5])]
+        out, recs, _ = self.run_cli(evs, [msg("all y")])
+        self.assertEqual([o["item"] for o in out], [1, 2, 3, 4, 5])
+        self.assertEqual(sorted(r["item"] for r in recs), ["1", "2", "3", "4", "5"])
+        out, recs, _ = self.run_cli(evs, [msg("6 y", uid=2)])
+        self.assertEqual([o["item"] for o in out], [6])
+
+    def test_reply_all_y_uses_digest_the_reply_answers(self):
+        evs = [ask(1), ask(2), digest_ev([1], ts="2026-10-16T07:30:00Z"),
+               digest_ev([1, 2], ts="2026-10-16T09:00:00Z")]
+        out, _, _ = self.run_cli(evs, [msg("all y")])
+        self.assertEqual([o["item"] for o in out], [1])
+
+    def test_reply_all_y_without_digest_approves_nothing(self):
+        out, recs, evs = self.run_cli([ask(1)], [msg("all y")])
+        self.assertEqual((out, recs), ([], []))
+        self.assertIn("not understood", evs[-1]["detail"]["text"])
 
     def test_reply_same_item_twice_in_batch(self):
         out, recs, _ = self.run_cli([ask(1)], [msg("1 n", uid=1), msg("1 y", uid=2)])

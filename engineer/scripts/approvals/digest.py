@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Telegram digest text: one numbered line per open T1 item, and a separate message per T2 hard gate.
 
-CLI (run by the supervisor): digest.py --events E --records R --now ISO [--max-open N]
-prints a JSON list of message strings: each open T2 item first, then the T1 digest.
+CLI (run by the supervisor): digest.py --events E --records R --now ISO [--max-open N] [--json-object]
+prints a JSON list of message strings: each open T2 item first, then the T1 digest. With --json-object it
+prints {"messages": [...], "shown": [item, ...]}: the T1 items the digest lists, which `all y` may cover.
 """
 import argparse
 import json
@@ -47,11 +48,16 @@ def _oldest_first(open_items: dict) -> list:
     return sorted(open_items.values(), key=lambda it: (str(it.get("asked_at", "")), it["item"]))
 
 
+def shown(open_items: dict, max_open: int = 5) -> list:
+    """The T1 items render() lists, oldest first (the rest are "+K more")."""
+    return [it for it in _oldest_first(open_items) if it.get("tier") == "T1"][:max_open]
+
+
 def render(open_items: dict, max_open: int = 5) -> list:
     """T1 digest messages: oldest first, at most max_open lines plus "+K more in MORNING.md"."""
     t1 = [it for it in _oldest_first(open_items) if it.get("tier") == "T1"]
     lines = []
-    for it in t1[:max_open]:
+    for it in shown(open_items, max_open):
         n = it["item"]
         lines.append(f'{n}. {one_line(it.get("text", ""))} (default: {one_line(it.get("default", "no"))}). '
                      f'Reply "{n} y" or "{n} n".')
@@ -83,11 +89,16 @@ def main(argv=None) -> int:
     ap.add_argument("--records", required=True)
     ap.add_argument("--now", required=True)
     ap.add_argument("--max-open", type=int, default=None)
+    ap.add_argument("--json-object", action="store_true")
     a = ap.parse_args(argv)
     open_ = _items.open_items(_items.read_jsonl(a.events), _items.read_jsonl(a.records), a.now)
+    max_open = a.max_open if a.max_open is not None else _max_open_default()
     msgs = [render_t2(it) for it in _oldest_first(open_) if it.get("tier") == "T2"]
-    msgs += render(open_, a.max_open if a.max_open is not None else _max_open_default())
-    print(json.dumps(msgs))
+    msgs += render(open_, max_open)
+    if a.json_object:
+        print(json.dumps({"messages": msgs, "shown": [it["item"] for it in shown(open_, max_open)]}))
+    else:
+        print(json.dumps(msgs))
     return 0
 
 

@@ -2,12 +2,13 @@
 """run-task PROJECT TASK_ID PROFILE [--resume SESSION_ID] [--dry-run]
 
 Sudo target (supervisor -> engineer). Creates or reuses the worktree PROJECTS_DIR/<p>.wt/<id> on branch
-task/<id> from the project's default branch, then runs one profile from templates/run-defaults.yaml:
+task/<id> from the project's default branch (fetched first from the broker mirror, scripts/runtask/worktree.py),
+then runs one profile from templates/run-defaults.yaml:
 `check` runs the task's check command under `timeout`; every other profile runs a fixed `claude -p` argv
 built here (the caller passes no command, flag or prompt). Prints one run-result JSON line and exits 0;
 with --dry-run prints {"argv", "cwd", "env"} and changes nothing.
 Refusals (message on stderr): 64 usage; 65 bad project, task, profile or resume; 75 kill switch, or not
-locked for a non-check profile on a non-scratch project; 78 ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN set.
+locked for a non-check profile on a non-scratch project; 78 an Anthropic key or token is set (REFUSED_ENV).
 """
 import json
 import os
@@ -23,10 +24,12 @@ sys.path.insert(0, str(ROOT / "scripts"))
 import yaml  # noqa: E402
 
 from eng import conf as engconf, schema  # noqa: E402
+from runtask import worktree  # noqa: E402
 
 PROJECT_RE = re.compile(r"^[a-z0-9][a-z0-9-]{0,39}$")
 SESSION_RE = re.compile(r"^[0-9a-f-]{36}$")
 TAIL_LINES = 200
+REFUSED_ENV = ("ANTHROPIC_API_KEY", "CLAUDE_CODE_OAUTH_TOKEN", "ANTHROPIC_AUTH_TOKEN")
 
 
 class Refuse(Exception):
@@ -79,22 +82,6 @@ def find_task(clone: Path, task_id: str) -> dict:
     raise Refuse(65, f"task {task_id} not in docs/plan/tasks.json")
 
 
-def git(*args, cwd=None) -> str:
-    return subprocess.run(["git", *args], cwd=cwd, check=True, capture_output=True, text=True).stdout.strip()
-
-
-def ensure_worktree(clone: Path, wt: Path, branch: str, default: str) -> None:
-    if wt.exists():
-        if wt.is_symlink() or git("rev-parse", "--abbrev-ref", "HEAD", cwd=wt) != branch:
-            raise Refuse(65, f"{wt} exists but is not a worktree on {branch}")
-        return
-    wt.parent.mkdir(parents=True, exist_ok=True)
-    exists = subprocess.run(["git", "rev-parse", "-q", "--verify", f"refs/heads/{branch}"], cwd=clone,
-                            capture_output=True).returncode == 0
-    extra = [str(wt), branch] if exists else ["-b", branch, str(wt), default]
-    git("worktree", "add", "-q", *extra, cwd=clone)
-
-
 def build(conf: dict, a: dict, profiles: dict, task: dict, wt: Path) -> tuple:
     project, task_id, profile = a["pos"]
     p = profiles[profile]
@@ -122,7 +109,7 @@ def child_env(conf: dict, project: str, task_id: str) -> dict:
             "ENGINEER_UNATTENDED": "1"}
 
 
-def run(profile: str, argv: list, wt: Path, env: dict) -> dict:
+def run(profile: str, argv: list, wt: Path, env: dict, base_ref: str) -> dict:
     p = subprocess.run(argv, cwd=wt, env=env, stdin=subprocess.DEVNULL, capture_output=True)
     out, err = p.stdout.decode(errors="replace"), p.stderr.decode(errors="replace")
     lines = (out + ("\n" if out and not out.endswith("\n") else "") + err).splitlines()
@@ -139,20 +126,19 @@ def run(profile: str, argv: list, wt: Path, env: dict) -> dict:
             res.update(session_id=r.get("session_id"), cost_usd=r.get("total_cost_usd"),
                        num_turns=r.get("num_turns"), subtype=r.get("subtype"),
                        permission_denials=r.get("permission_denials") or [])
+            if isinstance(r.get("structured_output"), dict):
+                res["structured_output"] = r["structured_output"]
             res["is_error"] = bool(r.get("is_error")) or p.returncode != 0
         else:
             res["is_error"] = True
-    try:
-        res["head_sha"] = git("rev-parse", "HEAD", cwd=wt)
-    except subprocess.CalledProcessError:
-        res["head_sha"] = None
+    res.update(worktree.shas(wt, base_ref))
     return res
 
 
 def main(argv: list) -> int:
     a = parse_args(argv)
     project, task_id, profile = a["pos"]
-    for key in ("ANTHROPIC_API_KEY", "CLAUDE_CODE_OAUTH_TOKEN"):
+    for key in REFUSED_ENV:
         if os.environ.get(key):
             raise Refuse(78, f"{key} is set; runs use the Max /login only (John's decision 1)")
     conf = engconf.load(ROOT)
@@ -177,10 +163,13 @@ def main(argv: list) -> int:
         print(json.dumps({"argv": argv_, "cwd": str(wt), "env": env}))
         return 0
     try:
-        ensure_worktree(clone, wt, f"task/{task_id}", row["default"])
+        base = worktree.ensure_worktree(clone, wt, f"task/{task_id}", row["default"],
+                                        worktree.mirror_path(conf, project))
+    except ValueError as e:
+        raise Refuse(65, str(e))
     except subprocess.CalledProcessError as e:
-        raise Refuse(65, f"cannot create the worktree: {e.stderr.strip()[:200]}")
-    print(json.dumps(run(profile, argv_, wt, env)))
+        raise Refuse(65, f"cannot create the worktree: {(e.stderr or '').strip()[:200]}")
+    print(json.dumps(run(profile, argv_, wt, env, base)))
     return 0
 
 

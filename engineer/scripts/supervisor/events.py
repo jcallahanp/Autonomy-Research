@@ -69,7 +69,7 @@ def state(events: list) -> dict:
 
     running: task_start or resume without a later task_end or crash. attempts: failed attempts
     (an outcome `audit` event whose detail.status is not done, or a crash). waiting: tasks with a
-    reset_wait not yet followed by a resume.
+    reset_wait not yet followed by a resume. John's `yes` to a task's relogin ask unblocks it.
     """
     st = {"done": set(), "blocked": set(), "needs_john": set(), "running": set(), "attempts": {},
           "waiting": {}}
@@ -86,6 +86,8 @@ def state(events: list) -> dict:
             st["attempts"][tid] = st["attempts"].get(tid, 0) + 1
         elif kind == "reset_wait":
             st["waiting"][tid] = {"session_id": e.get("session_id"), "reset_at": detail.get("reset_at")}
+        elif kind == "approval_answer" and detail.get("kind") == "relogin" and detail.get("answer") == "yes":
+            st["blocked"].discard(tid)
         elif kind == "audit" and detail.get("status"):
             status = detail["status"]
             if status != "done":

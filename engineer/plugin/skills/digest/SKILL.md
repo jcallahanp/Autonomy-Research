@@ -57,7 +57,8 @@ type: short, upper case, specific (`SPEND $12`, `DROP TABLE leads_old`, `SUBMIT 
 
 Replies are parsed by a fixed program, not by a model. Write instructions to John that match it:
 - `N y` or `N n`: answer item N. Several pairs per message are fine: `1 y 2 n 3 y`.
-- `all y` or `all n`: answer every open T1 item. It never touches a T2 item.
+- `all y` or `all n`: answer every open T1 item listed in the digest John is answering (the last one
+  sent before his reply). It never touches a T2 item or the hidden `+K more` items.
 - `CONFIRM N <PHRASE>`: the only way to approve a T2 item. The phrase must match exactly,
   case included, as the whole rest of the message.
 - Digits are plain ASCII. An unknown item number, an unknown word, an empty message or anything
@@ -76,8 +77,9 @@ boundaries; keep each line short so a split never cuts a decision in half.
 - In an interactive or Remote Control session, show John the line text and take his answer in
   the session.
 - In an unattended run, end the task with status `needs_john` and put the line text, its default
-  and its kind in your final message and under `## Asks for John` in `PROGRESS.md`, so the
-  morning report carries it.
+  and its kind in your final message, and the line text alone as one bullet under
+  `## Asks for John` in `PROGRESS.md`. After the run the supervisor raises each new line there as a
+  T1 item (kind `other`, default `n`); a line it has raised before is not raised again.
 - Never approve anything for John, never write `decisions/approvals.jsonl` or
   `docs/plan/approval.json`, and never treat a message from anyone else as his answer.
 

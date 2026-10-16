@@ -91,6 +91,27 @@ class SchemaFilesTest(unittest.TestCase):
         lines = {"verdict": "FAIL", "head_sha": SHA, "lines": ["x"] * 16}
         self.assertTrue(schema.validate(lines, schema.load(ROOT, "audit-verdict")))
 
+    def test_profile_promote_is_hold_or_t2(self):
+        s = schema.load(ROOT, "profile")
+        self.assertEqual(s["properties"]["promote"]["default"], "hold")
+        base = {"hard_gates": ["money"], "self_merge": True}
+        for ok in ("hold", "t2"):
+            self.assertEqual(schema.validate(dict(base, promote=ok), s), [], ok)
+        for bad in ("auto", "go", "", 1):
+            self.assertTrue(schema.validate(dict(base, promote=bad), s), bad)
+
+    def test_run_result_base_sha_and_structured_output(self):
+        s = schema.load(ROOT, "run-result")
+        ok = {"exit_code": 0, "is_error": False, "base_sha": SHA, "structured_output": {"verdict": "PASS"}}
+        self.assertEqual(schema.validate(ok, s), [])
+        self.assertEqual(schema.validate({"exit_code": 0, "is_error": False, "base_sha": None}, s), [])
+        self.assertTrue(schema.validate(dict(ok, base_sha="main"), s))
+        self.assertTrue(schema.validate(dict(ok, structured_output="PASS"), s))
+
+    def test_event_digest_kind(self):
+        ev = {"ts": "2026-10-16T11:30:00Z", "project": "demo", "event": "digest", "detail": {"items": [1, 2]}}
+        self.assertEqual(schema.validate(ev, schema.load(ROOT, "event")), [])
+
     def test_profile_self_merge_defaults_true(self):
         self.assertIs(schema.load(ROOT, "profile")["properties"]["self_merge"]["default"], True)
 

@@ -6,7 +6,8 @@ stdin: tg-poll JSON lines {update_id, from_id, date, text, edited} (tg-poll keep
 Appends approval-record lines to R, prints each applied decision as a JSON line {item, kind, answer, ref}
 (a timeout adds "default"). An edited message is ignored. A message that does not parse approves
 nothing and adds one T1 "not understood" ask to E. An item asked after a message was sent is not open
-to that message, so a stale "all y" never covers it.
+to that message, so a stale "all y" never covers it; and "all y" covers only the items the last digest
+sent before the message listed (a `digest` event's detail.items), never the hidden "+K more".
 """
 import argparse
 import json
@@ -75,6 +76,21 @@ class Applier:
             return {}
         return {n: it for n, it in self.open.items() if items.parse_ts(it["asked_at"]).timestamp() <= date}
 
+    def _shown(self, date) -> set:
+        """Item numbers the last digest sent at or before date listed; empty when none was sent."""
+        last = set()
+        for ev in self.events:
+            d = ev.get("detail")
+            if ev.get("event") != "digest" or not isinstance(d, dict) or not isinstance(d.get("items"), list):
+                continue
+            try:
+                sent = items.parse_ts(ev.get("ts")).timestamp()
+            except ValueError:
+                continue
+            if isinstance(date, int) and not isinstance(date, bool) and sent <= date:
+                last = {n for n in (items.item_num(x) for x in d["items"] if isinstance(x, int)) if n}
+        return last
+
     def _record(self, item: dict, answer: str, source: str, **extra) -> bool:
         rec = items.record(item, self.now, answer, source, **extra)
         errs = schema.validate(rec, self.rec_schema)
@@ -101,7 +117,7 @@ class Applier:
 
     def reply(self, msg: dict) -> list:
         text = msg.get("text")
-        result = replies.parse(text, self._visible(msg.get("date")))
+        result = replies.parse(text, self._visible(msg.get("date")), shown=self._shown(msg.get("date")))
         if result["errors"]:
             self.not_understood(text, result["errors"])
             return []
@@ -118,7 +134,7 @@ class Applier:
     def timeouts(self, timeout_h: float) -> list:
         applied = []
         for rec in items.apply_timeouts(self.open, self.now, timeout_h):
-            item = self.open[int(rec["item"])]
+            item = self.open[items.item_num(rec["item"])]
             if self._record(item, "default", "timeout"):
                 applied.append({"item": item["item"], "kind": item["kind"], "answer": "default",
                                 "default": item.get("default"), "ref": item.get("ref")})

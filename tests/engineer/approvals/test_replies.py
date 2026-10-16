@@ -27,6 +27,15 @@ class Replies(unittest.TestCase):
         self.assertEqual(out, {"decisions": [{"item": 1, "answer": "yes"}, {"item": 2, "answer": "no"}],
                                "errors": []})
 
+    def test_reply_all_covers_only_shown(self):
+        out = replies.parse("all y", {1: t1(1), 2: t1(2), 3: t1(3)}, shown={1, 3})
+        self.assertEqual([d["item"] for d in out["decisions"]], [1, 3])
+        out = replies.parse("all y", {1: t1(1)}, shown=set())
+        self.assertEqual(out["decisions"], [])
+        self.assertTrue(out["errors"])
+        out = replies.parse("2 y", {1: t1(1), 2: t1(2)}, shown={1})
+        self.assertEqual(out["decisions"], [{"item": 2, "answer": "yes"}])
+
     def test_reply_all_y_skips_t2(self):
         out = replies.parse("all y", {1: t1(1), 4: t2(4, "SPEND $12")})
         self.assertEqual(out["decisions"], [{"item": 1, "answer": "yes"}])

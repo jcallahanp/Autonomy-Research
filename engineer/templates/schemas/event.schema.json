@@ -50,7 +50,8 @@
         "pr_open",
         "merge",
         "challenge",
-        "heartbeat"
+        "heartbeat",
+        "digest"
       ]
     },
     "exit_code": {

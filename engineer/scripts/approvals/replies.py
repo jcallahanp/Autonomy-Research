@@ -2,7 +2,7 @@
 
 Grammar, tokens split on whitespace:
   <n> y|n ...          answer T1 items; n is ASCII digits only
-  all y | all n        every open T1 item (never a T2)
+  all y | all n        every open T1 item the answered digest showed (never a T2, never "+K more")
   CONFIRM <n> <PHRASE> the one T2 item n; PHRASE must equal the item's phrase exactly
                        (case-sensitive; the whole rest of the message)
 Any error approves nothing from the message.
@@ -33,7 +33,7 @@ def _confirm(tokens: list, open_items: dict) -> dict:
     return {"decisions": [{"item": n, "answer": "yes"}], "errors": []}
 
 
-def _pairs(tokens: list, open_items: dict) -> dict:
+def _pairs(tokens: list, open_items: dict, shown) -> dict:
     errors, answers = [], {}
     if len(tokens) % 2:
         errors.append(f"incomplete reply: {tokens[-1]!r} has no y or n")
@@ -44,9 +44,10 @@ def _pairs(tokens: list, open_items: dict) -> dict:
             errors.append(f"unknown answer {word!r}; use y or n")
             continue
         if _fold(target) == "all":
-            nums = [n for n, it in sorted(open_items.items()) if it.get("tier") == "T1"]
+            nums = [n for n, it in sorted(open_items.items())
+                    if it.get("tier") == "T1" and (shown is None or n in shown)]
             if not nums:
-                errors.append("all: no open T1 items")
+                errors.append("all: no open T1 items in the digest this reply answers")
         elif _NUM.fullmatch(target):
             n = int(target)
             item = open_items.get(n)
@@ -69,11 +70,14 @@ def _pairs(tokens: list, open_items: dict) -> dict:
     return {"decisions": [{"item": n, "answer": a} for n, a in answers.items()], "errors": []}
 
 
-def parse(text, open_items: dict) -> dict:
-    """{"decisions": [{"item": int, "answer": "yes"|"no"}], "errors": [str]}; errors mean no decisions."""
+def parse(text, open_items: dict, shown=None) -> dict:
+    """{"decisions": [{"item": int, "answer": "yes"|"no"}], "errors": [str]}; errors mean no decisions.
+
+    shown: the item numbers the digest being answered listed; `all` covers only those (None: every open T1).
+    """
     if not isinstance(text, str) or not text.strip():
         return {"decisions": [], "errors": ["empty reply"]}
     tokens = text.split()
     if tokens[0] == "CONFIRM":
         return _confirm(tokens, open_items)
-    return _pairs(tokens, open_items)
+    return _pairs(tokens, open_items, shown)

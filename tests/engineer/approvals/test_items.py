@@ -22,6 +22,18 @@ def ask(n, tier="T1", hours_ago=1, reversible=True, **extra):
 
 
 class Items(unittest.TestCase):
+    def test_item_number_round_trip(self):
+        for n in (1, 7, 123456789):
+            self.assertEqual(items.item_key(n), str(n))
+            self.assertEqual(items.item_num(items.item_key(n)), n)
+            self.assertEqual(items.item_num(n), n)
+        rec = items.record({"item": 4, "tier": "T1", "kind": "merge", "text": "t"}, NOW, "yes", "telegram")
+        self.assertEqual((rec["item"], items.item_num(rec["item"])), ("4", 4))
+        for bad in (0, -1, True, "", "04x", "\uff11", "1.0", None, 1.5):
+            self.assertIsNone(items.item_num(bad), bad)
+        with self.assertRaises(ValueError):
+            items.item_key("4")
+
     def test_open_items_skip_answered(self):
         events = [ask(1), ask(2), {"ts": NOW, "project": "demo", "event": "task_start"}]
         records = [{"item": "1", "answer": "yes"}]

@@ -17,7 +17,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import yaml  # noqa: E402
 
 from eng import conf as engconf  # noqa: E402
-from supervisor import breaker, dag, events, morning, nightwin, run_status, spool, steps  # noqa: E402
+from supervisor import asks, breaker, dag, events, morning, nightwin, run_status, spool, steps  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
 SLEEP_SECONDS = 60
@@ -52,8 +52,13 @@ def read_projects(path, only=None) -> list:
 
 
 def send_digest(c, header=None):
-    for text in ([header] if header else []) + steps.digest(c):
+    """Send the digest; record which T1 items it listed, the only ones a later `all y` may cover."""
+    msgs, shown = steps.digest(c)
+    for text in ([header] if header else []) + msgs:
         steps.agent_run(c.conf, "tg-send", stdin=text)
+    if shown is not None:
+        c.ev("digest", detail={"items": shown})
+    c.dir.mkdir(parents=True, exist_ok=True)
     (c.dir / "last-digest").write_text(nightwin.local_date(c.now, c.tz) + "\n")
 
 
@@ -78,18 +83,6 @@ def end_night(c, state, reason):
     send_digest(c, f"{c.name}: night of {key} ended {state}" + (f" ({reason})" if reason else ""))
 
 
-def apply_replies(c, polled: str):
-    if not polled.strip():
-        return
-    c.records_file.parent.mkdir(parents=True, exist_ok=True)
-    for d in steps.poll_replies(c, polled):
-        c.ev("approval_answer", detail=d)
-        if d.get("kind") == "plan" and d.get("answer") == "y":
-            steps.approve_plan(c, str(d.get("ref") or f"item-{d.get('item')}"))
-    if c.records_file.exists():
-        c.push("decisions/approvals.jsonl", c.records_file.read_text(), "records: approvals")
-
-
 def _after(c, res: dict):
     if "night" in res:
         end_night(c, res["night"], res["reason"])
@@ -102,7 +95,8 @@ def iterate(c, polled: str):
     spool.ingest(c.conf["SPOOL_DIR"], c.events, c.name)
     events.reconcile(c.events, c.name)
     steps.agent_run(c.conf, "hc-ping")
-    apply_replies(c, polled)
+    asks.apply_replies(c, polled)
+    asks.from_progress(c)  # the clone's asks (a plan approval comes before any task runs)
     win = c.defaults["night"]
     idx, open_night = events.current_night(events.read(c.events))
     if Path(c.conf["KILL_SWITCH"]).exists():

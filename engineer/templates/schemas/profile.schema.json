@@ -32,9 +32,12 @@
       "description": "Extra Tier 2 globs or kinds."
     },
     "promote": {
-      "type": "string",
+      "enum": [
+        "hold",
+        "t2"
+      ],
       "default": "hold",
-      "description": "Promotion to production; hold until John says go."
+      "description": "How a production promote reaches John: hold (a T1 line, default hold, promote only after he says go) or t2 (a T2 hard-gate prompt instead)."
     },
     "self_merge": {
       "type": "boolean",

@@ -96,7 +96,7 @@ class LoopTest(unittest.TestCase):
         self.run_ok()
         asks = [e["detail"] for e in self.rig.events() if e["event"] == "approval_ask"]
         self.assertEqual(len(asks), 1)
-        self.assertEqual((asks[0]["tier"], asks[0]["kind"], asks[0]["item"]), (1, "merge", 1))
+        self.assertEqual((asks[0]["tier"], asks[0]["kind"], asks[0]["item"]), ("T1", "merge", 1))
         self.assertEqual(asks[0]["ref"], "https://github.com/o/demo/pull/7")
         self.assertEqual(self.outcome()[-1]["status"], "done")
 
@@ -164,13 +164,13 @@ class LoopTest(unittest.TestCase):
 
     def test_outside_window_polls_and_sends_digest(self):
         (self.rig.rt / "poll").write_text('{"update_id": 1, "from_id": 111111, "date": 1, "text": "1 y", "edited": false}\n')
-        (self.rig.rt / "apply-replies.py.out").write_text('{"item": 1, "kind": "plan", "answer": "y", "ref": "rec-1"}')
+        (self.rig.rt / "apply-replies.py.out").write_text('{"item": 1, "kind": "plan", "answer": "yes", "ref": null}')
         self.run_ok(DAY)
         argv = self.rig.argv()
         self.assertFalse([a for a in argv if a.startswith("run-task")])
         self.assertTrue([a for a in argv if a.startswith("agent-run tg-poll")])
         self.assertIn("1 y", (self.rig.rt / "apply-replies.py.stdin").read_text())
-        self.assertTrue([a for a in argv if a.startswith("approve-plan demo --record-id rec-1 --by john --source telegram")])
+        self.assertTrue([a for a in argv if a.startswith("approve-plan demo --record-id item-1 --item 1 --by john --source telegram")])
         self.assertIn("approval_answer", [e["event"] for e in self.rig.events()])
         self.assertIn("Merge PR 7?", (self.rig.rt / "sent.txt").read_text())
         n = len((self.rig.rt / "sent.txt").read_text())

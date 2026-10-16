@@ -62,8 +62,11 @@ small, and change it only through a change record.
 ## Asking for approval
 
 1. Open the plan as one PR. Its description lists the four signed files and links each draft.
-2. Add one T1 line: `Approve plan v<N> for <project>? PR <url>` with default `n` (see the
-   `digest` skill). Plan approval never takes a default on timeout.
+2. Add one T1 line: `Approve plan v<N> for <project>? PR <url>` with default `n`, as a bullet
+   under `## Asks for John` in `PROGRESS.md` (see the `digest` skill). The supervisor raises it as
+   the plan item with the sha256 of each signed file as it is at that moment. Plan approval never
+   takes a default on timeout. If a signed file changes after the line is raised, `approve-plan`
+   refuses John's yes; write the line again so he is asked about the files as they are now.
 3. When John approves, the supervisor runs `approve-plan`, which writes the approval and tags
    `plan-approved-N`. Read the approval status from the SessionStart context; do not edit code
    until it says `approved`.

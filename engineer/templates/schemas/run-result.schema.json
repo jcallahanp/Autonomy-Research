@@ -68,6 +68,18 @@
           "string"
         ]
       }
+    },
+    "base_sha": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[0-9a-f]{40}$",
+      "description": "The commit the task branch was created from (merge-base with the default branch)."
+    },
+    "structured_output": {
+      "type": "object",
+      "description": "The parsed --json-schema result of the claude run, when the profile names a schema."
     }
   }
 }

@@ -1,8 +1,10 @@
 #!/usr/bin/python3 -I
-"""approve-plan PROJECT --record-id ID --by NAME --source telegram|pr
+"""approve-plan PROJECT --record-id ID --item N --by NAME --source telegram|pr
 
-Run by the supervisor when John approves the plan item. Copies the four signed files out of the
-project clone (regular files only, no symlinks), writes STATE_DIR/approvals/<p>.json (approval
+Run by the supervisor when John approves plan item N. Copies the four signed files out of the
+project clone (regular files only, no symlinks) and refuses unless each one still has the sha256 the
+plan ask N carried (STATE_DIR/<p>/events.jsonl), so John approves exactly what he saw; with source
+telegram it also needs his `yes` for N in the records clone. Writes STATE_DIR/approvals/<p>.json (approval
 schema, scope_version = previous + 1), commits the same JSON as docs/plan/approval.json on
 engineer-records in the supervisor's records clone, tags it plan-approved-N and pushes with
 `AGENT_RUN push-branch RECORDS_DIR/<p> engineer-records --tag plan-approved-N`.
@@ -22,6 +24,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
+from approvals import planask  # noqa: E402
 from eng import approval, schema  # noqa: E402
 from eng import conf as _conf  # noqa: E402
 
@@ -37,6 +40,7 @@ def args(argv):
     ap = argparse.ArgumentParser(prog="approve-plan")
     ap.add_argument("project")
     ap.add_argument("--record-id", required=True)
+    ap.add_argument("--item", required=True)
     ap.add_argument("--by", required=True)
     ap.add_argument("--source", required=True)
     a = ap.parse_args(argv)
@@ -48,7 +52,22 @@ def args(argv):
         raise Refused("bad approver name")
     if a.source not in ("telegram", "pr"):
         raise Refused("source must be telegram or pr")
+    if not re.fullmatch(r"[1-9][0-9]{0,8}", a.item):
+        raise Refused("bad item number")
+    a.item = int(a.item)
     return a
+
+
+def expected_hashes(conf: dict, a) -> dict:
+    """The plan ask's hashes; John's recorded yes is required for a Telegram approval."""
+    try:
+        ask = planask.ask(Path(conf["STATE_DIR"]) / a.project / "events.jsonl", a.item)
+    except ValueError as e:
+        raise Refused(str(e))
+    records = Path(conf["RECORDS_DIR"]) / a.project / "decisions" / "approvals.jsonl"
+    if a.source == "telegram" and not planask.answered_yes(records, a.item):
+        raise Refused(f"no recorded yes for item {a.item}")
+    return ask.get("files")
 
 
 def listed(conf: dict, project: str) -> bool:
@@ -133,6 +152,7 @@ def main(argv) -> int:
     conf = _conf.load(ROOT)
     if not listed(conf, a.project):
         raise Refused(f"project {a.project} is not in projects.txt")
+    expected = expected_hashes(conf, a)
     rec = Path(conf["RECORDS_DIR"]) / a.project
     if git(rec, "symbolic-ref", "--short", "HEAD", conf=conf) != "engineer-records":
         raise RuntimeError(f"{rec} is not on engineer-records")
@@ -143,6 +163,9 @@ def main(argv) -> int:
         raise RuntimeError(f"tag {tag} already exists in {rec}")
     with tempfile.TemporaryDirectory() as tmp:
         copy_signed(Path(conf["PROJECTS_DIR"]) / a.project, Path(tmp))
+        bad = planask.mismatches(expected, Path(tmp))
+        if bad:
+            raise Refused("signed files differ from what John was asked to approve: " + "; ".join(bad))
         now = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         doc = approval.make(Path(tmp), a.by, a.source, a.record_id, version,
                             gates(Path(tmp) / "docs/plan/profile.yaml"), now)

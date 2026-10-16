@@ -9,7 +9,7 @@ SID=0123abcd-0000-4000-8000-0123456789ab
 stub "$R" claude "printf '%s' \"\$2\" > '$T/prompt'
 { echo \"PWD=\$PWD\"; env | grep -E '^(ENGINEER_|HOME=|PATH=|ANTHROPIC|LEAK)' | sort; } > '$T/claude-env'
 echo 'progress line'
-echo '{\"type\":\"result\",\"subtype\":\"success\",\"is_error\":false,\"num_turns\":3,\"session_id\":\"$SID\",\"total_cost_usd\":0.42,\"permission_denials\":[{\"tool_name\":\"Bash\"}]}'"
+echo '{\"type\":\"result\",\"subtype\":\"success\",\"is_error\":false,\"num_turns\":3,\"session_id\":\"$SID\",\"total_cost_usd\":0.42,\"permission_denials\":[{\"tool_name\":\"Bash\"}],\"structured_output\":{\"verdict\":\"PASS\"}}'"
 
 src="$PROJECTS_DIR/demo"
 new_clone "$src"
@@ -60,6 +60,7 @@ expect 65 "bad task id" "$RT" demo '../t1' implementer --dry-run
 expect 65 "unknown profile" "$RT" demo t1 hacker --dry-run
 expect 78 "ANTHROPIC_API_KEY set" env ANTHROPIC_API_KEY=x "$RT" demo t1 implementer --dry-run
 expect 78 "CLAUDE_CODE_OAUTH_TOKEN set" env CLAUDE_CODE_OAUTH_TOKEN=x "$RT" demo t1 implementer --dry-run
+expect 78 "ANTHROPIC_AUTH_TOKEN set" env ANTHROPIC_AUTH_TOKEN=x "$RT" demo t1 implementer --dry-run
 touch "$KILL_SWITCH"
 expect 75 "kill switch" "$RT" demo t1 implementer --dry-run
 rm -f "$KILL_SWITCH"
@@ -93,6 +94,9 @@ echo "$res" | jq -e --arg s "$SID" --arg h "$(git -C "$wt" rev-parse HEAD)" '.pr
   and .session_id == $s and .cost_usd == 0.42 and .num_turns == 3 and .is_error == false and .timed_out == false
   and .head_sha == $h and (.output_tail | contains("progress line")) and (.permission_denials | length == 1)' >/dev/null \
   || fail "run-result fields: $res"
+# base_sha is the branch point (task/t1 already has a commit in the fixture); structured_output is passed on.
+echo "$res" | jq -e --arg b "$(git -C "$src" merge-base main task/t1)" '.base_sha == $b and .head_sha != $b
+  and .structured_output == {"verdict": "PASS"}' >/dev/null || fail "base_sha/structured_output: $res"
 expect 0 "second run reuses the worktree" "$RT" demo t1 implementer
 
 # check profile: runs the task check in the worktree.
@@ -110,4 +114,27 @@ rm -f "$R/LOCKED"
 new_clone "$PROJECTS_DIR/quiet"
 mkdir -p "$PROJECTS_DIR/quiet/docs/plan" && cp "$src/docs/plan/tasks.json" "$PROJECTS_DIR/quiet/docs/plan/"
 expect 0 "scratch=yes without LOCKED" "$RT" quiet t1 implementer --dry-run
+touch "$R/LOCKED"
+
+# --- test_run_task_fetches_from_mirror: a new task branches from the broker mirror's default branch
+# (newer than the engineer's clone), fetched over file:// with repo hooks off; the mirror belongs to another user.
+m="$STATE_DIR/mirrors/demo.git"
+git clone -q --bare "$src" "$m"
+git clone -q "$m" "$T/upstream" && echo newer > "$T/upstream/newer.txt"
+git -C "$T/upstream" add newer.txt && git -C "$T/upstream" commit -qm "feat: newer" && git -C "$T/upstream" push -q origin main
+up=$(git --git-dir="$m" rev-parse main)
+[ "$up" != "$(git -C "$src" rev-parse main)" ] || fail "fixture: mirror is not ahead of the clone"
+chown -R nobody "$m"
+jq '.tasks += [.tasks[0] | .id = "t3"]' "$src/docs/plan/tasks.json" > "$T/tasks.json" && cp "$T/tasks.json" "$src/docs/plan/tasks.json"
+for h in reference-transaction post-checkout; do printf '#!/bin/sh\ntouch %s/hooked\n' "$T" > "$src/.git/hooks/$h"; chmod 755 "$src/.git/hooks/$h"; done
+expect 0 "implementer run from the mirror" "$RT" demo t3 implementer
+res=$(validate "$T/out") || fail "mirror run-result invalid: $(cat "$T/out")"
+[ "$(git -C "$PROJECTS_DIR/demo.wt/t3" rev-parse HEAD)" = "$up" ] || fail "test_run_task_fetches_from_mirror: t3 not branched from the mirror"
+# test_first_attempt_without_commits_is_no_diff (run-task side): a new branch with no commit has head == base.
+echo "$res" | jq -e --arg u "$up" '.base_sha == $u and .head_sha == $u' >/dev/null || fail "base_sha is not the mirror head: $res"
+[ -e "$T/hooked" ] && fail "a repo hook ran during the mirror fetch or worktree add"
+[ "$(git -C "$src" rev-parse main)" != "$up" ] || fail "run-task moved the clone's main"
+rm -rf "$m" && mkdir -p "$m" && echo garbage > "$m/HEAD"
+jq '.tasks += [.tasks[0] | .id = "t4"]' "$src/docs/plan/tasks.json" > "$T/tasks.json" && cp "$T/tasks.json" "$src/docs/plan/tasks.json"
+expect 65 "broken mirror" "$RT" demo t4 implementer
 exit 0
