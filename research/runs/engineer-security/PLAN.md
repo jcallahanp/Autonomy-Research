@@ -18,7 +18,7 @@ Rulings: Claude Code is the engine and is not up for debate; everything else att
 - [ ] Security frameworks and which items tooling can check - notes/frameworks.md - pending
 - [ ] Security tooling an agent can run, and its noise - notes/tooling.md - pending
 - [x] LLM-driven security review and project-specific risks - notes/llm-review-and-risks.md - medium - CASTLE numbers, scan cost, open prompt packs, independent precision of vendor scanners not opened; Attio replay header and Withings webhook authenticity unconfirmed; John's code not inspected
-- [ ] Reports, gates, remediation and cadence - notes/reports-and-gates.md - pending
+- [x] Reports, gates, remediation and cadence - notes/reports-and-gates.md - medium - PTES page 503, NIST SP 800-115 and PCI PDFs unreadable; no public audit report opened; no sourced dollar cost per LLM scan; DefectDojo default SLA days not stated
 
 ## Gap round
 - pending

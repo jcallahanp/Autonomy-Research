@@ -467,3 +467,15 @@ packaging.md, architecture.md, engineer-intake.md, engineer-existing-systems.md)
 | DefectDojo SLA + risk acceptance (reports-and-gates.md) | https://docs.defectdojo.com/asset_modelling/os_hierarchy/os__sla_configuration/ | Per-severity SLA days, breach flag, risk-acceptance expiry restarts SLA | self-hosted/hosted | 2026-10-16 | Reference design; skip as a service for one user |
 | OWASP WSTG reporting structure (reports-and-gates.md) | https://wstg.owasp.org/latest/5-Reporting/01-Reporting_Structure | Report section list: scope, limitations, findings, artifacts, appendices | docs | 2026-10-16 | Use as REPORT.md skeleton |
 | FIRST CVSS 4.0 (reports-and-gates.md) | https://www.first.org/cvss/v4.0/specification-document | Severity scoring, CVSS-B/BTE labels; severity not risk | spec | 2026-10-16 | Use only for CVE-bearing dependency findings, labelled |
+
+## Engineer human in the loop
+
+| Tool | Link | What it does | Where it runs | Verified | Verdict |
+| --- | --- | --- | --- | --- | --- |
+| Channels permission relay (approvals facet) | https://code.claude.com/docs/en/channels-reference | Forwards tool-use prompts to chat; `yes <id>` verdict; first answer wins; sender allowlist | John's machine/VM | 2026-10-16 | Use for live prompts; do not rely on it overnight (stalled prompt blocks session) |
+| Supervisor Telegram digest | https://core.telegram.org/bots/api | Plain bot: sendMessage out, getUpdates in, allowlist on sender id; numbered batch with defaults | supervisor | 2026-10-16 | Use for batched approvals |
+| LangGraph interrupt | https://docs.langchain.com/oss/python/langgraph/interrupts | Pause/resume graph state, checkpointer required, node replay on resume | Python | 2026-10-16 | Skip; second runtime |
+| HumanLayer | https://github.com/humanlayer/humanlayer | Approval SDK; repo says code is deprecated | - | 2026-10-16 | Reject |
+| n8n human review / Send and Wait | https://docs.n8n.io/build/integrate-ai/ai-examples/human-in-the-loop-for-tools | Tool-call approval via Slack/Telegram; Limit Wait Time | n8n | 2026-10-16 (search text) | Alternative only if n8n already runs |
+| Twilio SMS | https://www.twilio.com/en-us/sms/pricing/us | $0.0083/segment, long code $1.15/month, 10DLC registration | hosted, paid | 2026-10-16 | Fallback alert only, not approval path |
+| Renovate Dependency Dashboard / Dependabot groups | https://docs.renovatebot.com/key-concepts/dashboard/ | Checkbox approval queue; grouped PRs; open-PR cap | hosted | 2026-10-16 | Pattern reference for batch design |
