@@ -72,7 +72,7 @@ if [ -f "$w" ]; then
   fm "$w" description | grep -qi 'spike' || fail method-skills "$w description does not say it is for the spike skill"
   for t in 'env -i' '--ignore-scripts' 'mktemp -d' 'HTTPS_PROXY' 'SSL_CERT_FILE' 'NODE_EXTRA_CA_CERTS' \
            'sudo' 'curl | sh' '~/.ssh' "user's own message" 'as data' 'PATH:' 'TAKEAWAYS:' 'GAPS:' 'CONFIDENCE:' \
-           'install surface' 'works' 'blocked'; do
+           'install surface'; do
     grep -qiF -- "$t" "$w" || fail method-skills "spike-worker.md lacks '$t'"
   done
 else fail method-skills "missing $w"; fi
@@ -88,3 +88,38 @@ fi
 grep -qiE 'in a worker' plugin/skills/system-map/SKILL.md && fail method-skills "system-map still says to run the Mermaid Chart connector in a worker"
 grep -qiE 'never (install|run)' plugin/agents/researcher.md || fail method-skills "researcher.md lost its never-install rule"
 grep -qi 'spike' plugin/agents/researcher.md && fail method-skills "researcher.md mentions spike (no exception allowed)"
+
+# Fix round 2.
+w=plugin/agents/spike-worker.md
+sy=plugin/agents/synthesizer.md
+s=plugin/skills/spike/SKILL.md
+flat() { tr '\n' ' ' < "$1" | tr -s ' '; }
+if [ -f "$w" ]; then
+  # Verdict line and its exact vocabulary, in the worker note shape and in the spike file shape.
+  grep -qF 'Verdict: works | fails | blocked' "$w" || fail method-skills "spike-worker.md lacks the 'Verdict: works | fails | blocked' line"
+  grep -qF 'works | fails | blocked | inconclusive' "$s" || fail method-skills "spike SKILL.md Results does not use 'works | fails | blocked | inconclusive'"
+  # No state carries between Bash calls.
+  grep -qF 'ONE Bash call' "$w" || fail method-skills "spike-worker.md does not say to run create/install/probe/cleanup in ONE Bash call"
+  grep -qiF 'literal temp path' "$w" || fail method-skills "spike-worker.md does not say to reuse the literal temp path"
+  grep -qi 'never rely on `\$T`' "$w" || fail method-skills "spike-worker.md does not forbid relying on \$T across calls"
+  # Exact env recipe, one ${VAR:+VAR="$VAR"} per pass-through variable, both cases.
+  for v in HTTPS_PROXY HTTP_PROXY NO_PROXY https_proxy http_proxy no_proxy SSL_CERT_FILE NODE_EXTRA_CA_CERTS REQUESTS_CA_BUNDLE; do
+    grep -qF "\${$v:+$v=\"\$$v\"}" "$w" || fail method-skills "spike-worker.md env recipe lacks \${$v:+$v=\"\$$v\"}"
+  done
+  # git clone of the candidate runs under the same env -i recipe.
+  flat "$w" | grep -qE 'env -i[^`]{0,400}git clone|git clone[^`]{0,40}env -i|`env -i[^`]*git clone' \
+    || fail method-skills "spike-worker.md does not run git clone under env -i"
+  grep -qF '.gitconfig' "$w" || fail method-skills "spike-worker.md does not mention ~/.gitconfig / credential helpers for the clone"
+fi
+# Synthesizer spike mode.
+if [ -f "$sy" ]; then
+  grep -qF 'Spike mode' "$sy" || fail method-skills "synthesizer.md lacks a 'Spike mode' section"
+  grep -qF 'SPIKE' "$sy" || fail method-skills "synthesizer.md does not mention SPIKE"
+  flat "$sy" | grep -qiE 'negative results.{0,60}never dropped|never drop.{0,40}negative' || fail method-skills "synthesizer.md Spike mode does not keep negative results"
+  flat "$sy" | grep -qiE 'command and the output excerpt' || fail method-skills "synthesizer.md Spike mode does not accept command and output excerpt as evidence"
+fi
+flat "$s" | grep -qE 'Spawn one `synthesizer`.{0,400}Begin its brief with the word `SPIKE`' || fail method-skills "spike SKILL.md synthesizer brief does not say SPIKE"
+# Triage before PLAN.md records the verdicts.
+tl=$(grep -n 'Run `repo-triage`' "$s" | head -1 | cut -d: -f1)
+pl=$(grep -n 'Write `research/runs/<slug>/PLAN.md`' "$s" | head -1 | cut -d: -f1)
+{ [ -n "$tl" ] && [ -n "$pl" ] && [ "$tl" -lt "$pl" ]; } || fail method-skills "spike SKILL.md: repo-triage step does not come before the PLAN.md step"

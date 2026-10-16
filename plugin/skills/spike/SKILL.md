@@ -38,8 +38,10 @@ installed or run, only in a `spike-worker`, and these rules bound it.
 ## Isolation rules (mirrored in `plugin/agents/spike-worker.md`)
 
 - Every install or run happens in `T=$(mktemp -d)` outside the project tree, under
-  `env -i HOME="$T" PATH="$PATH"`, passing only `HTTPS_PROXY`, `HTTP_PROXY`, `NO_PROXY`,
-  `SSL_CERT_FILE`, `NODE_EXTRA_CA_CERTS` and `REQUESTS_CA_BUNDLE` when set. No tokens or keys.
+  `env -i HOME="$T" PATH="$PATH"`, passing only the proxy variables (`HTTPS_PROXY`,
+  `HTTP_PROXY`, `NO_PROXY`, and their lower-case forms), `SSL_CERT_FILE`, `NODE_EXTRA_CA_CERTS`
+  and `REQUESTS_CA_BUNDLE`, and only when set. No tokens or keys. The `git clone` of the
+  candidate runs under the same `env -i`. The worker's agent file holds the exact recipe.
 - Use `--ignore-scripts` (or the installer's equivalent) unless the probe is about the install
   script, and say so in the note.
 - No `sudo`, no global installs, no `curl | sh`, no install steps beyond the path's documented
@@ -50,17 +52,18 @@ installed or run, only in a `spike-worker`, and these rules bound it.
 1. Confirm the question, the named paths (one to three) and the probe with the user in one
    message. The probe is a fixed, small test with a pass condition written before anything runs,
    for example "return the title of https://example.com in under 60 seconds".
-2. Write `research/runs/<slug>/PLAN.md` with the requirement under test, the paths, the probe
+2. Run `repo-triage` on each named path (in a `researcher` worker) and keep each verdict.
+3. Write `research/runs/<slug>/PLAN.md` with the requirement under test, the paths, the probe
    and each path's `repo-triage` verdict. Choose `<slug>` as a short kebab-case name.
-3. Run `repo-triage` on each named path and record the verdict in PLAN.md.
 4. Spawn one `spike-worker` per path, all in one turn, each briefed with: the path, its
    triage verdict, the probe, the isolation rules, the note path
    `research/runs/<slug>/notes/spike-<path>.md`, and the return contract.
 5. Read only the returns (`PATH:`, `TAKEAWAYS:`, `GAPS:`, `CONFIDENCE:`). Do not open the
    notes or any output they captured.
 6. Spawn one `synthesizer` to read the spike notes and write `research/spikes/<slug>.md` in the
-   shape below. The lead does not write that file from the returns. Brief it that the file is
-   a spike file, not a findings file, and that negative results stay.
+   shape below. The lead does not write that file from the returns. Begin its brief with the
+   word `SPIKE` (this switches it to its Spike mode: the file is a spike file, not a findings
+   file, and negative results stay), then give the notes folder, PLAN.md and the output path.
 7. Add each tool tried to `research/tool-registry.md` with the verdict (the synthesizer or a
    `researcher` worker may do this). Add anything unresolved to `research/open-questions.md`.
 
@@ -70,7 +73,8 @@ installed or run, only in a `spike-worker`, and these rules bound it.
 
 1. `# Spike: <question>` and the requirement under test in EARS form.
 2. `## Probe`: the fixed probe and its pass condition.
-3. `## Results`: one row per path: path, pass / fail / blocked / inconclusive, evidence, date.
+3. `## Results`: one row per path: path, verdict (`works | fails | blocked | inconclusive`),
+   evidence (the command and output excerpt from the note), date.
 4. `## Negative results`: what failed or blocked, with the command and error. Never empty
    unless every path passed, and then it says so.
 5. `## Recommendation`: which path to take, or "none", with the reason.
