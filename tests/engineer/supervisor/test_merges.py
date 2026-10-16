@@ -46,6 +46,9 @@ class MergesTest(unittest.TestCase):
         src = Path(cls._td.name)
         work = src / "work"
         git(src, "init", "-q", "-b", "main", str(work))
+        # Newer git runs maintenance in the background after a commit; its lock file races the copy per test.
+        git(work, "config", "maintenance.auto", "false")
+        git(work, "config", "gc.auto", "0")
         (work / "a.txt").write_text("a\n")
         git(work, "add", "-A")
         git(work, "commit", "-qm", "base")

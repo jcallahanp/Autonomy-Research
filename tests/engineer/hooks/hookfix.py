@@ -65,6 +65,9 @@ class HookCase(unittest.TestCase):
     def make_project(cls, path: Path) -> Path:
         path.mkdir(parents=True)
         git(path, "init", "-q", "-b", "main", env=cls.env)
+        # Newer git runs maintenance in the background after a commit; its lock file races the copy per test.
+        git(path, "config", "maintenance.auto", "false", env=cls.env)
+        git(path, "config", "gc.auto", "0", env=cls.env)
         cls.write(path / "README.md", "demo\n")
         cls.write(path / "tests/unit/test_old.py", "def test_x():\n    pass\n")
         cls.write(path / "tests/acceptance/a.py", "# acceptance\n")
