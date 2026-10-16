@@ -1,0 +1,8 @@
+# Other vendors' AI CLIs the engineer may not run (hooks/guards/vendor.py).
+# One command name per line; matched against the first word of every command segment.
+codex
+gemini
+agy
+aider
+openai
+llm
