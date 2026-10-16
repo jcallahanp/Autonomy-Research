@@ -24,4 +24,4 @@ Rulings: Claude Code is the engine and is not up for debate; everything else att
 
 ## Outputs
 - Findings: research/findings/engineer-intake.md - written (16 search-excerpt-only claims dropped to Open questions; 4 contradictions recorded)
-- Verification: pending
+- Verification: 19 of 20 verified, needs-review (one claim overstated a deep-research-only hallucination rate)

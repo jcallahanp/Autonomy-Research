@@ -316,3 +316,8 @@ Unsettled by the evidence:
 - No published plan-ignoring rates per tool; no source on Devin or Cursor plan failure modes; Kiro, Cursor, Devin and BMAD question counts and styles unpublished.
 - Exact AskUserQuestion behaviour in `claude -p` with no callback (block, error or auto-skip) unverified.
 - Who approves in a hands-off setup, where constraint records persist (CLAUDE.md, memory, a file), and whether repo agents already chain interview into research: product and design decisions, not answered by sources.
+
+## Verification
+Checked 2026-10-16 by the verifier. Sample: 20 cited claims.
+Verified: 19. Unverified: 1.
+- Unverified: "deep-research citation URLs are hallucinated at 3-13%" (Recommendation step 3 and the explore-branch rationale) — https://arxiv.org/abs/2604.03173v1 — page says the 3-13% is the range across commercial LLMs and deep-research agents, and that deep research agents hallucinate URLs at higher rates; no deep-research-only figure is stated, so the claim as written is not supported.
