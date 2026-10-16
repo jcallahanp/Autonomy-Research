@@ -217,7 +217,7 @@ Worker inferences:
 - After instruction tuning, "JSON format for graph representation consistently outperforms natural language and code formats" (small tuned models; https://doi.org/10.48550/arxiv.2408.05457).
 
 **Generated diagrams need checking.**
-- Results "vary widely by model" (https://doi.org/10.1016/j.procs.2025.09.191).
+- Across seven LLMs, results vary by model: "some LLMs demonstrating strong syntax adherence, while others struggle with diagram structure and semantic accuracy." (https://doi.org/10.1016/j.procs.2025.09.191).
 - LLM UML "consistently underperform compared to human-created diagrams" (https://doi.org/10.3390/info16070565).
 - "Claude produces diagrams with 31.67 nodes on average" against 21.42 for Gemini (https://aclanthology.org/2025.emnlp-main.640.pdf).
 

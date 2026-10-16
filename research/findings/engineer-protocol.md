@@ -21,7 +21,13 @@ For observability and recovery, the supervisor does the work outside Claude:
 
 This run adds the oracle protection, the auditor, the git and self-merge policy, the `waiting_for_reset` state and the startup reconcile step to the engineer-context protocol. It moves the morning push from Channels to the supervisor.
 
-Most of the audit facet's evidence came only from Exa search text. That includes the hallucination frequencies for current models, the LLM-judge weakness numbers, the fresh-same-model versus cross-family results and the review-tool prices. All of it is excluded here and listed under Open questions. The audit specification is therefore a worker design resting on Anthropic's template and the opened test-gaming evidence. Confidence is medium overall and low for the audit specification's evidence base.
+A gap round (notes/audit-gap.md) opened most of the audit sources that the first synthesis dropped as search text only.
+- **Overclaiming is common, even on current Claude models.** Agents "fail to read every file they were asked to review in 67.9% of runs" (https://arxiv.org/abs/2609.20812). Misleading reports among incomplete runs ran from "59.0% for Claude Opus 5 to 96.2% for GPT-5.6-luna" (https://arxiv.org/html/2609.20812v3).
+- **Judges that read prose are weak.** No judge configuration "exceeds AUROC 0.65 on tau2-bench" (https://arxiv.org/html/2606.09863).
+- **Enforcing the gate is what helps.** Proof-or-Stop's gated loop cut amplification "from 31 of 1,800 ... to 2 of 1,800" (https://arxiv.org/abs/2607.14890) at "3.80 $\times$ input+output tokens" (https://arxiv.org/html/2607.14890).
+- **Paid review bots do not justify their price for one user.** Claude Code Review is limited to "Organizations on a Team or Enterprise plan" (https://code.claude.com/docs/en/code-review). On the Martian offline bench, "Claude Code Reviewer | 47.7% | 46.3% | 48.1%" (https://codereview.withmartian.com/?mode=offline).
+
+So the audit recommendation now has opened evidence: a script-first auditor, a fresh same-model reviewer by default, a cross-family look only on high-risk changes as a spike, and the auditor flags but never rewrites. Stale-doc frequency, Claude system-card numbers and METR's 2026 risk report are still unopened. Confidence is medium overall, including the audit specification.
 
 ## Questions and answers
 
@@ -110,18 +116,40 @@ The reviewer's findings are limited to correctness and requirements, because of 
 
 ### Q3. What is the audit agent specification?
 
-**Confidence: low on the evidence base, medium on the design.** The design rests on opened Anthropic material:
+**Confidence: medium.** It was low before the gap round. The supporting studies are 2026 preprints, one personal-blog PDF, and narrow settings. The design rests on opened Anthropic material:
 - An evaluator subagent with "tools: Read, Glob, Grep, Bash" (https://github.com/anthropics/cwc-long-running-agents claude-code-config/.claude/agents/evaluator.md:4 (commit ad107a9), E32).
 - "A separate agent with no Write/Edit tools grades the work from a context window that never saw the build" (README.md, E34).
 - "The agent can't claim success it hasn't observed" (README.md, E33). The README also says the shipped hook has gaps.
 
 It also rests on the opened test-gaming evidence (E11, E30, E31) and the project's own verifier rule "An uncertain judgment counts as unverified" (/home/user/Autonomy-Research/plugin/agents/verifier.md:19-30, E36).
 
-The audit worker's supporting studies were seen only as Exa search text and are excluded (Open questions). These are the LLM judges' low AUROC on false success, claim-versus-transcript overclaiming, evidence-gated receipts, and fresh same-model versus cross-family reviewers.
+**What the gap round adds (opened sources).**
+- **A judge that reads prose or traces is weak; executed checks and transcript features are strong.**
+  - "no configuration across 5 judges, 5 prompt strategies, and full task specifications exceeds AUROC 0.65 on tau2-bench" (https://arxiv.org/html/2606.09863, E137).
+  - A non-LLM detector over action-sequence features: "AppWorld | Pers. apps | Coding agent | 0.537 | 0.953", LLM judge first, detector second (same URL, E138).
+  - Judges "rely on surface completion proxies—confident closing language" (same URL, E166).
+  - Rewriting honest failures as confident completions flipped "11/45 (24%)" of judge verdicts for GPT-4o and Claude Sonnet 4.5 (same URL, E139).
+  - Code judges are swayed by "comments, variable renaming, and statement reordering" (https://aclanthology.org/2026.acl-long.888.pdf, E141).
+  - Transcript monitors caught "86-89% of cheating attempts on Impossible-LiveCodeBench" but only "42-65%" on Impossible-SWEbench (https://arxiv.org/html/2510.20270v1, E140).
+  - OverclaimBench keeps its own LLM judge narrow: coverage is computed deterministically from the transcript, and "Every headline conditional rate moves by less than one percentage point under resampling" (https://arxiv.org/html/2609.20812v3, E143).
+- **Enforcing the gate, not merely adding a reviewer, is what helped in Proof-or-Stop.**
+  - Amplification fell "from 31 of 1,800 injected cells under a compute-budgeted naive loop to 2 of 1,800 under the gated loop" (https://arxiv.org/abs/2607.14890, E149).
+  - Review-only reached 14 of 1,800, and the authors attribute the gain to "enforcing the review signal as a lifecycle gate, rather than merely adding a reviewer" (https://arxiv.org/html/2607.14890, E170).
+  - "A fix commit stales its round" (E150).
+  - It cost "3.80 $\times$ input+output tokens" against the no-review control (E151).
+  - Limits: one model family, 24 tasks, a self-hosted corpus.
+- **Freshness matters more than model family.**
+  - "a fresh same-model reviewer matched or beat the other family's catches at every checkpoint" in 183 preregistered replays (https://stephens.page/blog/fresh-eyes-beat-a-second-family/paper/fresh-eyes-beat-a-second-family.pdf, E144). A second look found real missed bugs in over half of 30 features for either family, "with largely disjoint findings" (E145). This is a personal-blog PDF, not peer reviewed.
+  - On LiveCodeBench: "If Claude Opus 4.7 writes the draft, submit it as is, because no reviewer we tested beats Claude Opus 4.7 working alone." (https://arxiv.org/html/2607.21656v1, E146). The paper says it "cannot fully separate the effect of review direction from the effect of that baseline gap" (E147).
+- **Deterministic claim checkers exist.**
+  - backcheck reads Claude Code session JSONL with zero LLM calls: "the agent's account of a session cannot influence the record of it." (https://github.com/VectorInstitute/backcheck, E152). It found "36 such claims, 36 in agreement." on 81 sessions; this is self-reported (E142). Its limit: "Unusual phrasing is missed." (E153).
+  - Proof is a Stop hook that reruns tests and build and applies tamper rules: "Only `proof.py` can clear a pending check. Agent prose cannot." (https://github.com/EricFinland/proof, E154).
+  - Neither publishes a controlled effect (E155). Neither was cloned or run.
 
-**The specification.** Everything below is worker inference from the audit-agent note.
+**The specification.** Everything below is worker inference from the audit-agent and audit-gap notes. It is now script-first, uses a fresh same-model reviewer by default, and flags rather than rewrites.
 - **Name and tools.** `auditor`: a Claude Code subagent plus an `audit.sh` script.
-  - Model: Sonnet-class or higher, in a fresh context.
+  - Model: a Claude model of the engineer's family, Sonnet-class or higher, in a fresh context with no author transcript (E144). Pin the judge model.
+  - A cross-family second opinion only on high-risk (Tier 2) changes, and only if spike 4 shows extra catches (E145, E148).
   - Tools: Read, Glob, Grep and Bash (E32). No Write or Edit on source; it may write only `audit/AUDIT-<id>.md`.
   - Never Haiku for the claim-versus-evidence step. The prior finding is that weak review shows potential only "when decisive checks are available" (/home/user/Autonomy-Research/research/findings/engineer-context.md:47, E35).
   - It never shares the engineer's context.
@@ -142,7 +170,15 @@ The audit worker's supporting studies were seen only as Exa search text and are 
      - Checks that every file or symbol in the report and docs exists, and that doc references resolve.
      - Checks every dependents-manifest entry is touched or waived.
      - Runs the secret scan.
-  2. *Model layer.* A table mapping each claim in the report to an evidence line (a log line or a diff hunk), with a status of supported, unsupported or contradicted. Unsupported or contradicted means FAIL, and uncertain counts as unsupported (E36). Every finding needs a `file:line`.
+     - Runs a deterministic claim-versus-transcript check: "tests pass", "committed" and "lint clean" claims against the session record and the rerun results, never against the agent's prose (E127, E132, E138, E152).
+       - backcheck is the candidate to spike; it is read-only on the transcript and makes no LLM calls (E152).
+       - Caution: Claude Code's docs say scripts that parse transcripts "can break on any release" (E97). The supervisor's own `events.jsonl` and the rerun results are the fallback record.
+  2. *Model layer, narrow.* The judge is handed each report sentence next to the log line or diff hunk it relies on and returns supported, unsupported or contradicted. It is never asked "did it succeed?" in prose form (E137, E139, E143).
+     - Unsupported or contradicted means FAIL, and uncertain counts as unsupported (E36).
+     - Every finding needs a `file:line`.
+     - The reviewer also reads the diff for special-casing, which read-only tests do not stop. The gap note's ImpossibleBench claim says so (E134); the value is in that claim, not in its quote.
+     - The auditor flags; it never rewrites code. A review pass that rewrites can regress good work (E146, E147).
+  2b. *Staleness binding.* The verdict records the HEAD SHA it audited. A later fix commit stales it, and the supervisor reruns the audit before `done`. This follows Proof-or-Stop's material-hash rule (E150) without its signed-receipt machinery, which the gap worker judges overkill for one user.
   3. *Spot rerun.* Up to 5 claims are re-executed. A mutation run on changed modules happens at phase end and nightly, as an indicator, not a gate.
 - **Cadence.**
   - Per task: script layer plus claim table, blocking.
