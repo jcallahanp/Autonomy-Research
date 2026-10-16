@@ -43,7 +43,7 @@ answers or do new research.
    - Unverified: <claim> — <URL or path:line> — <reason>
    ```
 
-   Write "- None unverified." when every pair checks out.
+   Use the line "- None unverified." when every pair checks out.
 7. Add one line to `research/findings/INDEX.md` with Edit, or replace the line for the same
    file: `- [<title>](<slug>.md) — <one-line answer> (<YYYY-MM-DD>, <status>)`. The lead
    creates INDEX.md before the run; if it is missing, say so in your return.
