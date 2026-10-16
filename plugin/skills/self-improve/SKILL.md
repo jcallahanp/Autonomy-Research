@@ -1,6 +1,6 @@
 ---
 name: self-improve
-description: Capped self-improvement loop for the research-agent plugin, scored against a frozen exam. Use when the user says "improve yourself", "self-improve", "run a self-improvement round" or "start round 2". Researches the plugin itself first, checks that research with the verifier and a 20-citation hand check, plans a short change list, implements it with new tail cases, re-measures the frozen fast exam paired (3 runs per case, 5 when budget allows), keeps only changes that do not drop the exam and have a stated reason, writes a changelog in docs/self-improvement/ and opens a pull request. At most 2 rounds per approval. Never edits a frozen case, grader or mock.
+description: Capped self-improvement loop for the research-agent plugin, scored against a frozen exam. Use when the user says "improve yourself", "self-improve", "run a self-improvement round" or "start round 2". Researches the plugin itself first, checks that research with the verifier and a 20-citation hand check, plans a short change list, implements it with new tail cases, re-measures the frozen fast exam paired (3 runs per case, 5 when budget allows), keeps only changes that do not drop the exam and have a stated reason, writes a changelog in docs/self-improvement/ and opens a pull request. At most 2 rounds per series. Never edits a frozen case, grader or mock.
 ---
 
 # Self-improve
@@ -22,18 +22,29 @@ only sign-off.
   re-measure (same cases, same run count, same model, before and after) and the findings file
   or the hand check gives a specific reason for it. Otherwise revert it and list it as
   rejected in the changelog.
-- **Cap.** At most 2 rounds per approval from the user. After round 2, stop and ask.
+- **Attribution.** One after-measure cannot say which change dropped a case. For each case
+  that dropped, revert the changes that touch what it exercises (its skill, the agents it
+  spawns, the hook), re-run only that case with the same `--runs` and compare it with its
+  before score. If it is still below, widen the revert to the next changes it could reach
+  and re-run once more. If it is still below then, revert every plugin change of the round
+  and keep only the tests and tail cases.
+- **Cap.** At most 2 rounds per series. Each plan file records `Series: <s>, round <k> of 2`.
+  A series starts on the first round, or when the user asks for a new one after a `round 2 of
+  2` plan; the budget yes and the plan yes inside a round do not start a new series, nor
+  does a merged pull request. When the newest plan in `docs/self-improvement/` says `round 2
+  of 2`, stop and ask.
 - **Sign-off.** Open a pull request with the before and after numbers. Never merge it and never
   push to the default branch.
 - **Budget.** Every eval run uses the user's Claude plan usage. Confirm before each one, as the
   `self-test` skill does. Never re-run a suite to chase a better number: fix the run count
-  before measuring.
+  before measuring. The one re-run allowed is the Attribution re-run, after a revert.
 
 ## Steps
 
-1. **Confirm.** Tell the user the round's cost (two paired fast runs, one tail run, a research
-   run) and ask for a yes. Ask whether the budget allows 5 runs per case instead of 3. Work on
-   a new branch `self-improve/round-<n>`.
+1. **Confirm.** Read the newest plan's `Series:` line and stop if the Cap applies. Tell the
+   user the round's cost (two paired fast runs, one tail run, a research run) and ask for a
+   yes. Ask whether the budget allows 5 runs per case instead of 3. Work on a new branch
+   `self-improve/round-<n>`.
 2. **Baseline.** Run `bash tests/check.sh`; it must pass with the manifest intact. Run the
    paired "before" measure of the frozen fast exam (commands below) on the current default
    branch.
@@ -47,15 +58,15 @@ only sign-off.
    words; you never hold the pages. Write `research/runs/<slug>/hand-check.md`: picks,
    results, totals, and each failure pattern with the stage that introduced it (researcher,
    synthesizer, verifier).
-5. **Plan.** Write `docs/self-improvement/<YYYY-MM-DD>-round-<n>-plan.md`: the loop rules,
-   then one line per change with its files and its reason (a findings rank or a hand-check
+5. **Plan.** Write `docs/self-improvement/<YYYY-MM-DD>-round-<n>-plan.md`: its `Series:`
+   line, the loop rules, then one line per change with its files and its reason (a findings rank or a hand-check
    pattern). Show it to the user and implement only on a yes.
 6. **Implement.** For each change, add a structural rule in `tests/rules/` first and watch it
    fail, then make the change and watch it pass. Add a `tail` case for pipeline behaviour the
    frozen exam cannot see. Keep prompts tight and update the EARS lines where behaviour
    changes. Run `bash tests/check.sh` until it passes.
 7. **Re-measure.** Run the paired "after" measure with the same flags, and the tail suite once.
-8. **Keep or revert** each change by the keep rule.
+8. **Keep or revert** each change by the keep rule and the Attribution rule.
 9. **Changelog.** Write `docs/self-improvement/<YYYY-MM-DD>-round-<n>.md`: a before/after
    table per frozen case, the tail scores in their own table, kept and rejected changes with
    reasons, the model id and Claude Code version. Add an Unreleased entry to `CHANGELOG.md`.
@@ -64,7 +75,9 @@ only sign-off.
 ## Commands
 
 Run every eval from the repo root with the Bash tool's `run_in_background: true` and a long
-timeout, as in the `self-test` skill. Do not edit the plugin while one runs.
+timeout, as in the `self-test` skill. Do not edit the plugin while one runs. Copy each command
+whole: a tool left out of `--allow-tools` is withheld without an error, and every grader that
+needs it fails.
 
 The frozen fast exam, single run (the `self-test` command):
 
@@ -78,6 +91,12 @@ result file. Raise `--max-cost-usd` only with the user's yes; a `partial` result
 ```bash
 claude plugin eval plugin --tag fast --runs 3 --max-cost-usd 5 --json evals/results/round<n>-before.json -j 3 --allow-tools Write Edit
 claude plugin eval plugin --tag fast --runs 3 --max-cost-usd 5 --json evals/results/round<n>-after.json -j 3 --allow-tools Write Edit
+```
+
+Attribution re-run of one case (`--case <name>`), after a revert:
+
+```bash
+claude plugin eval plugin --case <name> --runs 3 --max-cost-usd 5 --json evals/results/round<n>-recheck.json -j 3 --allow-tools Write Edit
 ```
 
 Tail cases, reported separately:
@@ -102,9 +121,12 @@ the changelog even when the suite held.
   hand check before it changes any plugin file.
 - When a round's diff changes a file listed in `tests/frozen-exam.sha256`, `tests/check.sh`
   shall fail and the round shall not be opened as a pull request.
-- When the paired after-score of the frozen fast exam is below the before-score, the loop shall
-  revert the change and list it as rejected.
+- When a frozen case's paired after-score is below its before-score, the loop shall revert the
+  changes that touch its skill, agents or hook and re-run only that case, at most twice; if it
+  is still below, the loop shall revert every plugin change of the round and list them as
+  rejected.
 - When a change is kept, the changelog shall name the findings rank or hand-check pattern that
   justifies it.
 - When tail cases are scored, the loop shall report them apart from the frozen exam.
-- When 2 rounds have run since the user's approval, the loop shall stop and ask.
+- When the newest plan file in `docs/self-improvement/` records `round 2 of 2`, the loop shall
+  stop and ask the user before it starts another round.
