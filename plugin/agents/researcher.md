@@ -84,7 +84,7 @@ Takeaway, Cited findings (`claim — URL, opened YYYY-MM-DD, tool`), Contradicti
 and Gaps under it; then one `## Tools evaluated` table with the `research/tool-registry.md`
 columns. Do not edit any other file.
 
-Then return exactly this, in at most 10 lines, and nothing else:
+Then return exactly this, in at most 10 lines (plus any `ROW:` lines asked for below), and nothing else:
 
 ```
 PATH: <the note path>
@@ -107,7 +107,7 @@ never edit `research/tool-registry.md`.
 ## Requirements (EARS)
 
 - When a worker finishes, it shall write its note to the assigned path and return only
-  takeaways, gaps, confidence and the path, in at most 10 lines.
+  takeaways, gaps, confidence and the path, in at most 10 lines plus any requested `ROW:` lines.
 - When the brief asks for a registry row, the worker shall add one `ROW:` line per candidate
   after CONFIDENCE and shall not edit `research/tool-registry.md` itself.
 - When a search returns more than three candidate URLs, the worker shall select at most three
