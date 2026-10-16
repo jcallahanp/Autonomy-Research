@@ -441,7 +441,7 @@ So R16 needs one of three things: (a) GitHub Pro, (b) a public repo, or (c) loca
 - TDD as a prompt ritual. Regressions rose to 9.94% (https://arxiv.org/abs/2603.17973, E2).
 - Prompt-only anti-cheat. "Nearly negligible effect" (https://metr.org/blog/2025-06-05-recent-reward-hacking/, E31).
 - An LLM-only completion judge, already rejected in engineer-context.md Q7. Also, "no configuration across 5 judges, 5 prompt strategies, and full task specifications exceeds AUROC 0.65 on tau2-bench" (https://arxiv.org/html/2606.09863, E137), and judges flip on confident rewrites (E139).
-- An auditor that rewrites code. Review without execution regressed Opus 4.7 drafts, and Opus self-review gave no gain (https://arxiv.org/html/2607.21656v1, E146, E147).
+- An auditor that rewrites code. With review that did not execute code, "no reviewer we tested beats Claude Opus 4.7 working alone" (https://arxiv.org/html/2607.21656v1, E146). The design is confounded (E147).
 - Mutation score as a hard gate. Worker inference; its supporting studies are still unopened.
 - Forcing subagent delegation as an overclaiming fix. It "increased the proportion of misleading runs" (https://arxiv.org/html/2609.20812v3, E129).
 - Proof-or-Stop's signed-receipt machinery. The gap worker judges it overkill for one user; copy only the staleness rule (E150).
@@ -620,7 +620,14 @@ All sources were opened on 2026-10-16. Each bullet gives the source, the tool, t
 - **Protected paths and the guard script.** The engineer's settings ship a PreToolUse deny list covering tests, `conftest.py`, test and CI configuration, hooks, `.claude/`, `audit/`, CODEOWNERS and the protected-path list. A test-diff guard script backs it up, because Bash rewording bypasses deny rules (E77) and editable tests get gamed (E11, E30).
 - **The acceptance check is written before the build**, by the plan or interview step or a separate test agent, and is frozen (E3, E4). Implementer-written tests are allowed but never count as evidence (E1).
 - **The Stop/TaskCompleted hook is the only path to `done`.** The auditor's FAIL is a blocking item that the supervisor checks; the engineer's goodwill does not enforce it (E15, E32-E34).
-- **The `auditor`** is a new subagent file: Read, Glob, Grep and Bash only, plus `audit.sh` and `audit/waivers.md`, which John owns. Its first build step is the seeded-fault spike (spike 4).
+- **The `auditor`** is a new subagent file and two scripts.
+  - Same model family as the engineer, fresh context, Read, Glob, Grep and Bash only.
+  - `audit.sh` is the script layer, including a deterministic claim-versus-transcript check; backcheck is the candidate (E152).
+  - `audit/waivers.md` is owned by John.
+  - The verdict file records the audited HEAD SHA (E150).
+  - Its first build step is the seeded-fault spike (spike 4).
+  - Budget about 2-4x tokens per gated task (worker inference from E151).
+  - Do not buy a review-bot seat for the audit (E157-E165).
 - **Git.** One worktree and PR per task, with Conventional Commit titles and squash merge. The engineer uses a bot account with a repo-scoped PAT. R16 stays off until John picks a GitHub plan or a public repo and two weeks of shadow mode pass (Q5).
 - **The supervisor gains four parts:**
   - `events.jsonl` as the durable log.

@@ -25,4 +25,4 @@ Rulings: Claude Code is the engine and is not up for debate; everything else att
 
 ## Outputs
 - Findings: research/findings/engineer-security.md - written (9 unsourced claims dropped to Open questions; 1 numeric contradiction and 3 tool-claim contradictions unresolved, others explained)
-- Verification: pending
+- Verification: 19 of 20 verified, needs-review (EASE 2024 table gives CodeQL 15.3% and Semgrep 15.9%; the contradiction resolution favouring Semgrep 15.3% is wrong)
