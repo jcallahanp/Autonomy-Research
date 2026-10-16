@@ -16,6 +16,7 @@ Every number below is an untested default unless a citation says otherwise; the 
 | Denials of one kind before the night stops (F29) | 5 | builder default; SP04, SP30 |
 | Trials per decision | 3, configurable | engineer-feasibility §Q3 |
 | T1 default-on-timeout | 24 h, reversible items only; reminder at 12 h; at most 5 open T1 items | worker inference (engineer-human-loop §Tensions); SP30 |
+| Night window and digest time | Unattended runs 22:00-07:00 US Eastern; daily digest at 07:30 | builder default; John may change it in `run-defaults.yaml` |
 | `cleanupPeriodDays` | 7 | builder default for "low" (engineer-human-loop E91) |
 | Context ceiling before Explore subagents | about 128K-256K tokens | engineer-models §Q3 (worker inference); SP42 |
 
@@ -51,7 +52,7 @@ Map, bound, sandbox, decide, record (decisions.md area 4). Tool gaps run the bou
 ## Stage 4: plan, before-brief, approval, project setup list
 Plan set under `docs/plan/` (decisions.md area 7), three-page before-brief (area 8), John signs brief, acceptance, integrations and costs, gates. The project's setup list follows the setup.md pattern.
 - F18 Before building, the engineer shall write the plan set and the before-brief and treat them as the single source of truth (R8; engineer-planning §Q1).
-- F19 When John approves by an allowlisted Telegram reply or a PR approval from his account, the engineer shall write `approval.json` with the sha256 of each signed file and tag `plan-approved-N` (engineer-planning E27, E29, E30).
+- F19 When John approves by an allowlisted Telegram reply or a PR approval from his account, the engineer shall write `approval.json` with the sha256 of each signed file (`brief.md`, `requirements.md`, `integrations.yaml`, `profile.yaml`; repo-composition.md, Plan set) and tag `plan-approved-N` (engineer-planning E27, E29, E30).
 - F20 If an approved file's hash no longer matches, then the engineer shall refuse code edits until the change is re-approved (engineer-planning §Q2, S2).
 - F21 When the plan is approved, the engineer shall produce one ordered setup list, long waits first, with a verification per row and the reason for every human-only row (R11, R12; engineer-feasibility D44, D52).
 
@@ -60,7 +61,7 @@ The supervisor computes `ready` from the `tasks.json` DAG and runs one task at a
 - F22 When a task is ready, the supervisor shall start one fresh `claude -p` in its own worktree and branch with `--max-turns`, `--max-budget-usd` and a wall-clock timeout set from Run defaults (engineer-context §Q4; engineer-protocol E37, E38).
 - F23 While a task runs, the engineer shall not edit tests, CI, hooks, `.claude/` or `audit/` (engineer-protocol E11).
 - F24 When the implementer stops, the Stop/TaskCompleted hook shall run the task's evidence command and the `docs/DEPENDENTS.md` check and block with exit 2 on failure (engineer-protocol E15; engineer-context §Q7.3).
-- F25 When the gate passes, `audit.sh` shall rerun the checks at HEAD with a test count above zero and the auditor shall return `PASS`, `FAIL` or `NEEDS-JOHN` bound to that HEAD SHA (engineer-protocol E138, E150, §Q2).
+- F25 When the gate passes, `audit.sh` shall rerun the checks at HEAD with a test count above zero, then the supervisor shall start the auditor through `run-task` with the `auditor` profile, and the auditor shall return `PASS`, `FAIL` or `NEEDS-JOHN` bound to that HEAD SHA as JSON, which the supervisor writes to `audit/AUDIT-<id>.md` (engineer-protocol E138, E150, §Q2).
 - F26 If the same FAIL repeats, then the supervisor shall mark the task `NEEDS-JOHN` and continue with other ready tasks (engineer-protocol §Q3; R14).
 - F27 If a task fails twice, makes no git diff in 3 attempts, or repeats the same failing tests 5 times, then the supervisor shall write a blocked note and stop that task (engineer-context §Q7.4).
 - F28 When a task passes audit, the engineer shall open one PR with a Conventional Commit title; while R16 is off it shall add a T1 "merge PR?" line to the digest; while R16 is on and the paths are Tier 1 it shall run `gh pr merge --auto` (engineer-protocol E44, E54; ruling 2).

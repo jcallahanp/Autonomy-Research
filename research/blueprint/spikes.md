@@ -24,6 +24,8 @@ Purpose: every spike named in the 14 digests, de-duplicated, ordered by how much
 | SP15 | Reply parser on `1 y 2 n`, `all y`, `CONFIRM 4 SPEND $12` and junk | Unknown formats never approve | Approvals | human-loop 14 |
 | SP16 | One Telegram bot shared by Channels plugin and supervisor; managed bot via `getManagedBotToken` | Works, or two bots needed; token fetched | Channel setup | human-loop 13, 4 |
 | SP17 | Hook blocks code edits on approval-hash mismatch; `permissions.deny` on `plan.approved.vN`; ExitPlanMode vs file flag | Edits blocked; ExitPlanMode need known | Plan approval | planning S2; intake 8 |
+| SP83 | Load the engineer plugin from root-owned `/opt/engineer/plugin` with `--plugin-dir` in `claude -p` and interactive sessions; select the auditor and implementer agent per `run-task` profile; `engineer` cannot alter it | Skills, agents and hooks load; profile picks the agent; write attempts fail | Plugin loading, auditor launch | blueprint (stranger test 3) |
+| SP84 | `oauth-capture` loopback redirect for Google, Outreach, WHOOP, Withings, Slack; tunnel hostname fallback | Refresh token lands in SOPS for each vendor, or the vendor needs the tunnel | OAuth consents in the sitting | blueprint (stranger test 3) |
 
 ## B. Blocks a core-loop component
 | ID | Spike and probe | Pass criterion | Blocks | Sources |

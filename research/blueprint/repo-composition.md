@@ -5,11 +5,14 @@ Purpose: how the engineer's template repo, its plugin, the VM and each project r
 The engineer ships as one template-plus-plugin repo with a pinned bootstrap, the same shape as this research repo (engineer-runtime P1, P5). Plugin changes below are recommendations; nothing in `plugin/` was changed by this research (engineer-tool-discovery §Implications).
 
 ## Template repo
-Hosted as a private GitHub repo `engineer-template` under John's account (name is a builder default; setup.md step 1). The VM reads it with a read-only deploy key into `/srv/engineer-template` (root) and the builder's checkout `~engineer/engineer-template`; builder commits reach GitHub only as branches pushed by the `push-branch` broker job with the bot PAT, merged by John (setup.md steps 5, 19-21).
+Seeded from the Autonomy-Research repo (this research repo): John creates the private GitHub repo `engineer-template` under his account and pushes a full copy of Autonomy-Research into it, history included (setup.md step 1; name and method are builder defaults; a copy, not a submodule, so the builder can change any file). "Existing" below means a file carried over by that copy; `research/findings/engineer-*.md` and `research/blueprint/` come along as the builder's reference. The VM reads it with a read-only deploy key into `/srv/engineer-template` (root) and the builder's checkout `~engineer/engineer-template`; builder commits reach GitHub only as branches pushed by the `push-branch` broker job with the bot PAT, merged by John (setup.md steps 5, 19-21).
 ```
 plugin/
   skills/      interview, research, tool-scan, repo-triage, spike, system-map, setup   (existing, changed)
                as-is, plan, browser, deploy, security-review, digest                    (new)
+               brainstorming, writing-plans, subagent-driven-development, executing-plans,
+               verification-before-completion, using-git-worktrees, using-superpowers
+                                                  (Superpowers subset vendored at bb92a77)
   agents/      researcher, synthesizer, verifier, spike-worker                          (existing)
                mapper, merger, planner, implementer, plan-reviewer, auditor, triage-reader (new)
   hooks/       hooks.json + scripts (table below); source only, installed root-owned (Enforcement)
@@ -27,8 +30,7 @@ scripts/
 templates/
   managed-settings.json, egress-install.txt, egress-allowlist.txt, run-defaults.yaml (flow.md),
   schemas/ (tasks, events, run-status, profile, integrations), verify-all checks,
-  systemd units (engineer-supervisor, chrome-xvfb, novnc), superpowers/ (vendored at bb92a77
-  minus the dropped skills), project skeleton (below)
+  systemd units (engineer-supervisor, chrome-xvfb, novnc), project skeleton (below)
 tests/
   check.sh, check-mermaid.sh (existing), test-fm.sh, rules/ (existing)
   supervisor/, broker/, parser/   unit tests for the builder's own scripts (spikes SP04-SP17)
@@ -52,7 +54,7 @@ docs/versions.md        every pin the builder chooses (engineer-runtime §Repo c
 | system-map | Change | As-is input contract, to-be view via `classDef`, model file with parity check, agent output, dark theme with contrast check, SVG kept, open-questions path, default checker run | engineer-briefing §Q7, E108-E116 |
 | setup | Change | Becomes the tool-name probe behind `doctor.sh` | engineer-runtime P37, P38 |
 | as-is | New | Five-step brownfield protocol; lead holds status lines only | engineer-existing-systems §Implications 1 |
-| plan | New | 8-file plan set, task contract check, change records | engineer-planning §Implications |
+| plan | New | The plan set (Plan set below), task contract check, change records | engineer-planning §Implications |
 | browser | New | Ladder API or MCP, flow script, exploratory Playwright, then John; routing table checked in | engineer-browser §Implications 1 |
 | deploy | New | Platform matrix as decision table; pre-promote checklist | engineer-deploy §Implications 1, §Q10 |
 | security-review | New | Output schema is the evidence contract (file:line, CWE, severity, repro, scope) | engineer-security §Implications 1 |
@@ -64,7 +66,7 @@ docs/versions.md        every pin the builder chooses (engineer-runtime §Repo c
 | planner (plan and debug) | Opus or Fable class | Read, write plan files | engineer-context §Q3 |
 | implementer | Sonnet class | Full, inside worktree and sandbox | engineer-context §Q3 |
 | plan-reviewer | Sonnet class, fresh context | No Write or Edit | engineer-planning §Q2; engineer-models E41 |
-| auditor | Sonnet class or higher, never Haiku | Read, Glob, Grep, Bash; writes only `audit/AUDIT-<id>.md`, at most 15 lines, `PASS`, `FAIL` or `NEEDS-JOHN` | engineer-protocol §Q3, E35 |
+| auditor | Sonnet class or higher, never Haiku | Read, Glob, Grep, Bash; writes no file; returns JSON `{verdict: PASS|FAIL|NEEDS-JOHN, head_sha, lines[≤15]}`, which the supervisor writes to `audit/AUDIT-<id>.md` | engineer-protocol §Q3, E35, E150 |
 | mapper and merger | Explore, Haiku override possible | Read-only; note per module with `path:line` | engineer-existing-systems M26, M27 |
 | triage-reader | Any | Read-only, no secrets, no outbound; returns JSON from untrusted text | engineer-security §Q6, E123 |
 | Haiku roles (test runner, scout, summariser) | Haiku 5.5 | Only after SP32 | engineer-context §Q3 |
@@ -91,7 +93,7 @@ docs/versions.md        every pin the builder chooses (engineer-runtime §Repo c
 | `PROGRESS.md` | Project root | Each task session | engineer-planning E118 |
 | `dead-ends.md` | Project root and template | Trials, discovery | engineer-tool-discovery E121; engineer-feasibility B29 |
 | `docs/plan/architecture.yaml` | Project repo | The system model; Mermaid views generated with a parity check | engineer-briefing E39 |
-| `audit/AUDIT-<id>.md`, `audit/waivers.md` | Project repo | Auditor; waivers by John | engineer-protocol §Q3 |
+| `audit/AUDIT-<id>.md`, `audit/waivers.md` | Project repo | Supervisor, from the auditor's JSON; waivers by John | engineer-protocol §Q3 |
 | `trials/<id>/result.json` | VM state dir | Supervisor | engineer-feasibility C19, C53 |
 | `/etc/claude-code/managed-settings.json` | VM, root-owned | `setup-root.sh` | engineer-human-loop E148 |
 | Kill-switch file `/var/lib/engineer/STOP` (path is a builder default) | VM, directory owned by `supervisor`, not writable by `engineer` | John (`sudo touch`) or supervisor; the PreToolUse hook and the supervisor stop when it exists | engineer-human-loop E158 |
@@ -99,17 +101,21 @@ docs/versions.md        every pin the builder chooses (engineer-runtime §Repo c
 ## Enforcement: who owns it
 The engineer must not be able to rewrite its own checks (engineer-protocol E11, E15). Deny rules are "not a security boundary" (engineer-human-loop E142-E145), so the real boundaries are file ownership, the sandbox, the broker and the server.
 - Managed settings: `/etc/claude-code/managed-settings.json`, root-owned, read at the highest precedence; holds deny rules and `disableBypassPermissionsMode`, and no level including CLI flags overrides it (engineer-human-loop E148, §Q9).
-- Hooks: `plugin/hooks/` in the template is the only source. `setup-root.sh --install` copies the scripts to root-owned `/opt/engineer/hooks/`; `--lock` registers them in the managed-settings file, so the guards are installed last (setup.md, Root vs builder). Whether managed settings accept hook entries is not in the findings: untested default, confirmed by SP10; if not, `--lock` installs the plugin from the root-owned `/opt/engineer/plugin/` copy and records the mechanism in `docs/versions.md`. Command hooks run outside the sandbox with full access (engineer-human-loop §Q9), so hook scripts only read.
+- Hooks: `plugin/hooks/` in the template is the only source. `setup-root.sh --install` copies the scripts to root-owned `/opt/engineer/hooks/`; `--lock` registers them in the managed-settings file, so the guards are installed last (setup.md, Root vs builder). Whether managed settings accept hook entries is not in the findings: untested default, confirmed by SP10; if not, `--lock` registers them in the root-owned plugin's `hooks.json` under `/opt/engineer/plugin/` (loaded by every session, see Plugin loading) and records the mechanism in `docs/versions.md`. Command hooks run outside the sandbox with full access (engineer-human-loop §Q9), so hook scripts only read.
 - Supervisor, `audit.sh`, reply parser, state dir `/var/lib/engineer/`: owned by and run as `supervisor`; `engineer` cannot write them.
 - Unix users and sudoers (builder defaults, installed by `setup-root.sh`; findings name only `engineer` and `secretbroker`, engineer-human-loop setup 1):
 
 | User | Runs | Sudoers line |
 | --- | --- | --- |
 | `engineer` | Interactive and builder sessions; every `claude -p`; holds the Max `/login` | `engineer ALL=(secretbroker) NOPASSWD: /opt/engineer/bin/agent-run` |
-| `supervisor` | `engineer-supervisor.service`; launches tasks and talks to Telegram only through broker jobs | `supervisor ALL=(engineer) NOPASSWD: /opt/engineer/bin/run-task` and `supervisor ALL=(secretbroker) NOPASSWD: /opt/engineer/bin/agent-run` |
-| `secretbroker` | `agent-run` jobs: `seed`, `push-branch`, `open-pr`, `mint-child`, `api-call`, `tg-send`, `tg-poll`, `hc-ping` | none |
+| `supervisor` | `engineer-supervisor.service`; rootless Podman for trial containers (subuid/subgid, engineer-feasibility setup 2) and trial worktrees under `/var/lib/engineer/trials/`; reads project clones through a read-only ACL; talks to Telegram only through broker jobs | `supervisor ALL=(engineer) NOPASSWD: /opt/engineer/bin/run-task` and `supervisor ALL=(secretbroker) NOPASSWD: /opt/engineer/bin/agent-run` |
+| John (his own sudo) | `sudo -u secretbroker /opt/engineer/bin/seed <NAME>` and `.../oauth-capture`, from his SSH terminal; `seed` is not an `agent-run` job, so the model cannot overwrite a secret | his normal admin sudo |
+| `secretbroker` | `agent-run` jobs: `push-branch`, `oauth-capture`, `open-pr`, `mint-child`, `api-call`, `tg-send`, `tg-poll`, `hc-ping` | none |
 
-`run-task` is a root-owned wrapper that takes a task id, `cd`s into that task's worktree and execs `claude -p` with the flags from `templates/run-defaults.yaml`, so the supervisor cannot pass arbitrary commands; under Path A it uses `engineer`'s `/login`, under Path B it asks the broker for the key (exposure: open-questions 21).
+`run-task <project> <task-id> <profile>` is a root-owned wrapper run as `engineer`. It creates or reuses the task's worktree, then execs `claude -p --plugin-dir /opt/engineer/plugin` with the profile's agent, model, tools, `--max-turns`, `--max-budget-usd` and timeout from `templates/run-defaults.yaml`, so the supervisor cannot pass arbitrary commands. Profiles: `implementer`, `auditor` (started by the supervisor after the implementer exits and the Stop gate passes; `--output-format json --json-schema` for the verdict), `plan-reviewer`, `planner`, `mapper`. How the profile selects the agent definition is a builder default confirmed by SP83. Under Path A it uses `engineer`'s `/login`; under Path B it gets the key from the broker (exposure: open-questions 21).
+- Files on the VM (builder defaults): project clones at `/home/engineer/projects/<name>/`, task worktrees at `/home/engineer/projects/<name>.wt/<task-id>/`, both owned by `engineer`; `supervisor` has read-only ACL access to compute `ready` from `tasks.json`. Nobody is in the `docker` group.
+- Plugin loading (builder default, confirmed by SP83): every session, interactive or `claude -p`, loads the engineer plugin from root-owned `/opt/engineer/plugin/` with `--plugin-dir`; nothing is installed at user scope, so `engineer` cannot change skills, agents or hooks. `--install` copies `plugin/` there from the reviewed checkout, Superpowers subset included.
+- CLIs the broker runs (wrangler, the Clay CLI, `gh`, `gcloud`, `cloudflared`) are root-installed (`/opt/engineer/node_modules/.bin` or `/usr/bin`); `agent-run` uses a fixed `PATH` of `/opt/engineer/bin:/usr/bin:/bin`, so `engineer` cannot swap a binary the broker executes. CLI session stores (Clay, `gh`, `gcloud`) live in `secretbroker`'s home.
 - Secrets: only `secretbroker` reads them; `engineer` calls `sudo agent-run <job>` (engineer-human-loop E58-E60).
 - Git: `engineer` has no push credential; branches go up through an `agent-run` job that never pushes to the default branch, and server-side branch protection refuses it anyway (engineer-protocol E41, E77; SP18).
 
@@ -130,6 +136,11 @@ Field lists cited where the findings give them; everything else is "builder deci
 - `RUN_STATUS.json`: `state` (`done|blocked|stopped_by_bound|crashed|waiting_for_reset`), `reason`, `reset_at`, `last_task`, `counts`, `started`, `ended` (states from engineer-context §Q7.5 and engineer-protocol E115; other fields builder default).
 - `profile.yaml`: `hard_gates` (default the three), `t2_extra`, `promote` (`hold`), `self_merge` (`false`), `data_classes` per path (`public|internal|customer|health`, engineer-models §Q7), `allowed_processors`, `adopted_rules` (quote plus `path:line`, ruling 8), `unattended` (`true|false`).
 - `integrations.yaml` service: `id` (same as `architecture.yaml`), `purpose`, `auth`, `env_vars` (names), `price` with date, `owner_action`, `fallback` (engineer-planning §Q1), plus the 12 checklist fields of engineer-feasibility §Q7: auth type, token lifetime and rotation, scopes and grantor, rate limit and 429, pagination, webhook signature, webhook retries and reconciliation, idempotency, sandbox vs production, API version, plan or role gating, residency and terms; and `edges` (from, to, data, direction) for the generated map.
+
+## Plan set and what John signs
+The plan set is 8 entries (engineer-planning §Q1), mapped to this blueprint's paths: `docs/plan/brief.md`, `docs/plan/requirements.md` (EARS with fit criteria: the acceptance criteria), `docs/plan/architecture.yaml` (the system model; planning's `architecture.md` becomes its generated `architecture.mmd`), `docs/plan/integrations.yaml` (services, auth, each price with date and the monthly total: the costs), `docs/plan/contracts/`, `docs/plan/tasks.json`, `tests/acceptance/`, and decision records in `docs/adr/` (ruling 10). `docs/plan/profile.yaml` (gates, privacy) is a blueprint addition.
+- John signs: `brief.md` (goal, scope, non-goals, risks, costs summary), `requirements.md` (acceptance criteria), `integrations.yaml` (integrations and costs), `profile.yaml` (gates). He does not sign architecture, contracts, tasks or acceptance test code; the `plan-reviewer` checks those against the signed files (engineer-planning §Q2).
+- `approval.json` = `{approved_by, date, files: {path: sha256}, scope_version, gates}` (engineer-planning §Q2 step 3). `files` holds exactly those four paths; planning's own list is brief, requirements and integrations (§Q2 step 4), and `profile.yaml` is added because the gates live there. The hook recomputes those four hashes (F20, SP17).
 
 ## Project skeleton (written into each project repo)
 ```
@@ -162,7 +173,7 @@ Sources: engineer-planning §Q1-Q3; engineer-existing-systems §Repo composition
 ## Superpowers, Beads, Ralph and others
 | Source | Kept | Dropped | Evidence |
 | --- | --- | --- | --- |
-| Superpowers pinned at commit bb92a77 (version label unverified) | Brainstorming hard gate; "decide nothing" plan hygiene; writing-plans; ledger; fresh subagent per task; verification-before-completion; two-part task review; worktree skill; installed pinned by bootstrap | TDD iron law; its task sizing (no numeric cap); local merge to main and the finishing menu (replaced by always-PR) | engineer-planning E21, E25, E81, E82; engineer-context §Q7.1; engineer-protocol E14, E19, E20, E40, E41; engineer-runtime P17 |
+| Superpowers pinned at commit bb92a77 (version label unverified) | Brainstorming hard gate; "decide nothing" plan hygiene; writing-plans; ledger; fresh subagent per task; verification-before-completion; two-part task review; worktree skill; vendored into the plugin | TDD iron law; its task sizing (no numeric cap); local merge to main and the finishing menu (replaced by always-PR) | engineer-planning E21, E25, E81, E82; engineer-context §Q7.1; engineer-protocol E14, E19, E20, E40, E41; engineer-runtime P17 |
 | Beads | Upgrade path above about 50 tasks or several agents; `--with-beads` flag | Not in v1; `bd remember` overlaps auto memory; 2026-08-11 data-loss incident | engineer-context §Q1, §Q7 Alternatives; engineer-planning E105; engineer-runtime P19 |
 | Ralph | One task per loop, fresh context, one commit per iteration, bash-loop shape under the supervisor | The in-session plugin and unbounded loop (6,239 iterations, about 11.7 hours, issue 1699) | engineer-planning E86; engineer-context §Q7 Rejected; engineer-human-loop E179, E180 |
 | cwc-long-running-agents | Read-only evaluator, default FAIL, kill-switch hook idea | As a dependency (README seen only as an excerpt) | engineer-protocol E32-E34; engineer-human-loop E163 |
@@ -171,4 +182,4 @@ Sources: engineer-planning §Q1-Q3; engineer-existing-systems §Repo composition
 | Spec Guard | sha256 approval binding (idea only) | As a dependency | engineer-planning E29, E61 |
 | frankbria | Breaker thresholds (no diff in 3, same failure in 5) | Code | engineer-context §Q7.4 |
 
-How the dropped Superpowers parts are switched off: the template vendors Superpowers from https://github.com/obra/superpowers at commit `bb92a77` (the pin John's GTM repo records, /home/user/attio-project/CLAUDE.md; MIT) as plain files, the way John's GTM repo does (engineer-existing-systems J3), without the `test-driven-development` and `finishing-a-development-branch` skill folders (TDD iron law; finishing menu and local merge). Its task sizing is overridden by a CLAUDE.md line that the `plan` skill's task contract wins; Superpowers' own `using-superpowers` skill says CLAUDE.md instructions take precedence over skills (Superpowers `using-superpowers/SKILL.md`, "User Instructions", as vendored in `/home/user/attio-project/.claude/skills/`, read 2026-10-16). Local merge to main is blocked by the missing push credential and branch protection, not by prose.
+How Superpowers arrives and how the dropped parts are switched off: the template vendors a subset of https://github.com/obra/superpowers at commit `bb92a77` (the pin John's GTM repo records, /home/user/attio-project/CLAUDE.md; MIT) as plain files into `plugin/skills/`, the way John's GTM repo vendors it (engineer-existing-systems J3), and `--install` copies it into `/opt/engineer/plugin/` with the rest of the plugin. The subset leaves out the `test-driven-development` and `finishing-a-development-branch` skill folders (TDD iron law; finishing menu and local merge). Its task sizing is overridden by a CLAUDE.md line that the `plan` skill's task contract wins; Superpowers' own `using-superpowers` skill says CLAUDE.md instructions take precedence over skills (Superpowers `using-superpowers/SKILL.md`, "User Instructions", as vendored in `/home/user/attio-project/.claude/skills/`, read 2026-10-16). Local merge to main is blocked by the missing push credential and branch protection, not by prose.
