@@ -1,0 +1,71 @@
+"""MORNING.md: the night in one page, rendered from events.jsonl and RUN_STATUS.json."""
+from collections import Counter
+
+
+def _outcomes(events: list) -> dict:
+    """Last outcome per task: {task_id: detail of its last `audit` event with a status}."""
+    last = {}
+    for e in events:
+        detail = e.get("detail") or {}
+        if e["event"] == "audit" and e.get("task_id") and detail.get("status"):
+            last[e["task_id"]] = detail
+    return last
+
+
+def open_t1(events: list) -> int:
+    asked = {}
+    answered = set()
+    for e in events:
+        d = e.get("detail") or {}
+        if e["event"] == "approval_ask" and "item" in d:
+            asked[d["item"]] = d
+        elif e["event"] == "approval_answer" and "item" in d:
+            answered.add(d["item"])
+    return sum(1 for n, d in asked.items() if d.get("tier") == 1 and n not in answered)
+
+
+def _section(title: str, lines: list) -> list:
+    return [f"## {title}", *(lines or ["- none"]), ""]
+
+
+def render(events: list, run_status: dict) -> str:
+    """Markdown: state line, done, blocked with notes, needs-John, PRs, denials, cost total, open T1 count."""
+    project = next((e["project"] for e in events), (run_status or {}).get("project") or "project")
+    night = next((e["detail"].get("night") for e in events
+                  if e["event"] == "night_start" and e.get("detail")), None)
+    state = (run_status or {}).get("state", "unknown")
+    reason = (run_status or {}).get("reason")
+    out = [f"# Morning report: {project}" + (f", night of {night}" if night else ""), "",
+           f"State: **{state}**" + (f" - {reason}" if reason else ""), ""]
+    outcomes = _outcomes(events)
+    by = {s: [t for t, d in outcomes.items() if d["status"] == s] for s in ("done", "blocked", "needs_john")}
+
+    def noted(tid):
+        note = outcomes[tid].get("reason")
+        return f"- {tid}: {note}" if note else f"- {tid}"
+
+    out += _section("Done", [f"- {t}" for t in by["done"]])
+    out += _section("Blocked", [noted(t) for t in by["blocked"]])
+    out += _section("Needs John", [noted(t) for t in by["needs_john"]])
+    prs = []
+    for e in events:
+        d = e.get("detail") or {}
+        if e["event"] == "pr_open":
+            prs.append(f"- {e.get('task_id')}: {d.get('url', d.get('number'))}")
+        elif e["event"] == "merge":
+            prs.append(f"- {e.get('task_id')}: auto-merge on (tier {d.get('tier')})")
+    out += _section("Pull requests", prs)
+    denials = Counter((e.get("detail") or {}).get("kind", "unknown") for e in events if e["event"] == "denial")
+    out += _section("Denials", [f"- {k}: {n}" for k, n in sorted(denials.items())])
+    cost = sum(e.get("cost_usd") or 0 for e in events if e["event"] == "task_end")
+    cost += sum((e.get("detail") or {}).get("auditor_cost_usd") or 0 for e in events if e["event"] == "audit")
+    sessions = sum(1 for e in events if e["event"] == "task_end")
+    out += [f"Cost: ${cost:.2f} over {sessions} session(s).", f"Open T1 items: {open_t1(events)}", ""]
+    return "\n".join(out)
+
+
+def audit_md(task: dict, script: dict, auditor: dict) -> str:
+    """audit/AUDIT-<id>.md for the records branch and the PR body."""
+    return "\n".join([f"# AUDIT {task['id']}: {auditor['verdict']}", "", f"Task: {task['title']}",
+                      f"HEAD: {script['head_sha']}", "", "## audit.sh", *[f"- {x}" for x in script["lines"]], "",
+                      "## Auditor", *[f"- {x}" for x in auditor["lines"]], ""])
