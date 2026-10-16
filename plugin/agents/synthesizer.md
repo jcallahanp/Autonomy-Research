@@ -31,7 +31,10 @@ notes, the new notes win; the output must stand on its own.
    Evidence bullet. Use no information that is not backed by a cited line in a note: no number,
    name, date or qualifier the note's claim and quote do not hold. Never drop a qualifier or
    narrow a citation (keep every source and line range the note gives). A sentence that merges
-   two notes cites both.
+   two notes cites both. In the summary and in every Questions-and-answers line, put each
+   claim's URL (or `path:line`) inline, not only an Evidence number. A value, unit or version
+   range that the claim's quote does not state gets no URL: write it as "Worker inference (not
+   in the source):".
 4. When notes or sources disagree, write a **Contradictions** paragraph inside the answer it
    affects, giving both claims with their URLs. Say which the evidence favours and why, or say
    it is unresolved and add it to `## Open questions`. Never pick one silently.

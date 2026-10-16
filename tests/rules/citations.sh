@@ -40,3 +40,9 @@ for f in "$ns" "$r" "$sy"; do
   grep -qF 'path:line' "$f" || fail citations "$f does not accept repo path:line citations"
 done
 grep -qF 'with no URL' "$sy" && fail citations "synthesizer.md still drops every claim with no URL (repo citations included)"
+
+# Round 1 re-measure fix: summary and answer lines cite inline, and an unquoted qualifier is
+# labelled as a worker inference instead of borrowing the claim's URL (contradiction case dip).
+grep -q 'inline, not only an Evidence number' "$sy" || fail citations "$sy: summary and answers must cite URLs inline"
+grep -q 'Worker inference (not' "$sy" || fail citations "$sy: unquoted qualifiers must be labelled as worker inference"
+grep -q 'inline, the URL or `path:line`' "$ff" || fail citations "$ff: answers must cite inline"
