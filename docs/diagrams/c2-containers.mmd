@@ -19,4 +19,4 @@ flowchart TB
   agents --> findings
   agents --> registry
   skills --> diagrams
-  hooks --> findings
+  hooks -. "injects INDEX on start and after compaction" .-> findings
