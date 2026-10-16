@@ -247,6 +247,14 @@ packaging.md, architecture.md, engineer-intake.md, engineer-existing-systems.md)
 | WHOOP developer API | https://developer.whoop.com/docs/developing/getting-started | OAuth2, dashboard app creation (human), offline scope refresh, 100 req/min | hosted | 2026-10-16 | Use after one-time human registration and consent |
 | Withings Public API | https://developer.withings.com/developer-guide/v3/get-access/sign-up-for-a-developer-account | OAuth2 web flow; Withings+ required for new accounts on free plan from 2026-10-12 | hosted | 2026-10-16 | Use; check plan terms (plans page unreadable) |
 | n8n public API handlers (master) | https://github.com/n8n-io/n8n | Routes for community packages, credentials, variables, tags, projects, SSO settings (commit 21221ad) | self-hosted/cloud | 2026-10-16 | Use; confirm release and Cloud availability |
+| Fasten OnPrem (patient-portals.md) | https://github.com/fastenhealth/fasten-onprem/ | GPL-3.0 self-hosted FHIR viewer; archived; cannot import from providers, FHIR Bundle upload only | Docker | 2026-10-16 | Reject as puller; archived |
+| Fasten Connect | https://docs.connect.fastenhealth.com/quickstart | Commercial patient-authorized records API; free sandbox; TEFCA live fees; live price unpublished | hosted | 2026-10-16 | Fallback; ask whether an individual may open a live account |
+| Flexpa | https://www.flexpa.com/pricing | Patient-consented FHIR API with MCP add-on; $20,000/year minimum, no free live mode | hosted | 2026-10-16 | Reject: price |
+| 1upHealth / Metriport / Health Gorilla / Particle | https://docs.1up.health/docs/get-started/third-party-apps | Sales- or vetting-gated record aggregators (search highlights only) | hosted | 2026-10-16 (search highlight) | Reject for solo use |
+| Epic on FHIR patient-facing SMART app | https://open.epic.com/DeveloperResources | Self-service client IDs; per-health-system patient OAuth; sandbox forbids real PHI | Epic customers | 2026-10-16 | Fallback for MyChart labs; John does consent |
+| Android Health Connect Medical Records | https://developer.android.com/health-and-fitness/health-connect/medical-records | On-phone FHIR store with lab read permission; experimental | Android 16 | 2026-10-16 | Skip |
+| Apple Health clinical-records export | https://www.johngoldin.com/blog/apple-health-export/2020-02-apple-health-export1/index.en.html | export.zip with FHIR JSON clinical records (2020 blog) | iPhone then local parse | 2026-10-16 | Use if John has iPhone; spike |
+| Labcorp User Agreement (portal automation) | https://www.labcorp.com/compliance/privacy/privacy-notice/online-services-user-agreement | Bans robots/scrapers without written permission; allows personal downloads | n/a | 2026-10-16 | No unattended portal login; John downloads PDF |
 
 ## Engineer feasibility and trials
 

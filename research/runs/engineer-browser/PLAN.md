@@ -23,7 +23,7 @@ Rulings: Claude Code is the engine and is not up for debate; everything else att
 - [x] API versus browser per task for Attio, Clay, n8n and portals - notes/api-vs-browser.md - medium - patient portals and FHIR aggregators not researched; Attio App SDK block, Outreach step routes and scopes, n8n Cloud community-package route unverified; Withings plan terms unreadable
 
 ## Gap round
-- [ ] Blood-work and patient portals: API, aggregator or browser - notes/gap-patient-portals.md - pending (the API-versus-browser facet did not reach portals, which the health scenario needs)
+- [x] Blood-work and patient portals: API, aggregator or browser - notes/gap-patient-portals.md - medium - (gap round: the API-versus-browser facet did not reach portals) several aggregator and ONC claims from search highlights; Quest and Function terms, Epic solo-developer distribution, Blue Button unsettled; John's lab and phone unknown
 
 ## Outputs
 - Findings: research/findings/engineer-browser.md - pending
