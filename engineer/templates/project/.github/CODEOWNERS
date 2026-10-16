@@ -1,0 +1,42 @@
+# Code owners for {{NAME}}. Branch protection requires John's review on every path below, so a
+# pull request touching one of them (a Tier 2 change) cannot self-merge.
+# Tier 2 paths (the engineer's tier2-paths.txt):
+**/migrations/** @{{OWNER}}
+migrations/** @{{OWNER}}
+**/auth/** @{{OWNER}}
+auth/** @{{OWNER}}
+.github/** @{{OWNER}}
+infra/** @{{OWNER}}
+**/*.tf @{{OWNER}}
+Dockerfile @{{OWNER}}
+docker-compose*.yml @{{OWNER}}
+wrangler.toml @{{OWNER}}
+vercel.json @{{OWNER}}
+CODEOWNERS @{{OWNER}}
+CLAUDE.md @{{OWNER}}
+.claude/** @{{OWNER}}
+package.json @{{OWNER}}
+package-lock.json @{{OWNER}}
+pnpm-lock.yaml @{{OWNER}}
+yarn.lock @{{OWNER}}
+requirements*.txt @{{OWNER}}
+pyproject.toml @{{OWNER}}
+poetry.lock @{{OWNER}}
+uv.lock @{{OWNER}}
+go.mod @{{OWNER}}
+go.sum @{{OWNER}}
+Cargo.toml @{{OWNER}}
+Cargo.lock @{{OWNER}}
+docs/plan/** @{{OWNER}}
+security/** @{{OWNER}}
+.env.example @{{OWNER}}
+# Paths the engineer never writes (protected-paths.txt [always]):
+tests/acceptance/** @{{OWNER}}
+audit/** @{{OWNER}}
+.github/CODEOWNERS @{{OWNER}}
+**/conftest.py @{{OWNER}}
+pytest.ini @{{OWNER}}
+tox.ini @{{OWNER}}
+jest.config.* @{{OWNER}}
+vitest.config.* @{{OWNER}}
+.mocharc* @{{OWNER}}

@@ -1,0 +1,6 @@
+# Services for {{NAME}}: purpose, auth, env var names, price with date, owner action, fallback
+# and the 12-point checklist. John signs this file. Schema: integrations.schema.json.
+version: 1
+services: []
+edges: []
+monthly_total_usd: 0

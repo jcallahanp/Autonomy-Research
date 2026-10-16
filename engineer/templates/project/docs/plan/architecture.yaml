@@ -1,0 +1,4 @@
+# The system model for {{NAME}}. architecture.mmd shows the same node ids (a parity check
+# compares them). Node: {id, kind, label}. Edge: {from, to, data}.
+nodes: []
+edges: []
