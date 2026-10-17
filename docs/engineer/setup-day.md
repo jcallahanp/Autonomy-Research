@@ -30,9 +30,9 @@ Any price not in this table: check the price on the day.
 
 ## Before the day
 1. Merge the stage-1 pull request on GitHub.
-2. Ask the builder to do appendix part A: fill the two missing download checksums and re-check two
-   package-signing keys, in one small pull request. Merge it. Without it, step 4 below stops with "not
-   pinned". **The builder** means a Claude Code session on this repo at claude.ai/code (a cloud session).
+2. Appendix part A (two download checksums, two package-signing keys, GitHub's SSH fingerprints) was done
+   on 2026-10-17 in one small pull request; merge it if it is still open. Without it, step 4 below stops
+   with "not pinned". **The builder** means a Claude Code session on this repo at claude.ai/code (a cloud session).
    Every change to this repo, before and during the day, is made there and reaches the server as a
    pull request you merge; the builder on the server only tests and tells you what to change.
 3. Decide the open decisions (stage-1 plan, "Open decisions"), or keep the defaults: engine stays in this
@@ -76,6 +76,11 @@ into a chat with Claude; the `seed` command asks for it with the typing hidden.
    GIT_SSH_COMMAND="ssh -i /root/.ssh/autonomy-research" git clone git@github.com:jcallahanp/Autonomy-Research.git /srv/autonomy-research
    git -C /srv/autonomy-research config core.sshCommand "ssh -i /root/.ssh/autonomy-research"
    ```
+   The first time, ssh asks whether to trust github.com and shows a fingerprint. Type `yes` only if it is
+   one of GitHub's published ones: `SHA256:+DiY3wvvV6TuJJhbpZisF/zLDA0zPMSvHdkr4UvCOqU` (ED25519),
+   `SHA256:p2QAMXNIC1TJYWeIOttrVc98/R1BUFWu3/LiyKgUfQM` (ECDSA) or
+   `SHA256:uNiVztksCsDhcc0u9e8BujQXVUpKZIDTMczCvj3tD2s` (RSA), read 2026-10-17 from
+   docs.github.com/en/authentication/keeping-your-account-and-data-secure/githubs-ssh-key-fingerprints.
    You see: "Cloning into...", then done. If it fails with "Permission denied": the deploy key is missing or
    on the wrong repo.
 4. **Install everything that needs the administrator ("root").** You do:

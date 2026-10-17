@@ -13,14 +13,11 @@ a claude.ai/code cloud session on the repo (as in phase A), as a PR John merges;
 builder writes down what to change and why; John pastes that into the cloud session.
 
 ## A. Before the day (cloud session, one small PR)
-- `engineer/templates/release-pins.txt`: the `sops` and `bun` rows are `TO-PIN`; `setup-root.sh --install`
-  refuses until both carry a sha256. Take each from the vendor's checksum file on the release page
-  (`sops-v3.13.3.checksums.txt`, bun `SHASUMS256.txt` for bun-v1.4.3); record the date in `versions.md`.
-  Bun is needed by the Claude Code Channels plugins.
-- `engineer/templates/apt-repos.txt`: the nodesource and cloudflare fingerprints were read from the key
-  files themselves (trust on first use). Re-check both against the vendors' own pages; fix the row if they
-  differ.
-- Give John GitHub's published SSH host-key fingerprints for step 3, so his first `yes` is checked.
+- Done 2026-10-17: the `sops` and `bun` checksums in `engineer/templates/release-pins.txt` are filled, so
+  no `TO-PIN` row is left (vendor checksum files, matched by download), and the nodesource and cloudflare key fingerprints in
+  `engineer/templates/apt-repos.txt` were re-checked against each repo's signed index and the Ubuntu
+  keyserver (the vendors do not print them).
+- Done 2026-10-17: GitHub's published SSH host-key fingerprints are in the guide's step 3.
 - Help John make `engineer-scratch` from the skeleton (guide, before-the-day step 4) if he asks: it must
   hold the skeleton, `.github/workflows/checks.yml` included, before SP18 can test auto-merge.
 

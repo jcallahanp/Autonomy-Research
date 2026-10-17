@@ -29,10 +29,14 @@ class VersionsTest(unittest.TestCase):
                 self.assertIn(version, line, f"{name} row missing or without {version}")
                 self.assertIn("TO-PIN" if sha == "TO-PIN" else sha, line)
 
-    def test_unverified_checksums_said_so(self):
-        for name in ("gitleaks", "osv-scanner"):
-            line = next(l for l in self.text.splitlines() if l.startswith(f"| {name} "))
-            self.assertIn("copied from vendor checksum files, not re-verified by download", line)
+    def test_checksum_check_said(self):
+        """Each release row says whether its checksum was matched by a download or only copied."""
+        for name, _url, sha, _scope in rows(TEMPLATES / "release-pins.txt"):
+            if sha == "TO-PIN":
+                continue
+            with self.subTest(name=name):
+                line = next(l for l in self.text.splitlines() if l.startswith(f"| {name} "))
+                self.assertRegex(line, r"matched by download \d{4}-\d{2}-\d{2}|not re-verified by download")
 
     def test_apt_fingerprints_recorded(self):
         for name, _key, fprs, _deb in rows(TEMPLATES / "apt-repos.txt"):

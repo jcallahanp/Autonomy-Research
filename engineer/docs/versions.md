@@ -11,14 +11,14 @@ Re-pin by reading the source again on the day and updating both files in one com
 | `@playwright/cli` | 0.1.22 | npm | 2026-10-16 | `npm view @playwright/cli version` |
 | `@mermaid-js/mermaid-cli` | 11.12.0 | npm | 2026-10-16 | Kept at the pin in `tests/check-mermaid.sh` and `research/blueprint/stack.md`; `npm view` shows 12.0.0 is out, not adopted in stage 1 |
 | `@mermaid-lint/cli` (mermaid-lint) | 0.53.1 | npm | 2026-10-16 | `npm view @mermaid-lint/cli version`; the unscoped name `mermaid-lint` is not on npm; this package's maintainer is the author of github.com/jasonworden/mermaid-lint (engineer-briefing E59) and it ships the `mermaid-lint` binary |
-| gitleaks | 8.30.1 | github-release | 2026-10-16 | tag v8.30.1 (2026-02-21), read from `proxy.golang.org/github.com/zricethezav/gitleaks/v8/@latest`; sha256 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb (`gitleaks_8.30.1_linux_x64.tar.gz`), checksum copied from vendor checksum files, not re-verified by download |
-| osv-scanner | 2.7.0 | github-release | 2026-10-16 | tag v2.7.0 (2026-10-12), read from `proxy.golang.org/github.com/google/osv-scanner/v2/@latest`; sha256 160c6253e2922e9e0a6a9771c5c4c40a4b3c6090b34a3cdd5e80c96cc2e4218b (`osv-scanner_linux_amd64`), checksum copied from vendor checksum files, not re-verified by download |
-| sops | 3.13.3 | github-release | 2026-10-16 | tag v3.13.3, latest on `proxy.golang.org/github.com/getsops/sops/v3/@latest`; sha256 TO-PIN on setup day from `sops-v3.13.3.checksums.txt` on the release page |
-| bun | 1.4.3 | github-release | 2026-10-16 | `npm view bun version`; needed by the Claude Code Channels plugins; sha256 TO-PIN on setup day from `SHASUMS256.txt` on the bun-v1.4.3 release page |
+| gitleaks | 8.30.1 | github-release | 2026-10-16 | tag v8.30.1 (2026-02-21), read from `proxy.golang.org/github.com/zricethezav/gitleaks/v8/@latest`; sha256 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb (`gitleaks_8.30.1_linux_x64.tar.gz`), checksum copied from vendor checksum files; matched by download 2026-10-17 |
+| osv-scanner | 2.7.0 | github-release | 2026-10-16 | tag v2.7.0 (2026-10-12), read from `proxy.golang.org/github.com/google/osv-scanner/v2/@latest`; sha256 160c6253e2922e9e0a6a9771c5c4c40a4b3c6090b34a3cdd5e80c96cc2e4218b (`osv-scanner_linux_amd64`), checksum copied from vendor checksum files; matched by download 2026-10-17 |
+| sops | 3.13.3 | github-release | 2026-10-16 | tag v3.13.3, latest on `proxy.golang.org/github.com/getsops/sops/v3/@latest`; sha256 e5bec3346a873ae91d871550f3e698c1aad962aff462a080e40f25fde17fef6b (`sops-v3.13.3.linux.amd64`), from `sops-v3.13.3.checksums.txt` and matched by download 2026-10-17 |
+| bun | 1.4.3 | github-release | 2026-10-16 | `npm view bun version`; needed by the Claude Code Channels plugins; sha256 3e730528d89775f03f87f05c06787c4df4099d0a37f3f252e7b829cb23816e18 (`bun-linux-x64.zip`), from `SHASUMS256.txt` and matched by download 2026-10-17 |
 | semgrep | 1.181.0 | pipx | 2026-10-16 | `pip index versions semgrep` (PyPI) |
 
-Release downloads and their sha256 live in `engineer/templates/release-pins.txt`; a TO-PIN row stops
-`setup-root.sh --install` until the checksum is read on setup day.
+Release downloads and their sha256 live in `engineer/templates/release-pins.txt`; a TO-PIN row would stop
+`setup-root.sh --install` until its checksum is read. None is left as of 2026-10-17.
 
 ## Apt repository keys
 
