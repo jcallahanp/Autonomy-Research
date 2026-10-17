@@ -25,7 +25,7 @@ done
 grep -q '^AGE-SECRET-KEY-' "$K/keys.txt" || fail "no private key written"
 [ "$(cat "$K/recipient.txt")" = "$(age-keygen -y "$K/keys.txt")" ] || fail "recipient does not match the key"
 grep -Eqx 'age1[a-z0-9]+' "$K/recipient.txt" || fail "recipient is not one age1 line"
-echo "$out" | grep -q 'AGE-SECRET-KEY' && fail "private key printed"
+grep -q 'AGE-SECRET-KEY' <<<"$out" && fail "private key printed"
 grep -qx "CHOWN chown -h secretbroker:secretbroker $K/keys.txt" "$T/chown.log" || fail "key not chowned"
 grep -qx "CHOWN chown -h secretbroker:secretbroker $K/recipient.txt" "$T/chown.log" || fail "recipient not chowned"
 grep -qx "AS secretbroker: age-keygen -o $K/keys.txt" "$T/runuser.log" || fail "age-keygen not run as secretbroker"
@@ -36,7 +36,7 @@ rm "$K/recipient.txt"
 out=$(install_age_key 2>&1) || fail "second run failed: $out"
 [ "$before" = "$(sha256sum < "$K/keys.txt")" ] || fail "existing key replaced"
 [ "$(cat "$K/recipient.txt")" = "$(age-keygen -y "$K/keys.txt")" ] || fail "recipient not rebuilt"
-echo "$out" | grep -q 'AGE-SECRET-KEY' && fail "private key printed on rerun"
+grep -q 'AGE-SECRET-KEY' <<<"$out" && fail "private key printed on rerun"
 
 # A symlink at the key path is refused, not followed.
 rm "$K/keys.txt"; ln -s "$T/elsewhere" "$K/keys.txt"

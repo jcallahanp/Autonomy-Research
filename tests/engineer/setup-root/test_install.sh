@@ -24,9 +24,9 @@ for u in engineer supervisor secretbroker egress; do
 done
 echo "$out" | grep -Eq '^RUN: useradd .*--shell /bin/bash engineer$' || fail "engineer has no login shell"
 for u in chrome-xvfb novnc engineer-egress-proxy; do
-  echo "$out" | grep -qx "RUN: systemctl enable --now $u.service" || fail "$u not enabled"
+  grep -qx "RUN: systemctl enable --now $u.service" <<<"$out" || fail "$u not enabled"
 done
-echo "$out" | grep -q 'enable.*engineer-supervisor' && fail "engineer-supervisor enabled at install"
+grep -q 'enable.*engineer-supervisor' <<<"$out" && fail "engineer-supervisor enabled at install"
 for u in engineer-supervisor engineer-remote-control engineer-channels chrome-xvfb; do
   [ -f "$P/etc/systemd/system/$u.service" ] || fail "unit $u not installed"
 done
@@ -36,21 +36,21 @@ for d in records approvals checks audit-clones; do [ -d "$P/var/lib/engineer/$d"
 [ "$(stat -c %a "$P/home/engineer/.engineer/chrome-profile" 2>/dev/null)" = 700 ] || fail "chrome profile not 0700"
 # Mirrors: the broker's sync-mirror job writes them; run-task as engineer reads them.
 [ "$(stat -c %a "$P/var/lib/engineer/mirrors" 2>/dev/null)" = 2750 ] || fail "mirrors not 2750"
-echo "$out" | grep -qx "RUN: chown -h secretbroker:engineer $P/var/lib/engineer/mirrors" || fail "mirrors not secretbroker:engineer"
+grep -qx "RUN: chown -h secretbroker:engineer $P/var/lib/engineer/mirrors" <<<"$out" || fail "mirrors not secretbroker:engineer"
 # supervisor reads the mirrors too (records.ensure clones engineer-records from them), never writes.
 # Set by the owner, never following a symlink (-P).
 SB="RUN: runuser -u secretbroker -- setfacl"
-echo "$out" | grep -qx "$SB -m u:supervisor:rX $P/var/lib/engineer/mirrors" || fail "no supervisor ACL on mirrors"
-echo "$out" | grep -qx "$SB -R -P -d -m u:supervisor:rX $P/var/lib/engineer/mirrors" || fail "no default supervisor ACL on mirrors"
+grep -qx "$SB -m u:supervisor:rX $P/var/lib/engineer/mirrors" <<<"$out" || fail "no supervisor ACL on mirrors"
+grep -qx "$SB -R -P -d -m u:supervisor:rX $P/var/lib/engineer/mirrors" <<<"$out" || fail "no default supervisor ACL on mirrors"
 echo "$out" | grep '^RUN: .*setfacl -R ' | grep -qv -- '-R -P' && fail "a recursive setfacl may follow symlinks"
 grep -qx 'MIRROR_DIR=/var/lib/engineer/mirrors' "$REPO/engineer/etc/engineer.conf" || fail "engineer.conf has no MIRROR_DIR"
 # The secret store's age key: made with age-keygen (a privileged step), never printed; dirs 0700.
 K=/home/secretbroker/.config/sops/age
 grep -qx "AGE_KEY_FILE=$K/keys.txt" "$REPO/engineer/etc/engineer.conf" || fail "AGE_KEY_FILE differs from setup-root's"
 grep -qx "AGE_RECIPIENT_FILE=$K/recipient.txt" "$REPO/engineer/etc/engineer.conf" || fail "AGE_RECIPIENT_FILE differs"
-echo "$out" | grep -qx "RUN: runuser -u secretbroker -- age-keygen -o $P$K/keys.txt" || fail "no age-keygen as secretbroker"
-echo "$out" | grep -qx "RUN: age-keygen -y $P$K/keys.txt > $P$K/recipient.txt" || fail "no recipient written in dry run"
-echo "$out" | grep -qx "RUN: chown -h secretbroker:secretbroker $P$K/keys.txt" || fail "age key not owned by secretbroker"
+grep -qx "RUN: runuser -u secretbroker -- age-keygen -o $P$K/keys.txt" <<<"$out" || fail "no age-keygen as secretbroker"
+grep -qx "RUN: age-keygen -y $P$K/keys.txt > $P$K/recipient.txt" <<<"$out" || fail "no recipient written in dry run"
+grep -qx "RUN: chown -h secretbroker:secretbroker $P$K/keys.txt" <<<"$out" || fail "age key not owned by secretbroker"
 for d in .config .config/sops .config/sops/age; do
   [ "$(stat -c %a "$P/home/secretbroker/$d" 2>/dev/null)" = 700 ] || fail "$d not 0700"
 done
@@ -60,20 +60,20 @@ grep -qx "MIRROR_DIR=\"$T/src/var/lib/engineer/mirrors\"" "$SRC/etc/engineer.con
 cmp -s "$P/etc/engineer/egress.txt" "$SRC/templates/egress-install.txt" || fail "egress.txt is not the install list"
 [ -f "$P/etc/apparmor.d/bwrap" ] || fail "apparmor profile not written"
 EN="RUN: runuser -u engineer -- setfacl"
-echo "$out" | grep -qx "$EN -R -P -m u:supervisor:rX $P/home/engineer/projects" || fail "no supervisor ACL"
-echo "$out" | grep -qx "$EN -R -P -d -m u:supervisor:rX $P/home/engineer/projects" || fail "no default supervisor ACL"
-echo "$out" | grep -qx "$EN -m u:supervisor:x $P/home/engineer" || fail "no supervisor x on engineer home"
+grep -qx "$EN -R -P -m u:supervisor:rX $P/home/engineer/projects" <<<"$out" || fail "no supervisor ACL"
+grep -qx "$EN -R -P -d -m u:supervisor:rX $P/home/engineer/projects" <<<"$out" || fail "no default supervisor ACL"
+grep -qx "$EN -m u:supervisor:x $P/home/engineer" <<<"$out" || fail "no supervisor x on engineer home"
 echo "$out" | grep -Eq '^RUN: .*render-nft.py --uid engineer=.* --uid supervisor=.* --lo engineer=3128,5900 --lo supervisor=3128 ' || fail "nft render not printed with loopback ports"
-echo "$out" | grep -q '^RUN: apparmor_parser -r ' || fail "apparmor_parser not printed"
-echo "$out" | grep -q '^RUN: .*apt-get install .*google-chrome-stable' || fail "apt-get install not printed"
-echo "$out" | grep -q '^RUN: curl .*sops-test.* > .*/usr/local/bin/sops$' || fail "root release not installed"
-echo "$out" | grep -q 'tool.tar.gz' && fail "user-scope release installed by setup-root"
+grep -q '^RUN: apparmor_parser -r ' <<<"$out" || fail "apparmor_parser not printed"
+grep -q '^RUN: .*apt-get install .*google-chrome-stable' <<<"$out" || fail "apt-get install not printed"
+grep -q '^RUN: curl .*sops-test.* > .*/usr/local/bin/sops$' <<<"$out" || fail "root release not installed"
+grep -q 'tool.tar.gz' <<<"$out" && fail "user-scope release installed by setup-root"
 [ "$(stat -c %U:%a "$P/var/log/engineer" 2>/dev/null)" = "$(id -un):1775" ] || fail "/var/log/engineer not 1775"
-echo "$out" | grep -qx "RUN: chown -h root:egress $P/var/log/engineer" || fail "/var/log/engineer not group egress"
+grep -qx "RUN: chown -h root:egress $P/var/log/engineer" <<<"$out" || fail "/var/log/engineer not group egress"
 # Engineer's dirs are made by engineer; root never chowns or chmods inside engineer's home.
-echo "$out" | grep -qx "RUN: runuser -u engineer -- mkdir -p $P/home/engineer/.engineer/chrome-profile" || fail "chrome profile owner"
-echo "$out" | grep -qx "RUN: runuser -u engineer -- chmod 0700 $P/home/engineer/.engineer/chrome-profile" || fail "chrome profile mode"
-echo "$out" | grep -q "^RUN: chown .*$P/home/engineer/" && fail "root chowns inside engineer's home"
+grep -qx "RUN: runuser -u engineer -- mkdir -p $P/home/engineer/.engineer/chrome-profile" <<<"$out" || fail "chrome profile owner"
+grep -qx "RUN: runuser -u engineer -- chmod 0700 $P/home/engineer/.engineer/chrome-profile" <<<"$out" || fail "chrome profile mode"
+grep -q "^RUN: chown .*$P/home/engineer/" <<<"$out" && fail "root chowns inside engineer's home"
 
 # Idempotent: a second run leaves the same tree.
 before=$(tree_sum "$P")
@@ -85,11 +85,11 @@ cp "$SRC/templates/release-pins.txt" "$T/pins.bak"
 printf 'sops\thttps://example.invalid/sops\tTO-PIN\troot\n' > "$SRC/templates/release-pins.txt"
 rc=0; o=$(sr --install 2>&1) || rc=$?
 [ "$rc" = 1 ] || fail "TO-PIN release pin: exit $rc"
-echo "$o" | grep -q 'sops' || fail "TO-PIN error does not name the row: $o"
+grep -q 'sops' <<<"$o" || fail "TO-PIN error does not name the row: $o"
 cp "$T/pins.bak" "$SRC/templates/release-pins.txt"
 sed -i "s/$FPR/TO-PIN/" "$SRC/templates/apt-repos.txt"
 rc=0; o=$(sr --install 2>&1) || rc=$?
-[ "$rc" = 1 ] && echo "$o" | grep -q testrepo || fail "TO-PIN apt key: exit $rc: $o"
+[ "$rc" = 1 ] && grep -q testrepo <<<"$o" || fail "TO-PIN apt key: exit $rc: $o"
 
 # Not root and not dry run: refuse before doing anything.
 if [ "$(id -u)" = 0 ]; then
@@ -99,10 +99,10 @@ else
   as_user=()
 fi
 rc=0; o=$("${as_user[@]}" bash "$SRC/scripts/setup-root.sh" --install 2>&1) || rc=$?
-[ "$rc" = 1 ] && echo "$o" | grep -q 'must run as root' || fail "non-root install: exit $rc: $o"
+[ "$rc" = 1 ] && grep -q 'must run as root' <<<"$o" || fail "non-root install: exit $rc: $o"
 
 # Dry run must not write to the real filesystem.
 rc=0; o=$("${as_user[@]}" bash "$SRC/scripts/setup-root.sh" --install --dry-run --src "$SRC" 2>&1) || rc=$?
-[ "$rc" = 1 ] && echo "$o" | grep -q -- '--prefix' || fail "dry run with prefix /: exit $rc: $o"
+[ "$rc" = 1 ] && grep -q -- <<<"$o" '--prefix' || fail "dry run with prefix /: exit $rc: $o"
 rc=0; "${SR[@]}" --bogus >/dev/null 2>&1 || rc=$?
 [ "$rc" = 2 ] || fail "unknown option: exit $rc"
