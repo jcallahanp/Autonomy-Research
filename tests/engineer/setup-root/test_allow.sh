@@ -9,7 +9,7 @@ EG="$P/etc/engineer/egress.txt"
 AD="$P/etc/engineer/egress-added.txt"
 
 out=$(sr --allow api.attio.com 2>&1) || fail "allow exit $?: $out"
-echo "$out" | grep -qx 'RUN: systemctl restart engineer-egress-proxy.service' || fail "proxy not restarted"
+grep -qx 'RUN: systemctl restart engineer-egress-proxy.service' <<<"$out" || fail "proxy not restarted"
 sr --allow api.attio.com >/dev/null 2>&1 || fail "second allow failed"
 [ "$(grep -cx 'api.attio.com' "$EG")" = 1 ] || fail "egress.txt does not hold the host once"
 [ "$(grep -cx 'api.attio.com' "$AD")" = 1 ] || fail "egress-added.txt does not hold the host once"

@@ -20,8 +20,8 @@ for s in remote-control-session channels-session; do
     : > "$T/argv.log"
     rc=0; err=$("${clean_env[@]}" "$v=TEST-TOKEN-fake" "$root/bin/$s" 2>&1) || rc=$?
     [ "$rc" -eq 78 ] || fail "$s with $v set: rc=$rc"
-    echo "$err" | grep -q "$v" || fail "$s did not name $v: $err"
-    echo "$err" | grep -q TEST-TOKEN-fake && fail "$s printed the $v value"
+    grep -q "$v" <<<"$err" || fail "$s did not name $v: $err"
+    grep -q TEST-TOKEN-fake <<<"$err" && fail "$s printed the $v value"
     [ ! -s "$T/argv.log" ] || fail "$s ran claude with $v set"
   done
   rc=0; "${clean_env[@]}" ANTHROPIC_API_KEY= "$root/bin/$s" 2>/dev/null || rc=$?
